@@ -1,0 +1,20 @@
+/*
+div.contents {
+    width of 80 characters monospace plus line numbers 
+    width: 51em;
+    margin: 0px auto;
+    text-align: justify;
+}
+*/
+
+.title {
+    text-align: center;
+}
+
+div.fragment {
+    overflow: auto;
+}
+
+div.fragment div.line {
+    white-space: pre;
+}
