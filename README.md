@@ -1,7 +1,7 @@
-#Fortran library to handle sparse matrices  
+# Fortran library to handle sparse matrices  
 
 
-##Overview  
+## Overview  
 The Fortran 2003 library __libsparse__ is a library that provides objects to create and handle rectangular and square sparse matrices using different formats:  
 
  * Linked List (LL);  
@@ -45,7 +45,7 @@ This library was inspired by several sources:
 
 
 
-##Compilation  
+## Compilation  
 
 
 For compilation of the Fortran 2003 library: `make`  
