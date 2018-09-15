@@ -43,12 +43,6 @@ function hashf(row,col,mat,dim2,filled,getval) result(hashvr)
   
  !Cycle until a free entry is found
  do k=1,maxiter
-!  indnotzero=.false.;indnotequal=.false.
-!  do i=1,dim1
-!   j=mat(i,iaddress)
-!   if(j.ne.rowcol(i))indnotequal=.true.
-!   if(j.ne.0)indnotzero=.true.
-!  enddo     
   indnotzero=.false.;indnotequal=.false.
   if(mat(1,iaddress).ne.row.or.mat(2,iaddress).ne.col)indnotequal=.true.
   if(mat(1,iaddress).ne.0.or.mat(2,iaddress).ne.0)indnotzero=.true.
