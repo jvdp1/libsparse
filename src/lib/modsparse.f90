@@ -458,7 +458,7 @@ recursive subroutine add_coo(sparse,row,col,val)
  if(.not.validnonzero_gen(sparse,val))return
  if(sparse%lupperstorage.and..not.uppervalue_gen(row,col))return
 
- hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,1)
+ hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,.false.)
  ratiofilled=real(sparse%filled)/real(sparse%nel)
 
  if(hash.eq.-1.or.ratiofilled.gt.maxratiofilled)then
@@ -478,7 +478,7 @@ recursive subroutine add_coo(sparse,row,col,val)
   call move_alloc(sptmp%a,sparse%a)
   call sptmp%reset()
   !3. Search for a new address in the new matrix
-  hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,1)
+  hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,.false.)
   ratiofilled=real(sparse%filled)/real(sparse%nel)
  endif
 
@@ -575,7 +575,7 @@ function get_coo(sparse,row,col) result(val)
   tcol=row
  endif
 
- hash=hashf(trow,tcol,sparse%ij,sparse%nel,sparse%filled,0)
+ hash=hashf(trow,tcol,sparse%ij,sparse%nel,sparse%filled,.true.)
  
  if(hash.gt.0)val=sparse%a(hash)
 

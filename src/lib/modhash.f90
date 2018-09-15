@@ -9,29 +9,26 @@ contains
 !Simplifications made by Jeremie Vandenplas - 2018
 
 !PUBLIC
-function hashf(row,col,mat,dim2,filled,mode) result(hashvr)
+function hashf(row,col,mat,dim2,filled,getval) result(hashvr)
  !hashvr: address (column) of mat
  !mat of size dim1 (=2) x dim2
  !filled: number of elements
- !mode = 0: search for a value and returns 0 if absent
- !mode = 1: add a value if row,col was not present before
+ !getval .eq. .true. : search for a value and returns 0 if absent
+ !getval .eq. .false.: add a value if row,col was not present before
  integer(kind=int4)::hashvr
- integer(kind=int4),intent(in)::mode,row,col
+ integer(kind=int4),intent(in)::row,col!,mode
  integer(kind=int4),intent(inout)::mat(:,:)
  integer(kind=int8),intent(in)::dim2
  integer(kind=int8),intent(inout)::filled
+ logical,intent(in)::getval
 
  integer(kind=int4),parameter::dim1=2
  integer(kind=int4),parameter::maxiter=5000
 
  integer(kind=int8)::a,b,c,iaddress,plage
- integer(kind=int4)::rowcol(dim1) 
  integer(kind=int4)::i,j,k 
  logical::indnotzero,indnotequal
 
- rowcol(1)=row
- rowcol(2)=col
-  
  plage=dim2                !size of the array
  a=int(row,kind(a))        !conversion of 1st coordinate
  b=int(col,kind(b))        !conversion of 2nd coordinate
@@ -45,20 +42,22 @@ function hashf(row,col,mat,dim2,filled,mode) result(hashvr)
   
  !Cycle until a free entry is found
  do k=1,maxiter
+!  indnotzero=.false.;indnotequal=.false.
+!  do i=1,dim1
+!   j=mat(i,iaddress)
+!   if(j.ne.rowcol(i))indnotequal=.true.
+!   if(j.ne.0)indnotzero=.true.
+!  enddo     
   indnotzero=.false.;indnotequal=.false.
-  do i=1,dim1
-   j=mat(i,iaddress)
-   if(j.ne.rowcol(i))indnotequal=.true.
-   if(j.ne.0)indnotzero=.true.
-  enddo     
+  if(mat(1,iaddress).ne.row.or.mat(2,iaddress).ne.col)indnotequal=.true.
+  if(mat(1,iaddress).ne.0.or.mat(2,iaddress).ne.0)indnotzero=.true.
   if(.not.indnotzero.or..not.indnotequal)then
-   if(mode.eq.1.and..not.indnotzero)then
-    do i=1,dim1
-     mat(i,iaddress)=rowcol(i)
-    enddo
+   if(.not.getval.and..not.indnotzero)then
+    mat(1,iaddress)=row
+    mat(2,iaddress)=col
     filled=filled+1
    endif
-   if(mode.eq.0.and..not.indnotzero)then
+   if(getval.and..not.indnotzero)then
     hashvr=0
    else
     hashvr=iaddress
