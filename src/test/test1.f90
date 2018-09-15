@@ -14,7 +14,7 @@ program test1
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
  !LINKED LINK
- open(newunit=iunit,file='crsinput.asci',status='old',action='read')
+ open(newunit=iunit,file='crsinput.ascii',status='old',action='read')
  read(iunit,*) nrow
 
  ll=llsparse(nrow,lupper=lup)
@@ -47,7 +47,7 @@ program test1
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
  !COO
- open(newunit=iunit,file='crsinput.asci',status='old',action='read')
+ open(newunit=iunit,file='crsinput.ascii',status='old',action='read')
  read(iunit,*) nrow
 
  coo=coosparse(nrow,nel=4_int8,lupper=lup)
@@ -74,8 +74,8 @@ program test1
  call crs%printtofile('crscoo.dat')
 
 
-! call coo%add(1,1,150.d0)
-!
+ call coo%add(1,1,150.d0)
+
 ! crs=coo
 ! call crs%printstats
 ! !call crs%print(lint=.false.)
@@ -88,13 +88,13 @@ program test1
 ! call crs%printtofile('crs_int.dat',lint=.false.)
 !
 !
-!print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
-! print*,'4 3',coo%get(4,3)
-! print*,'3 4',coo%get(3,4)
-! print*,'3 3',coo%get(3,3)
-! print*,'1 4',coo%get(1,4)
-! print*,'1 1',coo%get(1,1)
-! 
+ print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
+ print*,'4 3',coo%get(4,3)
+ print*,'3 4',coo%get(3,4)
+ print*,'3 3',coo%get(3,3)
+ print*,'1 4',coo%get(1,4)
+ print*,'1 1',coo%get(1,1)
+ 
 !print*,'aaaaaaaaaaaaaaCSRaaaaaaaaaaaaaaaa'
 ! print*,'4 3',crs%get(4,3)
 ! print*,'3 4',crs%get(3,4)
@@ -103,7 +103,7 @@ program test1
 ! print*,'1 1',crs%get(1,1)
 ! 
 !print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
-! call coo%printsquare()
+ call coo%printsquare()
 !print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
 ! call crs%printsquare()
 ! call crs%printsquaretofile('crsquarse.dat')
