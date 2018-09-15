@@ -1,3 +1,8 @@
+!> Module containing three types of sparse matrices:  
+!> * Linked list (llsparse)  
+!> * COOrdinate storage (coosparse)  
+!> * Compressed Row Storage (crssparse)  
+
 module modsparse
  use modkind
  use modhash
@@ -9,6 +14,7 @@ module modsparse
  public::assignment(=)
 
  !GENERIC
+ !> @brief Generic object containing dimensions, storage format, and output unit
  type::gen_sparse
   private
   integer(kind=int4)::unlog=6
@@ -16,15 +22,19 @@ module modsparse
   logical::lupperstorage
   contains
   private
+  !> @brief Returns true if square matrix; else returns false
   procedure,public::lsquare
+  !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_gen
   procedure,public::printtofile=>printtofile_gen
+  !> @brief Prints the sparse matrix in a rectangular/square format to the output mat\%unlog
   procedure,public::printsquare=>printsquare_gen
   procedure,public::printsquaretofile=>printsquaretofile_gen
   procedure,public::printstats=>print_dim_gen
  end type
  
  !COO
+ !> @brief Object for COOrdinate storage
  type,extends(gen_sparse)::coosparse
   private
   integer(kind=int4),allocatable::ij(:,:)
@@ -33,18 +43,24 @@ module modsparse
   real(kind=real8),allocatable::a(:)
   contains
   private
-  procedure,public::add=>add_coo
+  !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
+  procedure,public::add=>add_coo 
+  !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_coo
+  !> @brief Prints the sparse matrix to the output mat\%unlog
   procedure,public::print=>print_coo
+  !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::reset=>reset_scal_coo
   final::deallocate_scal_coo
  end type
 
+ !> @brief Constructor; e.g., mat=coosparse(dim1,[dim2],[#elements],[upper_storage],[output_unit])
  interface coosparse
   module procedure constructor_coo
  end interface
  
  !CSR
+ !> @brief Object for Compressed Row Storage
  type,extends(gen_sparse)::crssparse
   private
   integer(kind=int4),allocatable::ia(:)
@@ -52,14 +68,20 @@ module modsparse
   real(kind=real8),allocatable::a(:)
   contains
   private
+  !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
   procedure,public::add=>add_crs
+  !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
+  !> @brief Prints the sparse matrix to the output sparse\%unlog
   procedure,public::print=>print_crs
+  !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
+  !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::reset=>reset_scal_crs
   final::deallocate_scal_crs
  end type
 
+ !> @brief Constructor; e.g., mat=crsparse(dim1,#elements,[dim2],[upper_storage],[output_unit])
  interface crssparse
   module procedure constructor_crs
  end interface
@@ -71,16 +93,21 @@ module modsparse
   procedure,public::size=>totalnumberofelements_ptrnode
  end type 
 
+ !> @brief Object for Linked List
  type,extends(gen_sparse)::llsparse
   private
   type(ptrnode),allocatable::heads(:)
   contains
   private
+  !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
   procedure,public::add=>addinorder_ll
   procedure,public::addtohead =>addtohead_ll
   procedure,public::addtotail =>addtotail_ll
+  !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_ll
+  !> @brief Prints the sparse matrix to the output sparse\%unlog
   procedure,public::print=>print_ll
+  !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::reset=>reset_ll
   procedure::totalnumberofelements_ll
   final::deallocate_scal_ll
@@ -96,11 +123,13 @@ module modsparse
   generic,public::assignment(=)=>equal_node
  end type
 
+ !> @brief Constructor; e.g., mat=llsparse(dim1,[dim2],[upper_storage],[output_unit])
  interface llsparse
   module procedure constructor_ll
  end interface
 
  !GENERAL INTERFACES
+ !> @brief Converts sparse matrices from one format to another one; e.g., crsmat=coomat
  interface assignment(=)
   module procedure convertfromlltocoo,convertfromlltocrs,convertfromcootocrs
  end interface
