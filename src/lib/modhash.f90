@@ -22,7 +22,6 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  integer(kind=int8),intent(inout)::filled
  logical,intent(in)::getval
 
- integer(kind=int4),parameter::dim1=2
  integer(kind=int4),parameter::maxiter=5000
 
  integer(kind=int8)::a,b,c
