@@ -9,13 +9,13 @@ contains
 !Simplifications made by Jeremie Vandenplas - 2018
 
 !PUBLIC
-function hashf(row,col,mat,dim2,filled,getval) result(hashvr)
- !hashvr: address (column) of mat
+function hashf(row,col,mat,dim2,filled,getval) result(address)
+ !address: address (column) of mat
  !mat of size dim1 (=2) x dim2
  !filled: number of elements
  !getval .eq. .true. : search for a value and returns 0 if absent
  !getval .eq. .false.: add a value if row,col was not present before
- integer(kind=int4)::hashvr
+ integer(kind=int8)::address
  integer(kind=int4),intent(in)::row,col!,mode
  integer(kind=int4),intent(inout)::mat(:,:)
  integer(kind=int8),intent(in)::dim2
@@ -25,64 +25,39 @@ function hashf(row,col,mat,dim2,filled,getval) result(hashvr)
  integer(kind=int4),parameter::dim1=2
  integer(kind=int4),parameter::maxiter=5000
 
- integer(kind=int8)::a,b,c,iaddress,plage
+ integer(kind=int8)::a,b,c
  integer(kind=int4)::i,j,k 
- logical::indnotzero,indnotequal
- !logical::indzero,indequal
+ logical::indzero,indequal
 
- plage=dim2                !size of the array
  a=int(row,kind(a))        !conversion of 1st coordinate
  b=int(col,kind(b))        !conversion of 2nd coordinate
  c=305419896_int8          !default value for 3rd coordinate  
 
- !Hashing
- call mix(a,b,c)
-  
- !Computation of the address
- iaddress=iand(c,plage-1)+1
-  
  !Cycle until a free entry is found
  do k=1,maxiter
-  indnotzero=.false.;indnotequal=.false.
-  if(mat(1,iaddress).ne.row.or.mat(2,iaddress).ne.col)indnotequal=.true.
-  if(mat(1,iaddress).ne.0.or.mat(2,iaddress).ne.0)indnotzero=.true.
-  if(.not.indnotzero.or..not.indnotequal)then
-   if(.not.getval.and..not.indnotzero)then
-    mat(1,iaddress)=row
-    mat(2,iaddress)=col
+  !Hashing
+  call mix(a,b,c)
+  !Computation of the address
+  address=iand(c,dim2-1)+1
+  !Check if the address is correct
+  indzero=.false.;indequal=.false.
+  if(mat(1,address).eq.row.and.mat(2,address).eq.col)indequal=.true.
+  if(mat(1,address).eq.0.or.mat(2,address).eq.0)indzero=.true.
+  if(indzero.or.indequal)then
+   if(.not.getval.and.indzero)then
+    mat(1,address)=row
+    mat(2,address)=col
     filled=filled+1
+    return
    endif
-   if(getval.and..not.indnotzero)then
-    hashvr=0
-   else
-    hashvr=iaddress
+   if(getval.and.indzero)then
+    address=0
    endif
    return
   endif
-
-!  indzero=.false.;indequal=.false.
-!  if(mat(1,iaddress).eq.row.and.mat(2,iaddress).eq.col)indequal=.true.
-!  if(mat(1,iaddress).eq.0.or.mat(2,iaddress).eq.0)indzero=.true.
-!  if(indzero.or.indequal)then
-!   if(.not.getval.and.indzero)then
-!    mat(1,iaddress)=row
-!    mat(2,iaddress)=col
-!    filled=filled+1
-!   endif
-!   if(getval.and.indzero)then
-!    hashvr=0
-!   else
-!    hasvr=iaddress
-!   endif
-!   return
-!  endif
-
-  !Hash again
-  call mix(a,b,c)
-  iaddress=iand(c,plage-1)+1
  enddo
 
- hashvr=-1
+ address=-1
  write(*,'(a)')' Warning: the maximum number of searches was reached!'
 
 end function
