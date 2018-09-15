@@ -28,6 +28,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(hashvr)
  integer(kind=int8)::a,b,c,iaddress,plage
  integer(kind=int4)::i,j,k 
  logical::indnotzero,indnotequal
+ !logical::indzero,indequal
 
  plage=dim2                !size of the array
  a=int(row,kind(a))        !conversion of 1st coordinate
@@ -64,7 +65,25 @@ function hashf(row,col,mat,dim2,filled,getval) result(hashvr)
    endif
    return
   endif
-  !Hashing again
+
+!  indzero=.false.;indequal=.false.
+!  if(mat(1,iaddress).eq.row.and.mat(2,iaddress).eq.col)indequal=.true.
+!  if(mat(1,iaddress).eq.0.or.mat(2,iaddress).eq.0)indzero=.true.
+!  if(indzero.or.indequal)then
+!   if(.not.getval.and.indzero)then
+!    mat(1,iaddress)=row
+!    mat(2,iaddress)=col
+!    filled=filled+1
+!   endif
+!   if(getval.and.indzero)then
+!    hashvr=0
+!   else
+!    hasvr=iaddress
+!   endif
+!   return
+!  endif
+
+  !Hash again
   call mix(a,b,c)
   iaddress=iand(c,plage-1)+1
  enddo
