@@ -98,6 +98,13 @@ To __print__ a sparse matrix as stored __to a file__ called *file.dat*, the meth
 call mat%printtofile('file.dat')  
 ````
 
+
+To __set__ an entry to a specified value (even __0__), the method *set* can be used:  
+
+````
+call mat%set(row,col,val)
+````
+
 To __sort__ (in an ascending order elements) within a row of a CRS sparse matrix, the method *sort* must be used:  
 
 ````

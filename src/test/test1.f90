@@ -102,12 +102,39 @@ program test1
 ! print*,'1 4',crs%get(1,4)
 ! print*,'1 1',crs%get(1,1)
 ! 
-!print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
+ print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
  call coo%printsquare()
 !print*,'aaaaaaaaaaaaaaCOOaaaaaaaaaaaaaaaa'
 ! call crs%printsquare()
 ! call crs%printsquaretofile('crsquarse.dat')
 
+
+ print*,'aaaaaaaaaaaaaaCOO modifaaaaaaaaaaaaaaaa'
+
+ call coo%set(4,4,-1.d0)
+ call coo%set(3,4,-1.d0)
+ call coo%set(4,3,0.d0)
+
+
+ call coo%print()
+
+ call coo%printsquare()
+
+ print*,'aaaaaaaaaaaaaaCRS modifaaaaaaaaaaaaaaaa'
+ crs=coo
+ call crs%sort()
+ call crs%print()
+
  call coo%reset()
+
+ call crs%set(4,4,100.d0,row)
+ print*,'error: ',row
+
+ call crs%set(1,4,100.d0,row)
+ print*,'error: ',row
+ call crs%print()
+
+ print*,'dim1',crs%getdim(1)
+ print*,'dim2',crs%getdim(2)
 
 end program

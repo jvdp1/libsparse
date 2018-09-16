@@ -22,6 +22,8 @@ module modsparse
   logical::lupperstorage
   contains
   private
+  !> @brief Returns the dimension of the matrix; e.g., ...=mat%getdim(1)
+  procedure,public::getdim=>getdim_gen
   !> @brief Returns true if square matrix; else returns false
   procedure,public::lsquare
   !> @brief Returns the number of non-zero elements
@@ -51,6 +53,8 @@ module modsparse
   procedure,public::print=>print_coo
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::reset=>reset_scal_coo
+  !> @brief Sets an entry to a certain value (even if equal to 0); e.g., call mat\%set(row,col,val)
+  procedure,public::set=>set_coo
   final::deallocate_scal_coo
  end type
 
@@ -78,6 +82,8 @@ module modsparse
   procedure,public::sort=>sort_crs
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::reset=>reset_scal_crs
+  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
+  procedure,public::set=>set_crs
   final::deallocate_scal_crs
  end type
 
@@ -636,6 +642,22 @@ function get_crs(sparse,row,col) result(val)
 
 end function
 
+function getdim_gen(sparse,dim1) result(dimget)
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int4),intent(in)::dim1
+ integer(kind=int4)::dimget
+
+ select case(dim1)
+  case(1)
+   dimget=sparse%dim1
+  case(2)
+   dimget=sparse%dim2
+  case default
+   dimget=-1
+   write(sparse%unlog,'(a)')' Warning: a sparse matrix has only 2 dimensions!'
+ end select
+
+end function
 
 !CHECKS
 function validvalue_gen(sparse,row,col) result(lvalid)
@@ -819,9 +841,10 @@ subroutine print_coo(sparse,lint,output)
  do i8=1,sparse%nel
   row=sparse%ij(1,i8)
   col=sparse%ij(2,i8)
+  if(row.eq.0.and.col.eq.0)cycle
   val=sparse%a(i8)
-  if(.not.validvalue_gen(sparse,row,col))cycle
-  if(.not.validnonzero_gen(sparse,val))cycle
+  !if(.not.validvalue_gen(sparse,row,col))cycle  !it should never happen
+  !if(.not.validnonzero_gen(sparse,val))cycle    !to print as internal
   write(un,'(2(i0,x),g0)')row,col,val
   if(.not.linternal.and.sparse%lupperstorage.and.row.ne.col)then
    write(un,'(2(i0,x),g0)')col,row,val
@@ -911,6 +934,89 @@ subroutine printsquare_gen(sparse,output)
 
 end subroutine
 
+
+!SET ELEMENTS
+recursive subroutine set_coo(sparse,row,col,val)
+ !from add_coo
+ class(coosparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::row,col
+ real(kind=int8),intent(in)::val
+
+ integer(kind=int8)::hash,i8
+ real(kind=real4),parameter::maxratiofilled=0.80
+ real(kind=real4)::ratiofilled
+ type(coosparse)::sptmp
+ 
+ if(.not.validvalue_gen(sparse,row,col))return
+ !if(.not.validnonzero_gen(sparse,val))return
+ if(sparse%lupperstorage.and..not.uppervalue_gen(row,col))return
+
+ hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,.false.)
+ ratiofilled=real(sparse%filled)/real(sparse%nel)
+
+ if(hash.eq.-1.or.ratiofilled.gt.maxratiofilled)then
+  !matrix probably full, or nothing available within the n requested searches
+  !1. Copy matrix
+  sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)
+  do i8=1_int8,sparse%nel
+   call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
+  enddo
+  !2. reallocate matrix using move_alloc
+  write(sparse%unlog,'(2(a,i0))')'  Current | New size COO: ',sparse%nel,' | ',sptmp%nel
+  sparse%nel=sptmp%nel
+  sparse%filled=sptmp%filled
+  if(allocated(sparse%ij))deallocate(sparse%ij)
+  if(allocated(sparse%a))deallocate(sparse%a)
+  call move_alloc(sptmp%ij,sparse%ij)
+  call move_alloc(sptmp%a,sparse%a)
+  call sptmp%reset()
+  !3. Search for a new address in the new matrix
+  hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,.false.)
+  ratiofilled=real(sparse%filled)/real(sparse%nel)
+ endif
+
+ if(hash.gt.0_int8)then!.and.ratiofilled.le.maxratiofilled)then
+  sparse%a(hash)=val
+ else
+  !is it possible?
+  write(sparse%unlog,*)' ERROR: unexpected'!,__FILE__,__LINE__
+  stop
+ endif
+ 
+end subroutine
+
+recursive subroutine set_crs(sparse,row,col,val,error)
+ !add a value only to an existing one
+ class(crssparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::row,col
+ integer(kind=int4),intent(out),optional::error
+ real(kind=int8),intent(in)::val
+
+ integer(kind=int4)::i
+ integer(kind=int4)::ierror    !added: error=0;Not existing: error=-1;matrix not inited: error=-10
+ 
+ if(present(error))error=0
+
+ if(.not.validvalue_gen(sparse,row,col))return
+ !if(.not.validnonzero_gen(sparse,val))return
+ if(sparse%lupperstorage.and..not.uppervalue_gen(row,col))return
+
+ if(sparse%ia(row).eq.0)then
+  if(present(error))error=-10
+  return
+ endif
+
+ do i=sparse%ia(row),sparse%ia(row+1)-1
+  if(sparse%ja(i).eq.col)then
+   sparse%a(i)=val
+   if(present(error))error=0
+   return
+  endif
+ enddo
+ 
+ if(present(error))error=-1
+
+end subroutine
 
 !SORT ARRAY
 subroutine sort_crs(sparse)
