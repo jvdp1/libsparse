@@ -52,7 +52,7 @@ module modsparse
   !> @brief Prints the sparse matrix to the output mat\%unlog
   procedure,public::print=>print_coo
   !> @brief Deallocates the sparse matrix and sets to default values 
-  procedure,public::reset=>reset_scal_coo
+  procedure,public::destroy=>destroy_scal_coo
   !> @brief Sets an entry to a certain value (even if equal to 0); e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_coo
   final::deallocate_scal_coo
@@ -81,7 +81,7 @@ module modsparse
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
   !> @brief Deallocates the sparse matrix and sets to default values 
-  procedure,public::reset=>reset_scal_crs
+  procedure,public::destroy=>destroy_scal_crs
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs
   final::deallocate_scal_crs
@@ -114,7 +114,7 @@ module modsparse
   !> @brief Prints the sparse matrix to the output sparse\%unlog
   procedure,public::print=>print_ll
   !> @brief Deallocates the sparse matrix and sets to default values 
-  procedure,public::reset=>reset_ll
+  procedure,public::destroy=>destroy_ll
   procedure::totalnumberofelements_ll
   final::deallocate_scal_ll
  end type
@@ -511,7 +511,7 @@ recursive subroutine add_coo(sparse,row,col,val)
   if(allocated(sparse%a))deallocate(sparse%a)
   call move_alloc(sptmp%ij,sparse%ij)
   call move_alloc(sptmp%a,sparse%a)
-  call sptmp%reset()
+  call sptmp%destroy()
   !3. Search for a new address in the new matrix
   hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,.false.)
   ratiofilled=real(sparse%filled)/real(sparse%nel)
@@ -969,7 +969,7 @@ recursive subroutine set_coo(sparse,row,col,val)
   if(allocated(sparse%a))deallocate(sparse%a)
   call move_alloc(sptmp%ij,sparse%ij)
   call move_alloc(sptmp%a,sparse%a)
-  call sptmp%reset()
+  call sptmp%destroy()
   !3. Search for a new address in the new matrix
   hash=hashf(row,col,sparse%ij,sparse%nel,sparse%filled,.false.)
   ratiofilled=real(sparse%filled)/real(sparse%nel)
@@ -1133,7 +1133,7 @@ end subroutine
 
 
 !RESET
-subroutine reset_scal_ptrnode(pnode)
+subroutine destroy_scal_ptrnode(pnode)
  type(ptrnode),target::pnode
 
  type(ptrnode)::cursor
@@ -1147,11 +1147,11 @@ subroutine reset_scal_ptrnode(pnode)
 
 end subroutine
 
-subroutine reset_ll(sparse)
+subroutine destroy_ll(sparse)
  class(llsparse),intent(inout)::sparse
  integer(kind=int4)::i
 
- print*,'reset ll'
+ print*,'destroy ll'
 
  sparse%dim1=-1
  sparse%dim2=-1
@@ -1160,14 +1160,14 @@ subroutine reset_ll(sparse)
 
  if(allocated(sparse%heads))then
   do i=1,size(sparse%heads)
-   call reset_scal_ptrnode(sparse%heads(i))
+   call destroy_scal_ptrnode(sparse%heads(i))
   enddo
   deallocate(sparse%heads)
  endif
 
 end subroutine
 
-subroutine reset_scal_coo(sparse)
+subroutine destroy_scal_coo(sparse)
  class(coosparse),intent(inout)::sparse
 
  sparse%dim1=-1
@@ -1182,10 +1182,10 @@ subroutine reset_scal_coo(sparse)
 
 end subroutine
 
-subroutine reset_scal_crs(sparse)
+subroutine destroy_scal_crs(sparse)
  class(crssparse),intent(inout)::sparse
 
- print*,'reset crs'
+ print*,'destroy crs'
 
  sparse%dim1=-1
  sparse%dim2=-1
@@ -1203,21 +1203,21 @@ end subroutine
 subroutine deallocate_scal_ll(sparse)
  type(llsparse),intent(inout)::sparse
 
- call reset_ll(sparse)
+ call destroy_ll(sparse)
 
 end subroutine
 
 subroutine deallocate_scal_coo(sparse)
  type(coosparse),intent(inout)::sparse
 
- call reset_scal_coo(sparse)
+ call destroy_scal_coo(sparse)
 
 end subroutine
 
 subroutine deallocate_scal_crs(sparse)
  type(crssparse),intent(inout)::sparse
 
- call reset_scal_crs(sparse)
+ call destroy_scal_crs(sparse)
 
 end subroutine
 

@@ -43,7 +43,7 @@ program test1
  call crs%sort()
  call crs%printtofile('crsll.dat')
 
- call ll%reset()
+ call ll%destroy()
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
  !COO
@@ -125,7 +125,7 @@ program test1
  call crs%sort()
  call crs%print()
 
- call coo%reset()
+ call coo%destroy()
 
  call crs%set(4,4,100.d0,row)
  print*,'error: ',row

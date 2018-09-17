@@ -16,7 +16,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  !getval .eq. .true. : search for a value and returns 0 if absent
  !getval .eq. .false.: add a value if row,col was not present before
  integer(kind=int8)::address
- integer(kind=int4),intent(in)::row,col!,mode
+ integer(kind=int4),intent(in)::row,col
  integer(kind=int4),intent(inout)::mat(:,:)
  integer(kind=int8),intent(in)::dim2
  integer(kind=int8),intent(inout)::filled
@@ -25,7 +25,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  integer(kind=int4),parameter::maxiter=5000
 
  integer(kind=int8)::a,b,c
- integer(kind=int4)::i,j,k 
+ integer(kind=int4)::i 
  logical::indzero,indequal
 
  a=int(row,kind(a))        !conversion of 1st coordinate
@@ -33,7 +33,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  c=305419896_int8          !default value for 3rd coordinate  
 
  !Cycle until a free entry is found
- do k=1,maxiter
+ do i=1,maxiter
   !Hashing
   call mix(a,b,c)
   !Computation of the address
