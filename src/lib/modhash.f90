@@ -1,7 +1,7 @@
 module modhash
  use modkind
  implicit none
- public::hashf
+ public::hashf,roundinguppower2
 
 contains
 !Inspired by lookup3.c from Bob Jenkins (http://burtleburtle.net/bob/hash/index.html#lookup)
@@ -61,6 +61,16 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
 
 end function
   
+function roundinguppower2(x) result(next)
+ integer(kind=int8),intent(in)::x
+ integer(kind=int8)::next
+
+ !https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+ 
+ next=2_int8**int((ceiling(log(real(x,real8))/log(real(2,real8)))),int8)
+
+end function
+
 !PRIVATE
 function rot(i,j) result(rota)
  integer(kind=int8) :: i,j
