@@ -48,7 +48,7 @@ module modsparse
   end subroutine
   function get_gen(sparse,row,col) result(val)
    import::int4,real8,gen_sparse
-   class(gen_sparse),intent(inout),target::sparse
+   class(gen_sparse),intent(inout)::sparse
    integer(kind=int4),intent(in)::row,col
    real(kind=real8)::val
   end function
@@ -59,7 +59,7 @@ module modsparse
   end function
   subroutine print_gen(sparse,lint,output)
    import::int4,gen_sparse
-   class(gen_sparse),intent(in),target::sparse
+   class(gen_sparse),intent(in)::sparse
    integer(kind=int4),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
@@ -241,7 +241,7 @@ subroutine print_dim_gen(sparse)
 end subroutine
 
 subroutine printtofile_gen(sparse,namefile,lint)
- class(gen_sparse),intent(in),target::sparse
+ class(gen_sparse),intent(in)::sparse
  character(len=*),intent(in)::namefile
  logical,intent(in),optional::lint
 
@@ -375,7 +375,7 @@ end subroutine
 
 !**GET ELEMENTS
 function get_coo(sparse,row,col) result(val)
- class(coosparse),intent(inout),target::sparse
+ class(coosparse),intent(inout)::sparse
  integer(kind=int4),intent(in)::row,col
  real(kind=real8)::val
  
@@ -409,7 +409,7 @@ end function
 
 !**PRINT
 subroutine print_coo(sparse,lint,output)
- class(coosparse),intent(in),target::sparse
+ class(coosparse),intent(in)::sparse
  integer(kind=int4),intent(in),optional::output
  logical,intent(in),optional::lint
 
@@ -601,7 +601,7 @@ end subroutine
 
 !**GET ELEMENTS
 function get_crs(sparse,row,col) result(val)
- class(crssparse),intent(inout),target::sparse
+ class(crssparse),intent(inout)::sparse
  integer(kind=int4),intent(in)::row,col
  real(kind=real8)::val
  
@@ -637,7 +637,7 @@ end function
 
 !**PRINT
 subroutine print_crs(sparse,lint,output)
- class(crssparse),intent(in),target::sparse
+ class(crssparse),intent(in)::sparse
  integer(kind=int4),intent(in),optional::output
  logical,intent(in),optional::lint
 
@@ -870,7 +870,7 @@ end function
 
 !**DESTROY
 subroutine destroy_scal_ptrnode(pnode)
- type(ptrnode),target::pnode
+ type(ptrnode)::pnode
 
  type(ptrnode)::cursor
  
@@ -996,13 +996,14 @@ end subroutine
 
 !**GET ELEMENTS
 function get_ll(sparse,row,col) result(val)
- class(llsparse),intent(inout),target::sparse
+ class(llsparse),intent(inout)::sparse
  integer(kind=int4),intent(in)::row,col
  real(kind=real8)::val
 
  integer(kind=int4)::trow,tcol
  integer(kind=int4)::i,un
  type(ptrnode),pointer::cursor
+ type(ptrnode),target::replacecursor
 
  val=0_real8
  
@@ -1014,7 +1015,10 @@ function get_ll(sparse,row,col) result(val)
   tcol=row
  endif
 
- cursor=>sparse%heads(trow)
+ !cursor=>sparse%heads(trow)
+ replacecursor=sparse%heads(trow)
+ cursor=>replacecursor
+ 
  do while(associated(cursor%p))
   if(cursor%p%col.eq.tcol)then
    val=cursor%p%val
@@ -1057,13 +1061,14 @@ end function
 
 !**PRINT
 subroutine print_ll(sparse,lint,output)
- class(llsparse),intent(in),target::sparse
+ class(llsparse),intent(in)::sparse
  integer(kind=int4),intent(in),optional::output
  logical,intent(in),optional::lint
 
  integer(kind=int4)::i,un
  logical::linternal
  type(ptrnode),pointer::cursor
+ type(ptrnode),target::replacecursor
 
  linternal=.true.
  if(present(lint))linternal=lint
@@ -1072,7 +1077,9 @@ subroutine print_ll(sparse,lint,output)
  if(present(output))un=output
 
  do i=1,sparse%dim1
-  cursor=>sparse%heads(i)
+  !cursor=>sparse%heads(i)
+  replacecursor=sparse%heads(i)
+  cursor=>replacecursor
   do while(associated(cursor%p))
    write(un,'(2(i0,x),g0)')i,cursor%p%col,cursor%p%val
    if(.not.linternal.and.sparse%lupperstorage.and.cursor%p%col.ne.i)then
