@@ -76,19 +76,19 @@ function rot(i,j) result(rota)
  integer(kind=int8) :: i,j
  integer(kind=int8)::rota
 
- rota=ior(ishft(i,j),ishft(i,-(32-j)))
+ rota=ior(ishft(i,j),ishft(i,-(32_int8-j)))
 
 end function
     
 subroutine mix(a,b,c)
  integer(kind=int8),intent(inout)::a,b,c
 
- a=a-c;a=ieor(a,rot(c,4));c=c+b 
- b=b-a;b=ieor(b,rot(a,6));a=a+c 
- c=c-b;c=ieor(c,rot(b,8));b=b+a 
- a=a-c;a=ieor(a,rot(c,16));c=c+b 
- b=b-a;b=ieor(b,rot(a,19));a=a+c 
- c=c-b;c=ieor(c,rot(b,4));b=b+a 
+ a=a-c;a=ieor(a,rot(c,4_int8));c=c+b 
+ b=b-a;b=ieor(b,rot(a,6_int8));a=a+c 
+ c=c-b;c=ieor(c,rot(b,8_int8));b=b+a 
+ a=a-c;a=ieor(a,rot(c,16_int8));c=c+b 
+ b=b-a;b=ieor(b,rot(a,19_int8));a=a+c 
+ c=c-b;c=ieor(c,rot(b,4_int8));b=b+a 
 
 end subroutine 
 

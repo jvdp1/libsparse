@@ -229,7 +229,7 @@ subroutine print_dim_gen(sparse)
 
  write(sparse%unlog,'(/" Type of the matrix           : ",a)')trim(sparse%namemat)
  write(sparse%unlog,'( "  Dimension of the matrix     : ",i0," x ",i0)')sparse%dim1,sparse%dim2
- write(sparse%unlog,'( "  Upper storage               : ",l)')sparse%lupperstorage
+ write(sparse%unlog,'( "  Upper storage               : ",l1)')sparse%lupperstorage
  write(sparse%unlog,'( "  Number of non-zero elements : ",i0)')sparse%nonzero()
  
  select type(sparse)
@@ -431,9 +431,9 @@ subroutine print_coo(sparse,lint,output)
   val=sparse%a(i8)
   !if(.not.validvalue_gen(sparse,row,col))cycle  !it should never happen
   !if(.not.validnonzero_gen(sparse,val))cycle    !to print as internal
-  write(un,'(2(i0,x),g0)')row,col,val
+  write(un,'(2(i0,1x),g0)')row,col,val
   if(.not.linternal.and.sparse%lupperstorage.and.row.ne.col)then
-   write(un,'(2(i0,x),g0)')col,row,val
+   write(un,'(2(i0,1x),g0)')col,row,val
   endif
  enddo
 
@@ -457,7 +457,7 @@ subroutine printsquare_coo(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(10000(f9.3,x))')tmp
+  write(un,'(10000(f9.3,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -653,10 +653,10 @@ subroutine print_crs(sparse,lint,output)
 
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
-   !write(un,'(2(i0,x),g0)')i,sparse%ja(j),sparse%a(j)
-   write(un,'(2i8,x,f0.4)')i,sparse%ja(j),sparse%a(j)
+   !write(un,'(2(i0,1x),g0)')i,sparse%ja(j),sparse%a(j)
+   write(un,'(2i8,1x,f0.4)')i,sparse%ja(j),sparse%a(j)
    if(.not.linternal.and.sparse%lupperstorage.and.i.ne.sparse%ja(j))then
-    write(un,'(2(i0,x),g0)')sparse%ja(j),i,sparse%a(j)
+    write(un,'(2(i0,1x),g0)')sparse%ja(j),i,sparse%a(j)
    endif
   enddo
  enddo
@@ -682,7 +682,7 @@ subroutine printsquare_crs(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(10000(f9.3,x))')tmp
+  write(un,'(10000(f9.3,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -1081,9 +1081,9 @@ subroutine print_ll(sparse,lint,output)
   replacecursor=sparse%heads(i)
   cursor=>replacecursor
   do while(associated(cursor%p))
-   write(un,'(2(i0,x),g0)')i,cursor%p%col,cursor%p%val
+   write(un,'(2(i0,1x),g0)')i,cursor%p%col,cursor%p%val
    if(.not.linternal.and.sparse%lupperstorage.and.cursor%p%col.ne.i)then
-    write(un,'(2(i0,x),g0)')cursor%p%col,i,cursor%p%val
+    write(un,'(2(i0,1x),g0)')cursor%p%col,i,cursor%p%val
    endif
    cursor=>cursor%p%next
   enddo
