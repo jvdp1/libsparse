@@ -1159,6 +1159,8 @@ function get_ll(sparse,row,col) result(val)
 
 end function
 
+!**LOAD
+
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_ptrnode(pnode) result(nel)
  class(ptrnode),intent(in),target::pnode
@@ -1188,6 +1190,10 @@ function totalnumberofelements_ll(sparse) result(nel)
  enddo
 
 end function
+
+!**SAVE
+
+!**SET ELEMENTS
 
 !**PRINT
 subroutine print_ll(sparse,lint,output)
