@@ -60,7 +60,7 @@ program test3
  call subcrs%printstats()
  call subcrs%printsquare()
 
- print*,'SELECT LOWER BLOCK xxxxxxxxxxxxxxxxxxxxxxxxxx'
+ print*,'SELECT LOWER BLOCK a xxxxxxxxxxxxxxxxxxxxxxxxxx'
  print*,'aaaa 3 4 1 2'
  subcrs=crs%submatrix(3,4,1,2,.true.)
  call subcrs%printstats()
@@ -71,10 +71,6 @@ program test3
  subcrs=crs%submatrix(1,2,1,3,.true.)
  call subcrs%printstats()
  call subcrs%printsquare()
-
-
-
-
 
 
 
@@ -138,5 +134,10 @@ program test3
  subcrs=crs%submatrix(1,2,1,3,.true.)
  call subcrs%printstats()
  call subcrs%printsquare()
+
+
+
+
+
 
 end program

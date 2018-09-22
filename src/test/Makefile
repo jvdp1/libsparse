@@ -6,7 +6,7 @@ else
  DEBUG=
 endif
 
-EXEC=test1 test2 test1_ll
+EXEC=test1 test2 test3 test4 test1_ll
 
 all:	$(EXEC)
 
@@ -17,6 +17,12 @@ test1_ll:	test1_ll.f90 ../lib/libsparse.a
 	$(f90)  -I../lib $(optf90) $(DEBUG) $^ ../lib/libsparse.a -o $@
 
 test2:	test2.f90 ../lib/libsparse.a
+	$(f90)  -I../lib $(optf90) $(DEBUG) $^ ../lib/libsparse.a -o $@
+
+test3:	test3.f90 ../lib/libsparse.a
+	$(f90)  -I../lib $(optf90) $(DEBUG) $^ ../lib/libsparse.a -o $@
+
+test4:	test4.f90 ../lib/libsparse.a
 	$(f90)  -I../lib $(optf90) $(DEBUG) $^ ../lib/libsparse.a -o $@
 
 clean:

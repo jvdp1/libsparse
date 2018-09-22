@@ -100,6 +100,8 @@ module modsparse
   procedure,public::save=>save_coo
   !> @brief Sets an entry to a certain value (even if equal to 0); e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_coo
+  !> @brief Gets a submatrix from a sparse matrix
+  procedure,public::submatrix=>submatrix_coo
   final::deallocate_scal_coo
  end type
 
@@ -140,6 +142,8 @@ module modsparse
   procedure,public::set=>set_crs
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
+  !> @brief Gets a submatrix from a sparse matrix
+  procedure,public::submatrix=>submatrix_crs
   final::deallocate_scal_crs
  end type
 
@@ -589,6 +593,93 @@ recursive subroutine set_coo(sparse,row,col,val)
  
 end subroutine
 
+!**SUBMATRIX
+function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) result(subsparse)
+ !Not programmed efficiently, but it should do the job
+ class(coosparse),intent(in)::sparse
+ type(coosparse)::subsparse
+ integer(kind=int4),intent(in)::startdim1,enddim1,startdim2,enddim2
+ integer(kind=int4),intent(in),optional::unlog
+ logical,intent(in),optional::lupper
+ 
+ integer(kind=int4)::i,j,k,un
+ integer(kind=int8)::i8,nel=10000
+ logical::lincludediag,lupperstorage
+
+ if(.not.validvalue_gen(sparse,startdim1,startdim2))return
+ if(.not.validvalue_gen(sparse,enddim1,enddim2))return
+ 
+ !check if the submatrix include diagonal elements of sparse
+ ! if yes -> lupperstorage
+ ! if no  -> .not.lupperstorage
+ lincludediag=.false.
+ firstdim: do i=startdim1,enddim1
+  do j=startdim2,enddim2
+   if(i.eq.j)then
+    lincludediag=.true.
+    exit firstdim
+   endif
+  enddo
+ enddo firstdim
+
+ lupperstorage=sparse%lupperstorage
+ if(present(lupper))then
+  lupperstorage=lupper
+ else
+  if(sparse%lupperstorage)then
+   lupperstorage=.false.
+   if(lincludediag)lupperstorage=.true.
+  endif
+ endif
+
+
+ if(present(unlog))then
+  subsparse=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage,unlog)
+ else
+  subsparse=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage)
+ endif
+
+
+ if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+  ! upper -> upper  ||  full -> full
+  do i8=1,sparse%nel
+   i=sparse%ij(1,i8)
+   if(i.eq.0)cycle
+   j=sparse%ij(2,i8)
+   if((i.ge.startdim1.and.i.le.enddim1).and.(j.ge.startdim2.and.j.le.enddim2))then
+    call subsparse%add(i-startdim1+1,j-startdim2+1,sparse%a(i8))
+   endif
+  enddo
+ elseif(sparse%lupperstorage.and..not.lupperstorage)then
+  ! upper -> full
+  do i8=1,sparse%nel
+   i=sparse%ij(1,i8)
+   if(i.eq.0)cycle
+   j=sparse%ij(2,i8)
+   if((i.ge.startdim1.and.i.le.enddim1).and.(j.ge.startdim2.and.j.le.enddim2))then
+    call subsparse%add(i-startdim1+1,j-startdim2+1,sparse%a(i8))
+   endif
+   if(i.ne.k)then
+    if((j.ge.startdim1.and.j.le.enddim1).and.(i.ge.startdim2.and.i.le.enddim2))then
+     call subsparse%add(j-startdim1+1,i-startdim2+1,sparse%a(i8))
+    endif
+   endif
+  enddo
+ elseif(.not.sparse%lupperstorage.and.lupperstorage)then
+  ! full -> upper
+  do i8=1,sparse%nel
+   i=sparse%ij(1,i8)
+   if(i.eq.0)cycle
+   j=sparse%ij(2,i8)
+print*,i,j,sparse%a(i8)
+   if((j-startdim2+1.ge.i-startdim1+1).and.(i.ge.startdim1.and.i.le.enddim1).and.(j.ge.startdim2.and.j.le.enddim2))then
+    call subsparse%add(i-startdim1+1,j-startdim2+1,sparse%a(i8))
+   endif
+  enddo
+ endif
+
+end function
+
 !FINAL
 subroutine deallocate_scal_coo(sparse)
  type(coosparse),intent(inout)::sparse
@@ -629,8 +720,6 @@ end function
 !**DESTROY
 subroutine destroy_scal_crs(sparse)
  class(crssparse),intent(inout)::sparse
-
- print*,'destroy crs'
 
  call sparse%destroy_gen_gen()
 
@@ -966,6 +1055,167 @@ subroutine sort_crs(sparse)
  
 end subroutine
 
+!**SUBMATRIX
+function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) result(subsparse)
+ !Not programmed efficiently, but it should do the job
+ class(crssparse),intent(in)::sparse
+ type(crssparse)::subsparse
+ integer(kind=int4),intent(in)::startdim1,enddim1,startdim2,enddim2
+ integer(kind=int4),intent(in),optional::unlog
+ logical,intent(in),optional::lupper
+ 
+ integer(kind=int4)::i,j,k,nel,un
+ logical::lincludediag,lupperstorage
+ type(coosparse)::subcoo
+
+ if(.not.validvalue_gen(sparse,startdim1,startdim2))return
+ if(.not.validvalue_gen(sparse,enddim1,enddim2))return
+ 
+ !check if the submatrix include diagonal elements of sparse
+ ! if yes -> lupperstorage
+ ! if no  -> .not.lupperstorage
+ lincludediag=.false.
+ firstdim: do i=startdim1,enddim1
+  do j=startdim2,enddim2
+   if(i.eq.j)then
+    lincludediag=.true.
+    exit firstdim
+   endif
+  enddo
+ enddo firstdim
+
+ lupperstorage=sparse%lupperstorage
+ if(present(lupper))then
+  lupperstorage=lupper
+ else
+  if(sparse%lupperstorage)then
+   lupperstorage=.false.
+   if(lincludediag)lupperstorage=.true.
+  endif
+ endif
+
+ !determine the number of elements
+ !possibilities
+ nel=0
+ if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+  ! upper -> upper  ||  full -> full
+  do i=startdim1,enddim1
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if(k.ge.startdim2.and.k.le.enddim2)then
+     nel=nel+1
+    endif
+   enddo
+  enddo
+ elseif(sparse%lupperstorage.and..not.lupperstorage)then
+  ! upper -> full
+  do i=startdim1,enddim1
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if(k.ge.startdim2.and.k.le.enddim2)then
+     nel=nel+1
+    endif
+   enddo
+  enddo
+  do i=startdim2,enddim2
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if(i.ne.k.and.k.ge.startdim1.and.k.le.enddim1)then
+     nel=nel+1
+    endif
+   enddo
+  enddo
+ elseif(.not.sparse%lupperstorage.and.lupperstorage)then
+  ! full -> upper
+  do i=startdim1,enddim1
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if((k-startdim2+1.ge.i-startdim1+1).and.k.ge.startdim2.and.k.le.enddim2)then
+     nel=nel+1
+    endif
+   enddo
+  enddo
+ endif
+ 
+ !add the elements
+ if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+  ! upper -> upper  ||  full -> full
+  if(present(unlog))then
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,unlog)
+  else
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage)
+  endif
+  subsparse%ia=0
+  nel=1
+  un=0
+  do i=startdim1,enddim1
+   un=un+subsparse%ia(nel)
+   nel=nel+1
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if(k.ge.startdim2.and.k.le.enddim2)then
+     subsparse%ia(nel)=subsparse%ia(nel)+1
+     subsparse%ja(un+subsparse%ia(nel))=k-startdim2+1
+     subsparse%a(un+subsparse%ia(nel))=sparse%a(j)
+    endif
+   enddo
+  enddo
+  subsparse%ia(1)=1
+  do i=2,subsparse%dim1+1
+   subsparse%ia(i)=subsparse%ia(i)+subsparse%ia(i-1)
+  enddo
+ elseif(sparse%lupperstorage.and..not.lupperstorage)then
+  ! upper -> full
+  if(present(unlog))then
+   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage,unlog)
+  else
+   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage)
+  endif
+  do i=1,sparse%dim1
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if(k.ge.startdim2.and.k.le.enddim2)then
+     call subcoo%add(i-startdim1+1,k-startdim2+1,sparse%a(j))
+    endif
+    if(i.ne.k)then
+     if((k.ge.startdim1.and.k.le.enddim1).and.(i.ge.startdim2.and.i.le.enddim2))then
+      call subcoo%add(k-startdim1+1,i-startdim2+1,sparse%a(j))
+     endif
+    endif
+   enddo
+  enddo
+  subsparse=subcoo
+  call subcoo%destroy()
+ elseif(.not.sparse%lupperstorage.and.lupperstorage)then
+  ! full -> upper
+  if(present(unlog))then
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,unlog)
+  else
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage)
+  endif
+  subsparse%ia=0
+  nel=1
+  un=0
+  do i=startdim1,enddim1
+   un=un+subsparse%ia(nel)
+   nel=nel+1
+   do j=sparse%ia(i),sparse%ia(i+1)-1
+    k=sparse%ja(j)
+    if((k-startdim2+1.ge.i-startdim1+1).and.k.ge.startdim2.and.k.le.enddim2)then
+     subsparse%ia(nel)=subsparse%ia(nel)+1
+     subsparse%ja(un+subsparse%ia(nel))=k-startdim2+1
+     subsparse%a(un+subsparse%ia(nel))=sparse%a(j)
+    endif
+   enddo
+  enddo
+  subsparse%ia(1)=1
+  do i=2,subsparse%dim1+1
+   subsparse%ia(i)=subsparse%ia(i)+subsparse%ia(i-1)
+  enddo
+ endif
+
+end function
+
 !FINAL
 subroutine deallocate_scal_crs(sparse)
  type(crssparse),intent(inout)::sparse
@@ -1017,7 +1267,6 @@ subroutine destroy_ll(sparse)
  class(llsparse),intent(inout)::sparse
  integer(kind=int4)::i
 
- print*,'destroy ll'
  call sparse%destroy_gen_gen()
 
  if(allocated(sparse%heads))then
