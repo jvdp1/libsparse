@@ -2,6 +2,7 @@
 !> * Linked list (llsparse)  
 !> * COOrdinate storage (coosparse)  
 !> * Compressed Row Storage (crssparse)  
+
 !> @todo Use of submodules (one submodule for each type of matrix)
 
 module modsparse
@@ -14,6 +15,8 @@ module modsparse
  public::assignment(=)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+ integer(kind=int4),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
+
  !> @brief Generic object containing dimensions, storage format, and output unit
  type,abstract::gen_sparse
   private
@@ -93,14 +96,21 @@ module modsparse
   procedure,public::print=>print_coo
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_coo
+  !> @brief Saves the matrix (internal format) to stream file
+  procedure,public::save=>save_coo
   !> @brief Sets an entry to a certain value (even if equal to 0); e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_coo
   final::deallocate_scal_coo
  end type
 
- !> @brief Constructor; e.g., mat=coosparse(dim1,[dim2],[#elements],[upper_storage],[output_unit])
+! !> @brief Load a COO matrix from file
+! interface cooload
+!  module procedure load_coo
+! end interface
+
+ !> @brief Constructor; e.g., mat=coosparse(dim1,[dim2],[#elements],[upper_storage],[output_unit]) OR mat=coosparse('file',[output_unit])
  interface coosparse
-  module procedure constructor_coo
+  module procedure constructor_coo,load_coo
  end interface
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
@@ -124,6 +134,8 @@ module modsparse
   procedure,public::print=>print_crs
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs
+  !> @brief Saves the matrix (internal format) to stream file
+  procedure,public::save=>save_crs
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs
   !> @brief Sorts the elements in a ascending order within a row
@@ -131,9 +143,14 @@ module modsparse
   final::deallocate_scal_crs
  end type
 
- !> @brief Constructor; e.g., mat=crsparse(dim1,#elements,[dim2],[upper_storage],[output_unit])
+! !> @brief Load a CRS matrix from file
+! interface crsload
+!  module procedure load_crs
+! end interface
+
+ !> @brief Constructor; e.g., mat=crsparse(dim1,#elements,[dim2],[upper_storage],[output_unit]) OR mat=crssparse('file',[output_unit])
  interface crssparse
-  module procedure constructor_crs
+  module procedure constructor_crs,load_crs
  end interface
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!LINKED LIST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
@@ -185,7 +202,9 @@ module modsparse
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GENERAL INTERFACES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  !> @brief Converts sparse matrices from one format to another one; e.g., crsmat=coomat
  interface assignment(=)
-  module procedure convertfromlltocoo,convertfromlltocrs,convertfromcootocrs
+  module procedure convertfromlltocoo,convertfromlltocrs&
+                  ,convertfromcootocrs,convertfromcootoll&
+                  ,convertfromcrstocoo,convertfromcrstoll
  end interface
 
 contains
@@ -228,6 +247,7 @@ subroutine print_dim_gen(sparse)
  integer(kind=int8)::nel
 
  write(sparse%unlog,'(/" Type of the matrix           : ",a)')trim(sparse%namemat)
+ write(sparse%unlog,'( "  Output unit                 : ",i0)')sparse%unlog
  write(sparse%unlog,'( "  Dimension of the matrix     : ",i0," x ",i0)')sparse%dim1,sparse%dim2
  write(sparse%unlog,'( "  Upper storage               : ",l1)')sparse%lupperstorage
  write(sparse%unlog,'( "  Number of non-zero elements : ",i0)')sparse%nonzero()
@@ -398,6 +418,41 @@ function get_coo(sparse,row,col) result(val)
 
 end function
 
+!**LOAD
+function load_coo(namefile,unlog) result(sparse)
+ type(coosparse)::sparse
+ character(len=*),intent(in)::namefile
+ integer(kind=int4),intent(in),optional::unlog
+
+ integer(kind=int4)::un,dim1,dim2
+ integer(kind=int8)::nonzero,nel
+ logical::lupperstorage
+
+ open(newunit=un,file=namefile,action='read',status='old',access='stream',buffered='yes')
+ read(un)dim1
+ if(dim1.ne.typecoo)then
+  write(*,'(a)')' ERROR: the proposed file is not a COO file'
+  stop
+ endif
+ read(un)dim1            !int4
+ read(un)dim2            !int4
+ read(un)nonzero         !int8
+ read(un)nel             !int8
+ read(un)lupperstorage   !logical
+
+ if(present(unlog))then
+  sparse=coosparse(dim1,dim2,nel,lupperstorage,unlog)
+ else
+  sparse=coosparse(dim1,dim2,nel,lupperstorage)
+ endif
+
+ sparse%filled=nonzero
+ read(un)sparse%ij              !int4
+ read(un)sparse%a               !real8
+ close(un)
+
+end function
+
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_coo(sparse) result(nel)
  class(coosparse),intent(in)::sparse
@@ -461,6 +516,26 @@ subroutine printsquare_coo(sparse,output)
  enddo
 
  deallocate(tmp)
+
+end subroutine
+
+!**SAVE
+subroutine save_coo(sparse,namefile)
+ class(coosparse),intent(in)::sparse
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int4)::un
+
+ open(newunit=un,file=namefile,action='write',status='replace',access='stream',buffered='yes')
+ write(un)typecoo                !int4
+ write(un)sparse%dim1            !int4
+ write(un)sparse%dim2            !int4
+ write(un)sparse%nonzero()       !int8
+ write(un)sparse%nel             !int8
+ write(un)sparse%lupperstorage   !logical
+ write(un)sparse%ij              !int4
+ write(un)sparse%a               !real8
+ close(un)
 
 end subroutine
 
@@ -626,6 +701,41 @@ function get_crs(sparse,row,col) result(val)
 
 end function
 
+!**LOAD
+function load_crs(namefile,unlog)  result(sparse)
+ type(crssparse)::sparse
+ integer(kind=int4),intent(in),optional::unlog
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int4)::un,dim1,dim2
+ integer(kind=int8)::nonzero
+ logical::lupperstorage
+
+ open(newunit=un,file=namefile,action='read',status='old',access='stream',buffered='yes')
+ read(un)dim1
+ if(dim1.ne.typecrs)then
+  write(*,'(a)')' ERROR: the proposed file is not a CRS file'
+  stop
+ endif
+ read(un)dim1            !int4
+ read(un)dim2            !int4
+ read(un)nonzero         !int8
+ read(un)lupperstorage   !logical
+
+ if(present(unlog))then
+  sparse=crssparse(dim1,int(nonzero,int4),dim2,lupperstorage,unlog)
+ else
+  sparse=crssparse(dim1,int(nonzero,int4),dim2,lupperstorage)
+ endif
+
+ read(un)sparse%ia              !int4
+ read(un)sparse%ja              !int4
+ read(un)sparse%a               !real8
+
+ close(un)
+
+end function
+
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_crs(sparse) result(nel)
  class(crssparse),intent(in)::sparse
@@ -686,6 +796,26 @@ subroutine printsquare_crs(sparse,output)
  enddo
 
  deallocate(tmp)
+
+end subroutine
+
+!**SAVE
+subroutine save_crs(sparse,namefile)
+ class(crssparse),intent(in)::sparse
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int4)::un
+
+ open(newunit=un,file=namefile,action='write',status='replace',access='stream',buffered='yes')
+ write(un)typecrs                !int4
+ write(un)sparse%dim1            !int4
+ write(un)sparse%dim2            !int4
+ write(un)sparse%nonzero()       !int8
+ write(un)sparse%lupperstorage   !logical
+ write(un)sparse%ia              !int4
+ write(un)sparse%ja              !int4
+ write(un)sparse%a               !real8
+ close(un)
 
 end subroutine
 
@@ -1318,6 +1448,61 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
 end subroutine
 
+subroutine convertfromcootoll(othersparse,sparse)
+ type(llsparse),intent(out)::othersparse
+ type(coosparse),intent(in)::sparse
+ 
+ integer(kind=int4)::row
+ integer(kind=int8)::i8
+
+ othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
+
+ do i8=1_int8,sparse%nel
+  row=sparse%ij(1,i8)
+  if(row.ne.0)then
+   call othersparse%add(row,sparse%ij(1,i8),sparse%a(i8))
+  endif
+ enddo
+
+! call othersparse%print()
+
+end subroutine
+
+subroutine convertfromcrstocoo(othersparse,sparse)
+ type(coosparse),intent(out)::othersparse
+ type(crssparse),intent(in)::sparse
+ 
+ integer(kind=int4)::i,j
+
+ othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
+
+ do i=1,sparse%dim1
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   call othersparse%add(i,sparse%ja(j),sparse%a(j))
+  enddo
+ enddo
+
+! call othersparse%print()
+
+end subroutine
+
+subroutine convertfromcrstoll(othersparse,sparse)
+ type(llsparse),intent(out)::othersparse
+ type(crssparse),intent(in)::sparse
+ 
+ integer(kind=int4)::i,j
+
+ othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
+
+ do i=1,sparse%dim1
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   call othersparse%add(i,sparse%ja(j),sparse%a(j))
+  enddo
+ enddo
+
+! call othersparse%print()
+
+end subroutine
 
 
 end module

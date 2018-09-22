@@ -10,7 +10,7 @@ program test1
  logical::lup=.false.
  type(llsparse)::ll
  type(coosparse)::coo
- type(crssparse)::crs
+ type(crssparse)::crs,crs1
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
  !LINKED LINK
@@ -125,8 +125,20 @@ program test1
  call crs%sort()
  call crs%print()
 
+
+ print*,'aaaaaaaaaaaaa print COO to stream aaaaaaaaaa'
+ call coo%save('coostream.dat')
+ call coo%printstats()
+
  call coo%destroy()
 
+ print*,'aaaaaaaaaaaaa read COO to stream aaaaaaaaaa'
+ coo=coosparse('coostream.dat')!,444)
+ call coo%printstats()
+
+ call coo%destroy()
+
+ print*,'aaaaaaaaaaaaa add to CRS aaaaaaaaaa'
  call crs%set(4,4,100.d0,row)
  print*,'error: ',row
 
@@ -136,5 +148,26 @@ program test1
 
  print*,'dim1',crs%getdim(1)
  print*,'dim2',crs%getdim(2)
+
+ print*,'aaaaaaaaaaaaaaa test load/save aaaaaaaaaaaaaaa'
+ call crs%save('crsstream.dat')
+ 
+ crs1=crssparse('crsstream.dat')
+ call crs1%print()
+ 
+ print*,'aaaaaaaaaaaaaaa test copy aaaaaaaaaaaaaaa'
+ call crs%destroy()
+
+ crs=crs1
+
+ print*,'aaaaaaaaaaaaaaaCRSaaaaaaaaaaaaaaa'
+ call crs%add(1,1,130._real8)
+ call crs%printstats()
+ call crs%print()
+
+ print*,'aaaaaaaaaaaaaaaCRS1aaaaaaaaaaaaaaa'
+ call crs1%printstats()
+ call crs1%print()
+
 
 end program
