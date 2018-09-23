@@ -1,7 +1,7 @@
 module modhash
  use modkind
  implicit none
- public::hashf
+ public::hashf,roundinguppower2
 
 contains
 !Inspired by lookup3.c from Bob Jenkins (http://burtleburtle.net/bob/hash/index.html#lookup)
@@ -16,7 +16,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  !getval .eq. .true. : search for a value and returns 0 if absent
  !getval .eq. .false.: add a value if row,col was not present before
  integer(kind=int8)::address
- integer(kind=int4),intent(in)::row,col!,mode
+ integer(kind=int4),intent(in)::row,col
  integer(kind=int4),intent(inout)::mat(:,:)
  integer(kind=int8),intent(in)::dim2
  integer(kind=int8),intent(inout)::filled
@@ -25,7 +25,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  integer(kind=int4),parameter::maxiter=5000
 
  integer(kind=int8)::a,b,c
- integer(kind=int4)::i,j,k 
+ integer(kind=int4)::i 
  logical::indzero,indequal
 
  a=int(row,kind(a))        !conversion of 1st coordinate
@@ -33,7 +33,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  c=305419896_int8          !default value for 3rd coordinate  
 
  !Cycle until a free entry is found
- do k=1,maxiter
+ do i=1,maxiter
   !Hashing
   call mix(a,b,c)
   !Computation of the address
@@ -61,24 +61,34 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
 
 end function
   
+function roundinguppower2(x) result(next)
+ integer(kind=int8),intent(in)::x
+ integer(kind=int8)::next
+
+ !https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
+ 
+ next=2_int8**int((ceiling(log(real(x,real8))/log(real(2,real8)))),int8)
+
+end function
+
 !PRIVATE
 function rot(i,j) result(rota)
  integer(kind=int8) :: i,j
  integer(kind=int8)::rota
 
- rota=ior(ishft(i,j),ishft(i,-(32-j)))
+ rota=ior(ishft(i,j),ishft(i,-(32_int8-j)))
 
 end function
     
 subroutine mix(a,b,c)
  integer(kind=int8),intent(inout)::a,b,c
 
- a=a-c;a=ieor(a,rot(c,4));c=c+b 
- b=b-a;b=ieor(b,rot(a,6));a=a+c 
- c=c-b;c=ieor(c,rot(b,8));b=b+a 
- a=a-c;a=ieor(a,rot(c,16));c=c+b 
- b=b-a;b=ieor(b,rot(a,19));a=a+c 
- c=c-b;c=ieor(c,rot(b,4));b=b+a 
+ a=a-c;a=ieor(a,rot(c,4_int8));c=c+b 
+ b=b-a;b=ieor(b,rot(a,6_int8));a=a+c 
+ c=c-b;c=ieor(c,rot(b,8_int8));b=b+a 
+ a=a-c;a=ieor(a,rot(c,16_int8));c=c+b 
+ b=b-a;b=ieor(b,rot(a,19_int8));a=a+c 
+ c=c-b;c=ieor(c,rot(b,4_int8));b=b+a 
 
 end subroutine 
 

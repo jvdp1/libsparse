@@ -17,6 +17,14 @@ The library is written following an object-oriented approach. It has been tested
 
 
 
+## Compilation  
+For compilation of the Fortran 2003 library: `make`  
+
+Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
+
+
+
+## Acknowledgements  
 This library was inspired by several sources:  
 
 
@@ -38,16 +46,11 @@ This library was inspired by several sources:
  * https://software.intel.com/en-us/forums/intel-visual-fortran-compiler-for-windows/topic/755612  
 
 
- * https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2 
+ * https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2   
 
 
  * and by many courses related to object-oriented programming and Fortran 2003/2008.  
 
 
 
-## Compilation  
 
-
-For compilation of the Fortran 2003 library: `make`  
-
-Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  

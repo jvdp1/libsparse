@@ -38,7 +38,7 @@ program test2
  !$ write(*,'(/a,f0.3)')' Elapsed time crsll: ',omp_get_wtime()-t1
  call crs%sort()
  call crs%printtofile('crsll.dat')
- call sparse%reset()
+ call sparse%destroy()
 
  coo=coosparse(nrow,nel=nel,lupper=.true.)
  !$ t2=0.d0
