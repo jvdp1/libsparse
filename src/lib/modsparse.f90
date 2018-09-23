@@ -215,6 +215,7 @@ contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !DESTROY
+!> @brief Subroutine to reset/destroy a generic object
 subroutine destroy_gen_gen(sparse)
  class(gen_sparse),intent(inout)::sparse
 
