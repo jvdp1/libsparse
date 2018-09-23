@@ -88,6 +88,10 @@ module modsparse
   procedure,public::add=>add_coo 
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_scal_coo
+  procedure::diag_vect_coo
+  procedure::diag_mat_coo
+  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+  generic,public::diag=>diag_vect_coo,diag_mat_coo
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_coo
   !> @brief Returns the number of non-zero elements
@@ -128,6 +132,10 @@ module modsparse
   procedure,public::add=>add_crs
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_scal_crs
+  procedure::diag_vect_crs
+  procedure::diag_mat_crs
+  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+  generic,public::diag=>diag_vect_crs,diag_mat_crs
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
   !> @brief Returns the number of non-zero elements
@@ -348,6 +356,44 @@ subroutine destroy_scal_coo(sparse)
  if(allocated(sparse%a))deallocate(sparse%a)
 
 end subroutine
+
+!**DIAGONAL ELEMENTS
+function diag_vect_coo(sparse) result(array)
+ class(coosparse),intent(inout)::sparse
+ real(kind=real8),allocatable::array(:)
+
+ integer(kind=int4)::ndiag,i
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(array(ndiag))
+ array=0_real8
+ 
+ do i=1,ndiag
+  array(i)=sparse%get(i,i)
+ enddo
+
+end function
+
+function diag_mat_coo(sparse,noff) result(diagsparse)
+ class(coosparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::noff
+ type(coosparse)::diagsparse
+
+ integer(kind=int4)::ndiag,i,j
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ diagsparse=coosparse(ndiag,ndiag,int(ndiag,int8),lupper=.true.)
+ 
+ do i=1,ndiag
+  call diagsparse%add(i,i,sparse%get(i,i))
+  do j=i+1,i+noff
+   call diagsparse%add(i,j,sparse%get(i,j))
+  enddo
+ enddo
+
+end function
 
 !**ADD ELEMENTS
 recursive subroutine add_coo(sparse,row,col,val)
@@ -729,6 +775,84 @@ subroutine destroy_scal_crs(sparse)
  if(allocated(sparse%a))deallocate(sparse%a)
 
 end subroutine
+
+!**DIAGONAL ELEMENTS
+function diag_vect_crs(sparse) result(array)
+ class(crssparse),intent(inout)::sparse
+ real(kind=real8),allocatable::array(:)
+
+ integer(kind=int4)::ndiag,i
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(array(ndiag))
+ array=0_real8
+ 
+ do i=1,ndiag
+  array(i)=sparse%get(i,i)
+ enddo
+
+end function
+
+function diag_mat_crs(sparse,noff) result(diagsparse)
+ class(crssparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::noff
+ type(crssparse)::diagsparse
+
+ integer(kind=int4)::ndiag,i,j,k,startoff,endoff,nel
+ integer(kind=int4),allocatable::rowpos(:)
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(rowpos(ndiag)) 
+ rowpos=0
+
+ !determine the number of elements per row
+ do i=1,ndiag
+  startoff=i+1
+  endoff=i+noff
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   if(sparse%ja(j).ge.startoff.and.sparse%ja(j).le.endoff)then
+    rowpos(i)=rowpos(i)+1
+   endif
+  enddo
+ enddo
+
+ nel=ndiag+sum(rowpos)
+
+ diagsparse=crssparse(ndiag,nel,ndiag,lupper=.true.)
+
+ !determine the number of non-zero off-diagonal elements per row
+ diagsparse%ia(2:diagsparse%dim1+1)=rowpos
+
+ !accumulate the number of elements and add diagonal elements
+ diagsparse%ia(1)=1
+ do i=1,ndiag
+  diagsparse%ia(i+1)=diagsparse%ia(i+1)+1+diagsparse%ia(i)
+  diagsparse%ja(diagsparse%ia(i))=i   !set diagonal element for the case it would not be present
+ enddo
+
+
+ !add the non-zero elements to crs (diagsparse)
+ rowpos=diagsparse%ia(1:diagsparse%dim1)
+ do i=1,ndiag
+  startoff=i+1
+  endoff=i+noff
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   k=sparse%ja(j)
+   if(i.eq.k)then
+    diagsparse%a(diagsparse%ia(i))=sparse%a(j)
+   elseif(k.ge.startoff.and.k.le.endoff)then
+    rowpos(i)=rowpos(i)+1
+    diagsparse%ja(rowpos(i))=k
+    diagsparse%a(rowpos(i))=sparse%a(j)
+   endif
+  enddo
+ enddo
+
+ deallocate(rowpos)
+
+end function
 
 !**ADD ELEMENTS
 subroutine add_crs(sparse,row,col,val,error)
@@ -1279,6 +1403,8 @@ subroutine destroy_ll(sparse)
 
 end subroutine
 
+!**DIAGONAL ELEMENTS
+
 !EQUALITIES
 subroutine equal_node(nodeout,nodein)
  class(node),intent(out)::nodeout
@@ -1444,6 +1570,8 @@ end function
 !**SAVE
 
 !**SET ELEMENTS
+
+!**SUBMATRIX
 
 !**PRINT
 subroutine print_ll(sparse,lint,output)
