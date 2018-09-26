@@ -7,8 +7,10 @@ f90=ifort
 
 #LIBRARIES PATHS AND OTHER
 pathintel=/opt/intel
-optf90=-O3 -I${MKLROOT}/include/intel64/lp64 -I${MKLROOT}/include -static-intel -heap-arrays -assume noold_maxminloc -L${pathintel}/compilers_and_libraries/linux/lib/intel64 -L$(MKLROOT)/lib/intel64 -qopenmp -parallel -lpthread -qopt-matmul -fpp -qopt-report=5 -stand f08
 
-mkl=${MKLROOT}/lib/intel64/libmkl_blas95_lp64.a ${MKLROOT}/lib/intel64/libmkl_lapack95_lp64.a -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_intel_lp64.a ${MKLROOT}/lib/intel64/libmkl_intel_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -liomp5 -lpthread -lm -ldl
+F90FLAGS=-O3 -assume noold_maxminloc -heap-arrays -qopenmp -liomp5 -parallel -qopt-matmul -qopt-report=5 -stand f08
+F90FLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
+F90FLAGS+=-lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core 
+F90FLAGS+=-lpthread -ldl
 
 

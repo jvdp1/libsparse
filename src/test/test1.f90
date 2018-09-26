@@ -170,4 +170,26 @@ program test1
  call crs1%print()
 
 
+ print*,'aaaaaaaaaaaaaaa DIAGONAL COO aaaaaaaaaaaaaaaa'
+ coo=crs1
+
+ call coo%printsquare()
+
+ print*,'aaaa',coo%diag()
+
+ crs=coo%diag(-1)
+
+ call crs%printsquare()
+
+ call coo%destroy()
+
+ print*,'aaaaaaaaaaaaaaa DIAGONAL CRS aaaaaaaaaaaaaaaa'
+ coo=crs1
+ crs=coo
+ call crs%printsquare()
+
+ print*,'aaaa',crs%diag()
+ crs1=crs%diag(10)
+ call crs1%printsquare()
+
 end program

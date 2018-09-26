@@ -5,9 +5,16 @@
 
 !> @todo Use of submodules (one submodule for each type of matrix)
 
+#if (_PARDISO==1)
+include 'mkl_pardiso.f90'
+#endif
+
 module modsparse
  use modkind
  use modhash
+#if (_PARDISO==1)
+ use mkl_pardiso
+#endif
  !$ use omp_lib
  implicit none
  private
@@ -41,6 +48,8 @@ module modsparse
   !> @brief Prints the sparse matrix in a rectangular/square format to the output mat\%unlog
   procedure,public::printsquaretofile=>printsquaretofile_gen
   procedure,public::printstats=>print_dim_gen
+  !> @brief Sets the output unit to value; e.g., call mat%setouputunit(unlog)
+  procedure,public::setoutputunit
   procedure::destroy_gen_gen
  end type
  
@@ -88,6 +97,10 @@ module modsparse
   procedure,public::add=>add_coo 
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_scal_coo
+  procedure::diag_vect_coo
+  procedure::diag_mat_coo
+  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+  generic,public::diag=>diag_vect_coo,diag_mat_coo
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_coo
   !> @brief Returns the number of non-zero elements
@@ -128,8 +141,16 @@ module modsparse
   procedure,public::add=>add_crs
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_scal_crs
+  procedure::diag_vect_crs
+  procedure::diag_mat_crs
+  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+  generic,public::diag=>diag_vect_crs,diag_mat_crs
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
+  !> @brief Initiate the vectors ia,ja,and a from external vectors
+  procedure,public::external=>external_crs
+  !> @brief Multiplication with a vector
+  procedure,public::multbyv=>multgenv_csr
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_crs
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -140,6 +161,8 @@ module modsparse
   procedure,public::save=>save_crs
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs
+  !> @brief MKL PARDISO solver
+  procedure,public::solve=>solve_crs
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
   !> @brief Gets a submatrix from a sparse matrix
@@ -295,6 +318,15 @@ subroutine printsquaretofile_gen(sparse,namefile)
 
 end subroutine
 
+!**SET OUTPUT UNIT
+subroutine setoutputunit(sparse,unlog)
+ class(gen_sparse),intent(inout)::sparse
+ integer(kind=int4)::unlog
+
+ sparse%unlog=unlog
+
+end subroutine
+
 !**OTHER
 function lsquare(sparse) result(ll)
  class(gen_sparse),intent(in)::sparse
@@ -348,6 +380,44 @@ subroutine destroy_scal_coo(sparse)
  if(allocated(sparse%a))deallocate(sparse%a)
 
 end subroutine
+
+!**DIAGONAL ELEMENTS
+function diag_vect_coo(sparse) result(array)
+ class(coosparse),intent(inout)::sparse
+ real(kind=real8),allocatable::array(:)
+
+ integer(kind=int4)::ndiag,i
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(array(ndiag))
+ array=0_real8
+ 
+ do i=1,ndiag
+  array(i)=sparse%get(i,i)
+ enddo
+
+end function
+
+function diag_mat_coo(sparse,noff) result(diagsparse)
+ class(coosparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::noff
+ type(coosparse)::diagsparse
+
+ integer(kind=int4)::ndiag,i,j
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ diagsparse=coosparse(ndiag,ndiag,int(ndiag,int8),lupper=.true.)
+ 
+ do i=1,ndiag
+  call diagsparse%add(i,i,sparse%get(i,i))
+  do j=i+1,i+noff
+   call diagsparse%add(i,j,sparse%get(i,j))
+  enddo
+ enddo
+
+end function
 
 !**ADD ELEMENTS
 recursive subroutine add_coo(sparse,row,col,val)
@@ -423,6 +493,8 @@ function get_coo(sparse,row,col) result(val)
 
 end function
 
+!**EXTERNAL
+
 !**LOAD
 function load_coo(namefile,unlog) result(sparse)
  type(coosparse)::sparse
@@ -457,6 +529,8 @@ function load_coo(namefile,unlog) result(sparse)
  close(un)
 
 end function
+
+!**MULTIPLICATIONS
 
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_coo(sparse) result(nel)
@@ -594,6 +668,10 @@ recursive subroutine set_coo(sparse,row,col,val)
  
 end subroutine
 
+!**SOLVE
+
+!**SORT ARRAY
+
 !**SUBMATRIX
 function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) result(subsparse)
  !Not programmed efficiently, but it should do the job
@@ -730,6 +808,84 @@ subroutine destroy_scal_crs(sparse)
 
 end subroutine
 
+!**DIAGONAL ELEMENTS
+function diag_vect_crs(sparse) result(array)
+ class(crssparse),intent(inout)::sparse
+ real(kind=real8),allocatable::array(:)
+
+ integer(kind=int4)::ndiag,i
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(array(ndiag))
+ array=0_real8
+ 
+ do i=1,ndiag
+  array(i)=sparse%get(i,i)
+ enddo
+
+end function
+
+function diag_mat_crs(sparse,noff) result(diagsparse)
+ class(crssparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::noff
+ type(crssparse)::diagsparse
+
+ integer(kind=int4)::ndiag,i,j,k,startoff,endoff,nel
+ integer(kind=int4),allocatable::rowpos(:)
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(rowpos(ndiag)) 
+ rowpos=0
+
+ !determine the number of elements per row
+ do i=1,ndiag
+  startoff=i+1
+  endoff=i+noff
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   if(sparse%ja(j).ge.startoff.and.sparse%ja(j).le.endoff)then
+    rowpos(i)=rowpos(i)+1
+   endif
+  enddo
+ enddo
+
+ nel=ndiag+sum(rowpos)
+
+ diagsparse=crssparse(ndiag,nel,ndiag,lupper=.true.)
+
+ !determine the number of non-zero off-diagonal elements per row
+ diagsparse%ia(2:diagsparse%dim1+1)=rowpos
+
+ !accumulate the number of elements and add diagonal elements
+ diagsparse%ia(1)=1
+ do i=1,ndiag
+  diagsparse%ia(i+1)=diagsparse%ia(i+1)+1+diagsparse%ia(i)
+  diagsparse%ja(diagsparse%ia(i))=i   !set diagonal element for the case it would not be present
+ enddo
+
+
+ !add the non-zero elements to crs (diagsparse)
+ rowpos=diagsparse%ia(1:diagsparse%dim1)
+ do i=1,ndiag
+  startoff=i+1
+  endoff=i+noff
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   k=sparse%ja(j)
+   if(i.eq.k)then
+    diagsparse%a(diagsparse%ia(i))=sparse%a(j)
+   elseif(k.ge.startoff.and.k.le.endoff)then
+    rowpos(i)=rowpos(i)+1
+    diagsparse%ja(rowpos(i))=k
+    diagsparse%a(rowpos(i))=sparse%a(j)
+   endif
+  enddo
+ enddo
+
+ deallocate(rowpos)
+
+end function
+
 !**ADD ELEMENTS
 subroutine add_crs(sparse,row,col,val,error)
  !add a value only to an existing one
@@ -791,6 +947,31 @@ function get_crs(sparse,row,col) result(val)
 
 end function
 
+!**EXTERNAL
+subroutine external_crs(sparse,ia,ja,a)
+ class(crssparse),intent(inout)::sparse
+ integer(kind=int4),intent(in)::ia(:),ja(:)
+ real(kind=real8),intent(in)::a(:)
+
+ if(size(ia).ne.size(sparse%ia))then
+  write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
+  stop
+ endif
+ if(size(ja).ne.size(sparse%ja))then
+  write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different size!'
+  stop
+ endif
+ if(size(a).ne.size(sparse%a))then
+  write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different size!'
+  stop
+ endif
+ 
+ sparse%ia=ia
+ sparse%ja=ja
+ sparse%a=a
+
+end subroutine
+
 !**LOAD
 function load_crs(namefile,unlog)  result(sparse)
  type(crssparse)::sparse
@@ -825,6 +1006,30 @@ function load_crs(namefile,unlog)  result(sparse)
  close(un)
 
 end function
+
+!**MULTIPLICATIONS
+subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
+ !Computes y=val*y+alpha*sparse(tranposition)*x
+ class(crssparse),intent(in)::sparse
+ real(kind=real8),intent(in)::val,alpha
+ real(kind=real8),intent(in)::x(:)
+ real(kind=real8),intent(out)::y(:)
+ character(len=1),intent(in)::trans
+
+ character(len=1)::matdescra(6)
+
+
+ if(.not.sparse%lupperstorage)then
+  matdescra(1)='G'
+ elseif(sparse%lupperstorage)then
+  matdescra(1)='T'
+  matdescra(2)='U'
+  matdescra(3)='N'
+ endif
+ matdescra(4)='F'
+ call mkl_dcsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),x,val,y)
+ 
+end subroutine
 
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_crs(sparse) result(nel)
@@ -942,6 +1147,97 @@ subroutine set_crs(sparse,row,col,val,error)
  if(present(error))error=-1
 
 end subroutine
+
+!**SOLVE
+#if (_PARDISO==1)
+subroutine solve_crs(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(in)::sparse
+ real(kind=real8),intent(out)::x(:)
+ real(kind=real8),intent(inout)::y(:)
+
+ !Pardiso variables
+ integer(kind=int4)::mtype=-2
+ !integer(kind=int4)::mtype=11
+ integer(kind=int4)::solver=0,error,phase,maxfct=1,mnum=1,nrhs=1
+ integer(kind=int4)::idum(1)
+ integer(kind=int4),save::iparm(64),msglvl=1
+ real(kind=real8)::ddum(1)
+ type(MKL_PARDISO_HANDLE),allocatable,save::pt(:)
+ logical,save::lpardisofirst=.true.
+
+ integer(kind=int4)::i
+ !$ real(kind=real8)::t1
+
+ if(.not.sparse%lsquare())then
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+  return
+ endif
+
+ if(lpardisofirst)then
+  !$ t1=omp_get_wtime()
+  !Preparation of Cholesky of A11 with Pardiso
+  !initialize pt
+  allocate(pt(64))
+  do i = 1, 64
+    pt(i)%DUMMY=0 
+  enddo
+ 
+  !initialize iparm
+  call pardisoinit(pt,mtype,iparm)
+!  do i=1,64
+!   write(sparse%unlog,*)'iparm',i,iparm(i)
+!  enddo
+  
+  !Ordering and factorization
+  phase=12
+  iparm(2)=3
+  iparm(27)=1
+  write(sparse%unlog,'(a)')' Start ordering and factorization'
+  call pardiso(pt,maxfct,mnum,mtype,phase,&
+               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+               idum,nrhs,iparm,msglvl,ddum,ddum,error)
+  call checkparido(phase,error) 
+ 
+  write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',iparm(18)
+  write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',iparm(19)
+  !$ write(sparse%unlog,'(a,g0)')' Elapsed time                   = ',omp_get_wtime()-t1
+ endif 
+
+ !Solving
+ phase=33
+ iparm(27)=0
+ call pardiso(pt,maxfct,mnum,mtype,phase,&
+              sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+              idum,nrhs,iparm,msglvl,y,x,error)
+ call checkparido(phase,error) 
+
+ msglvl=0
+ lpardisofirst=.false.
+
+contains
+
+ subroutine checkparido(phase,error)
+  integer(kind=int4),intent(in)::phase,error
+  if(error.ne.0)then
+   write(sparse%unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
+   stop
+  endif
+ end subroutine
+
+end subroutine
+#else
+subroutine solve_crs(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(in)::sparse
+ real(kind=real8),intent(out)::x(:)
+ real(kind=real8),intent(in)::y(:)
+
+ write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
+ x=y
+
+end subroutine
+#endif
 
 !**SORT ARRAY
 subroutine sort_crs(sparse)
@@ -1139,7 +1435,7 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  endif
  
  !add the elements
- if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+ if((sparse%lupperstorage.eq.lupperstorage).or.(sparse%lupperstorage.and..not.lincludediag))then
   ! upper -> upper  ||  full -> full
   if(present(unlog))then
    subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,unlog)
@@ -1279,6 +1575,8 @@ subroutine destroy_ll(sparse)
 
 end subroutine
 
+!**DIAGONAL ELEMENTS
+
 !EQUALITIES
 subroutine equal_node(nodeout,nodein)
  class(node),intent(out)::nodeout
@@ -1409,7 +1707,11 @@ function get_ll(sparse,row,col) result(val)
 
 end function
 
+!**EXTERNAL
+
 !**LOAD
+
+!**MULTIPLICATIONS
 
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_ptrnode(pnode) result(nel)
@@ -1444,6 +1746,12 @@ end function
 !**SAVE
 
 !**SET ELEMENTS
+
+!**SOLVE
+
+!**SORT ARRAY
+
+!**SUBMATRIX
 
 !**PRINT
 subroutine print_ll(sparse,lint,output)

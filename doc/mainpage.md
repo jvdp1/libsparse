@@ -70,6 +70,14 @@ type(crssparse)::crsmatcopy
 csrmatcopy=crsmat  
 ````  
 
+To __multiply__ a sparse matrix by a vector as, *y = alpha \* mat(trans) \* v + val \* y* , the method *multbyv* must be used:  
+
+````
+call mat%multbyv(alpha,trans,v,val,y)  
+````  
+where *alpha* and *val* are double-precision real values, *v* and *y* are vectors, and *trans* (= 'n' or 't') relates to the transposition of the matrix.   
+
+
 To __print__ a sparse matrix as stored __to default output__ (screen), the method *print* must be used, e.g.:  
 
 
@@ -90,6 +98,14 @@ To __save__ a matrix in the internal format, the method *save* can be used:
 ````
 call mat%save('file.stream')  
 ````
+
+To __solve__ a linear system of equations of the form *mat \* x = y*, the method *solve* must be used:  
+
+````
+call mat%solve(x,y)  
+````
+The method *solve* is based on MKL Pardiso.  
+
 
 To __set__ an entry to a specified value (even __0__), the method *set* can be used:  
 
