@@ -105,7 +105,7 @@ To __solve__ a linear system of equations of the form *mat \* x = y*, the method
 ````
 call mat%solve(x,y)  
 ````
-The method *solve* is based on MKL Pardiso.  
+The method *solve* is based on Intel MKL Pardiso.  
 
 
 To __set__ an entry to a specified value (even __0__), the method *set* can be used:  

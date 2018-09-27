@@ -550,6 +550,7 @@ subroutine print_coo(sparse,lint,output)
  integer(kind=int4)::un,row,col
  integer(kind=int8)::i8
  real(kind=real8)::val
+ character(len=30)::frm='(2(i0,1x),g0)'
  logical::linternal
 
  linternal=.true.
@@ -565,9 +566,9 @@ subroutine print_coo(sparse,lint,output)
   val=sparse%a(i8)
   !if(.not.validvalue_gen(sparse,row,col))cycle  !it should never happen
   !if(.not.validnonzero_gen(sparse,val))cycle    !to print as internal
-  write(un,'(2(i0,1x),g0)')row,col,val
+  write(un,frm)row,col,val
   if(.not.linternal.and.sparse%lupperstorage.and.row.ne.col)then
-   write(un,'(2(i0,1x),g0)')col,row,val
+   write(un,frm)col,row,val
   endif
  enddo
 
@@ -1048,6 +1049,7 @@ subroutine print_crs(sparse,lint,output)
 
  integer(kind=int4)::i
  integer(kind=int4)::un,j
+ character(len=30)::frm='(2(i0,1x),g0)'
  logical::linternal
 
  linternal=.true.
@@ -1058,10 +1060,9 @@ subroutine print_crs(sparse,lint,output)
 
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
-   !write(un,'(2(i0,1x),g0)')i,sparse%ja(j),sparse%a(j)
-   write(un,'(2i8,1x,f0.4)')i,sparse%ja(j),sparse%a(j)
+   write(un,frm)i,sparse%ja(j),sparse%a(j)
    if(.not.linternal.and.sparse%lupperstorage.and.i.ne.sparse%ja(j))then
-    write(un,'(2(i0,1x),g0)')sparse%ja(j),i,sparse%a(j)
+    write(un,frm)sparse%ja(j),i,sparse%a(j)
    endif
   enddo
  enddo
@@ -1760,6 +1761,7 @@ subroutine print_ll(sparse,lint,output)
  logical,intent(in),optional::lint
 
  integer(kind=int4)::i,un
+ character(len=20)::frm='(2(i0,1x),g0)'
  logical::linternal
  type(ptrnode),pointer::cursor
  type(ptrnode),target::replacecursor
@@ -1775,9 +1777,9 @@ subroutine print_ll(sparse,lint,output)
   replacecursor=sparse%heads(i)
   cursor=>replacecursor
   do while(associated(cursor%p))
-   write(un,'(2(i0,1x),g0)')i,cursor%p%col,cursor%p%val
+   write(un,frm)i,cursor%p%col,cursor%p%val
    if(.not.linternal.and.sparse%lupperstorage.and.cursor%p%col.ne.i)then
-    write(un,'(2(i0,1x),g0)')cursor%p%col,i,cursor%p%val
+    write(un,frm)cursor%p%col,i,cursor%p%val
    endif
    cursor=>cursor%p%next
   enddo
