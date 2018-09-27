@@ -23,6 +23,9 @@ For compilation of the Fortran 2003 library: `make`
 Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
 
 
+## Documentation  
+The documentation is available in the directory *doc* (see *mainpage.md*). An extended documentation can be generated with *Doxygen*.  
+
 
 ## Acknowledgements  
 This library was inspired by several sources:  

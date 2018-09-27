@@ -76,6 +76,7 @@ To __multiply__ a sparse matrix by a vector as, *y = alpha \* mat(trans) \* v + 
 call mat%multbyv(alpha,trans,v,val,y)  
 ````  
 where *alpha* and *val* are double-precision real values, *v* and *y* are vectors, and *trans* (= 'n' or 't') relates to the transposition of the matrix.   
+The method *multbyv* is based on the MKL Sparse BLAS library.  
 
 
 To __print__ a sparse matrix as stored __to default output__ (screen), the method *print* must be used, e.g.:  
@@ -104,7 +105,7 @@ To __solve__ a linear system of equations of the form *mat \* x = y*, the method
 ````
 call mat%solve(x,y)  
 ````
-The method *solve* is based on MKL Pardiso.  
+The method *solve* is based on Intel MKL Pardiso.  
 
 
 To __set__ an entry to a specified value (even __0__), the method *set* can be used:  
@@ -113,17 +114,17 @@ To __set__ an entry to a specified value (even __0__), the method *set* can be u
 call mat%set(row,col,val)  
 ````
 
-To __sort__ (in an ascending order elements) within a row of a CRS sparse matrix, the method *sort* must be used:  
+To __sort__ a column (in an ascending order) within a row of a CRS sparse matrix, the method *sort* must be used:  
 
 ````
 call crsmat%sort()  
 ````
 
 
-To __deallocate__  a sparse matrix, the method *reset* can be used, e.g.:  
+To __deallocate__  a sparse matrix, the method *destroy* can be used, e.g.:  
 
 ````   
-call mat%reset()  
+call mat%destroy()  
 ````  
 
 
