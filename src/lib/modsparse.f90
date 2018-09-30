@@ -2026,7 +2026,7 @@ subroutine convertfromcootoll(othersparse,sparse)
  do i8=1_int8,sparse%nel
   row=sparse%ij(1,i8)
   if(row.ne.0)then
-   call othersparse%add(row,sparse%ij(1,i8),sparse%a(i8))
+   call othersparse%add(row,sparse%ij(2,i8),sparse%a(i8))
   endif
  enddo
 
