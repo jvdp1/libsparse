@@ -1375,6 +1375,7 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  lincludediag=.false.
  firstdim: do i=startdim1,enddim1
   do j=startdim2,enddim2
+   if(j.gt.i)exit
    if(i.eq.j)then
     lincludediag=.true.
     exit firstdim
