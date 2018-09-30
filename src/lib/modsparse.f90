@@ -1375,6 +1375,7 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  lincludediag=.false.
  firstdim: do i=startdim1,enddim1
   do j=startdim2,enddim2
+   if(j.gt.i)exit
    if(i.eq.j)then
     lincludediag=.true.
     exit firstdim
@@ -2026,7 +2027,7 @@ subroutine convertfromcootoll(othersparse,sparse)
  do i8=1_int8,sparse%nel
   row=sparse%ij(1,i8)
   if(row.ne.0)then
-   call othersparse%add(row,sparse%ij(1,i8),sparse%a(i8))
+   call othersparse%add(row,sparse%ij(2,i8),sparse%a(i8))
   endif
  enddo
 
