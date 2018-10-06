@@ -4,6 +4,7 @@
 !> * Compressed Row Storage (crssparse)  
 
 !> @todo Use of submodules (one submodule for each type of matrix)
+!> @todo Implementation of parameterized derived-type declarations to allow single- and double-precision sparse matrices
 
 #if (_PARDISO==1)
 include 'mkl_pardiso.f90'
