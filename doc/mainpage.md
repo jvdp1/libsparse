@@ -7,7 +7,7 @@ The Fortran 2003 library __libsparse__ is a library that provides objects to cre
  * Linked List (LL);  
 
 
- * COOrdinate storage (COO);  
+ * COOrdinate storage (COO) (with elements stored using a hashing function);  
 
 
  * Compressed Row Storage (CRS).   
@@ -43,11 +43,10 @@ This option can also be used to __load__ a matrix from a stream file.
 To __add__ a value *val* at the position (*row*,*col*) of a sparse matrix, the method *add* must be used, e.g.:  
 
 ````   
-call mat%add(row,col,val)
+call mat%add(row,col,val)  
 ````  
 
-
-To __convert__  a sparse matrix from a format to another format, the assignment *=* can be used. E.g., to convert from COO to CSR:  
+To __convert__  a sparse matrix from a format to another format, the assignment = can be used. E.g., to convert from COO to CSR:  
 
 ````   
 type(coosparse)::coomat  
@@ -56,7 +55,7 @@ type(crssparse)::crsmat
 csrmat=coomat  
 ````  
 
-To __copy__ a sparse matrix, the assignment *=* can be used. E.g.,:  
+To __copy__ a sparse matrix, the assignment = can be used. E.g.,:  
 
 ````   
 type(crssparse)::crsmat  
@@ -102,7 +101,7 @@ To __get one of the dimensions__ of a sparse matrix, the method *getdim* must be
 ````   
 val=mat%getdim(x)
 ````  
-where *x* is 1 (=number of rows) or 2 (=number of columns).  
+where *x* is 1 (=*number of rows*) or 2 (=*number of columns*).  
 
 
 To __create__ a CRS matrix from __existing arrays__, the method *external* must be used:
