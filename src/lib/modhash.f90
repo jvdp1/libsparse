@@ -1,5 +1,5 @@
 module modhash
- use modkind
+ use iso_fortran_env
  implicit none
  public::hashf,roundinguppower2
 
@@ -15,22 +15,22 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
  !filled: number of elements
  !getval .eq. .true. : search for a value and returns 0 if absent
  !getval .eq. .false.: add a value if row,col was not present before
- integer(kind=int8)::address
- integer(kind=int4),intent(in)::row,col
- integer(kind=int4),intent(inout)::mat(:,:)
- integer(kind=int8),intent(in)::dim2
- integer(kind=int8),intent(inout)::filled
+ integer(kind=int64)::address
+ integer(kind=int32),intent(in)::row,col
+ integer(kind=int32),intent(inout)::mat(:,:)
+ integer(kind=int64),intent(in)::dim2
+ integer(kind=int64),intent(inout)::filled
  logical,intent(in)::getval
 
- integer(kind=int4),parameter::maxiter=5000
+ integer(kind=int32),parameter::maxiter=5000
 
- integer(kind=int8)::a,b,c
- integer(kind=int4)::i 
+ integer(kind=int64)::a,b,c
+ integer(kind=int32)::i 
  logical::indzero,indequal
 
  a=int(row,kind(a))        !conversion of 1st coordinate
  b=int(col,kind(b))        !conversion of 2nd coordinate
- c=305419896_int8          !default value for 3rd coordinate  
+ c=305419896_int64          !default value for 3rd coordinate  
 
  !Cycle until a free entry is found
  do i=1,maxiter
@@ -62,33 +62,33 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
 end function
   
 function roundinguppower2(x) result(next)
- integer(kind=int8),intent(in)::x
- integer(kind=int8)::next
+ integer(kind=int64),intent(in)::x
+ integer(kind=int64)::next
 
  !https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
  
- next=2_int8**int((ceiling(log(real(x,real8))/log(real(2,real8)))),int8)
+ next=2_int64**int((ceiling(log(real(x,real64))/log(real(2,real64)))),int64)
 
 end function
 
 !PRIVATE
 function rot(i,j) result(rota)
- integer(kind=int8) :: i,j
- integer(kind=int8)::rota
+ integer(kind=int64) :: i,j
+ integer(kind=int64)::rota
 
- rota=ior(ishft(i,j),ishft(i,-(32_int8-j)))
+ rota=ior(ishft(i,j),ishft(i,-(32_int64-j)))
 
 end function
     
 subroutine mix(a,b,c)
- integer(kind=int8),intent(inout)::a,b,c
+ integer(kind=int64),intent(inout)::a,b,c
 
- a=a-c;a=ieor(a,rot(c,4_int8));c=c+b 
- b=b-a;b=ieor(b,rot(a,6_int8));a=a+c 
- c=c-b;c=ieor(c,rot(b,8_int8));b=b+a 
- a=a-c;a=ieor(a,rot(c,16_int8));c=c+b 
- b=b-a;b=ieor(b,rot(a,19_int8));a=a+c 
- c=c-b;c=ieor(c,rot(b,4_int8));b=b+a 
+ a=a-c;a=ieor(a,rot(c,4_int64));c=c+b 
+ b=b-a;b=ieor(b,rot(a,6_int64));a=a+c 
+ c=c-b;c=ieor(c,rot(b,8_int64));b=b+a 
+ a=a-c;a=ieor(a,rot(c,16_int64));c=c+b 
+ b=b-a;b=ieor(b,rot(a,19_int64));a=a+c 
+ c=c-b;c=ieor(c,rot(b,4_int64));b=b+a 
 
 end subroutine 
 

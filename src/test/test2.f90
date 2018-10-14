@@ -1,29 +1,29 @@
 program test2
+ use iso_fortran_env
  !$ use omp_lib
- use modkind
  use modsparse
  implicit none
- integer(kind=int4)::nrow
- integer(kind=int4)::row,col
- integer(kind=int4)::i,j
- integer(kind=int8)::nel
- real(kind=real8)::val
- !$ real(kind=real8)::t1
- !$ real(kind=real8)::t2
+ integer(kind=int32)::nrow
+ integer(kind=int32)::row,col
+ integer(kind=int32)::i,j
+ integer(kind=int64)::nel
+ real(kind=real64)::val
+ !$ real(kind=real64)::t1
+ !$ real(kind=real64)::t2
  type(llsparse)::sparse
  type(coosparse)::coo
  type(crssparse)::crs
 
  nrow=10000
  val=1.d0
- nel=1000000_int8
-! nel=67108865_int8
+ nel=1000000_int64
+! nel=67108865_int64
 
  sparse=llsparse(nrow,lupper=.true.)
  !$ t2=0.d0
  do i=1,nrow!,2
   do j=1,nrow!,3
-   val=real(i+j,real8)
+   val=real(i+j,real64)
    !$ t1=omp_get_wtime()
    call sparse%addtohead(i,j,val)
    !$ t2=t2+omp_get_wtime()-t1
@@ -45,7 +45,7 @@ program test2
  !$ t1=omp_get_wtime()
  do i=1,nrow!,2
   do j=1,nrow!,3
-   val=real(i+j,real8)
+   val=real(i+j,real64)
    !$ t1=omp_get_wtime()
    call coo%add(i,j,val)
    !$ t2=t2+omp_get_wtime()-t1

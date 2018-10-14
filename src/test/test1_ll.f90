@@ -1,12 +1,12 @@
 program test1_ll
- use modkind
+ use iso_fortran_env
  use modsparse
  implicit none
- integer(kind=int4)::nrow,i,j
- integer(kind=int4)::row
- integer(kind=int4)::col
- integer(kind=int4)::iunit, istat
- real(kind=real8)::val
+ integer(kind=int32)::nrow,i,j
+ integer(kind=int32)::row
+ integer(kind=int32)::col
+ integer(kind=int32)::iunit, istat
+ real(kind=real64)::val
  logical::lup=.false.
  type(llsparse)::ll
  type(coosparse)::coo
