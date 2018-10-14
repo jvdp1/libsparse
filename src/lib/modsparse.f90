@@ -392,7 +392,7 @@ function diag_vect_coo(sparse) result(array)
  ndiag=min(sparse%dim1,sparse%dim2)
 
  allocate(array(ndiag))
- array=0_real8
+ array=0.0_real8
  
  do i=1,ndiag
   array(i)=sparse%get(i,i)
@@ -478,7 +478,7 @@ function get_coo(sparse,row,col) result(val)
  integer(kind=int4)::trow,tcol
  integer(kind=int8)::hash
 
- val=0_real8
+ val=0.0_real8
  
  trow=row
  tcol=col
@@ -490,7 +490,7 @@ function get_coo(sparse,row,col) result(val)
 
  hash=hashf(trow,tcol,sparse%ij,sparse%nel,sparse%filled,.true.)
  
- if(hash.gt.0)val=sparse%a(hash)
+ if(hash.gt.0_int8)val=sparse%a(hash)
 
 end function
 
@@ -589,7 +589,7 @@ subroutine printsquare_coo(sparse,output)
  allocate(tmp(sparse%dim2))
 
  do i=1,sparse%dim1
-  tmp=0.d0
+  tmp=0._real8
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
@@ -820,7 +820,7 @@ function diag_vect_crs(sparse) result(array)
  ndiag=min(sparse%dim1,sparse%dim2)
 
  allocate(array(ndiag))
- array=0_real8
+ array=0.0_real8
  
  do i=1,ndiag
   array(i)=sparse%get(i,i)
@@ -930,7 +930,7 @@ function get_crs(sparse,row,col) result(val)
  
  integer(kind=int4)::i,trow,tcol
 
- val=0_real8
+ val=0.0_real8
  
  trow=row
  tcol=col
@@ -1084,7 +1084,7 @@ subroutine printsquare_crs(sparse,output)
  allocate(tmp(sparse%dim2))
 
  do i=1,sparse%dim1
-  tmp=0.d0
+  tmp=0.0_real8
   !could be implemented in a more efficient way
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
@@ -1686,7 +1686,7 @@ function get_ll(sparse,row,col) result(val)
  type(ptrnode),pointer::cursor
  type(ptrnode),target::replacecursor
 
- val=0_real8
+ val=0.0_real8
  
  trow=row
  tcol=col
