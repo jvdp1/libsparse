@@ -1,5 +1,9 @@
 program test2
- use iso_fortran_env
+#if (_DP==0)
+ use iso_fortran_env,only:int32,int64,real64,wp=>real32
+#else
+ use iso_fortran_env,only:int32,int64,wp=>real64
+#endif
  !$ use omp_lib
  use modsparse
  implicit none
@@ -7,7 +11,7 @@ program test2
  integer(kind=int32)::row,col
  integer(kind=int32)::i,j
  integer(kind=int64)::nel
- real(kind=real64)::val
+ real(kind=wp)::val
  !$ real(kind=real64)::t1
  !$ real(kind=real64)::t2
  type(llsparse)::sparse
@@ -15,7 +19,7 @@ program test2
  type(crssparse)::crs
 
  nrow=10000
- val=1.d0
+ val=1._wp
  nel=1000000_int64
 ! nel=67108865_int64
 
@@ -23,7 +27,7 @@ program test2
  !$ t2=0.d0
  do i=1,nrow!,2
   do j=1,nrow!,3
-   val=real(i+j,real64)
+   val=real(i+j,wp)
    !$ t1=omp_get_wtime()
    call sparse%addtohead(i,j,val)
    !$ t2=t2+omp_get_wtime()-t1
@@ -45,7 +49,7 @@ program test2
  !$ t1=omp_get_wtime()
  do i=1,nrow!,2
   do j=1,nrow!,3
-   val=real(i+j,real64)
+   val=real(i+j,wp)
    !$ t1=omp_get_wtime()
    call coo%add(i,j,val)
    !$ t2=t2+omp_get_wtime()-t1
@@ -66,9 +70,9 @@ program test2
 
 ! call crs%print()
 !
-! call crs%add(1,2,5.d0,i)
+! call crs%add(1,2,5._wp,i)
 ! print*,'aaaaaa',i
-! call crs%add(2,2,5.d0,i)
+! call crs%add(2,2,5._wp,i)
 ! print*,'aaaaaa',i
 ! call crs%print()
 end program

@@ -1,12 +1,16 @@
 program test3
- use iso_fortran_env
+#if (_DP==0)
+ use iso_fortran_env,only:int32,int64,wp=>real32
+#else
+ use iso_fortran_env,only:int32,int64,wp=>real64
+#endif
  use modsparse
  implicit none
  integer(kind=int32)::nrow
  integer(kind=int32)::row
  integer(kind=int32)::col
  integer(kind=int32)::iunit, istat
- real(kind=real64)::val
+ real(kind=wp)::val
  logical::lup=.false.
  type(coosparse)::coo
  type(crssparse)::crs,subcrs

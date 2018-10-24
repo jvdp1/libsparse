@@ -7,7 +7,7 @@ The Fortran 2003 library __libsparse__ is a library that provides objects to cre
  * Linked List (LL);  
 
 
- * COOrdinate storage (COO);  
+ * COOrdinate storage (COO) (with elements stored using a hashing function);  
 
 
  * Compressed Row Storage (CRS).   
@@ -21,6 +21,8 @@ The library is written following an object-oriented approach. It has been tested
 For compilation of the Fortran 2003 library: `make`  
 
 Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
+
+Compilation for single precision is possible by adding the argument `DPENABLE=0`.  
 
 
 ## Documentation  

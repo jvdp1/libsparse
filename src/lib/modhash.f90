@@ -1,5 +1,5 @@
 module modhash
- use iso_fortran_env
+ use iso_fortran_env,only:int32,int64,real64
  implicit none
  public::hashf,roundinguppower2
 

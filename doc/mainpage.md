@@ -33,9 +33,9 @@ mat=coosparse(dim1)
 
 Other options are possible for the constructor (see details in the module pages). For sparse matrices with upper storage (default: fulled storage), it must be mentioned as:  
 
-````
+````  
 mat=coosparse(dim1,lupper=.true.)  
-````
+````  
 
 This option can also be used to __load__ a matrix from a stream file.  
 
@@ -74,7 +74,7 @@ To extract the __diagonal elements__ of a sparse matrix into a array, the method
 
 ````  
 array=mat%diag()  
-````
+````  
 
 To extract the __diagonal elements__ and __off-diagonals__ of a sparse matrix into a array, the method *diag* must be used:  
 
@@ -88,23 +88,23 @@ where *x* is the number of off-diagonals (next to the diagonal) that must be ext
 To __get__ a value *val* at the position (*row*,*col*) of a sparse matrix, the method *get* must be used, e.g.:  
 
 ````   
-val=mat%get(row,col)
+val=mat%get(row,col)  
 ````  
 To __get__ a value *val* at the position (*row*,*col*) of a sparse matrix, the method *get* must be used, e.g.:  
 
 ````   
-val=mat%get(row,col)
+val=mat%get(row,col)  
 ````  
 
 To __get one of the dimensions__ of a sparse matrix, the method *getdim* must be used:  
 
 ````   
-val=mat%getdim(x)
+val=mat%getdim(x)  
 ````  
 where *x* is 1 (=*number of rows*) or 2 (=*number of columns*).  
 
 
-To __create__ a CRS matrix from __existing arrays__, the method *external* must be used:
+To __create__ a CRS matrix from __existing arrays__, the method *external* must be used:  
 
 ````  
 call crsmat%external(ia,ja,a)  
@@ -114,7 +114,7 @@ where the arrays *ia*, *ja*, and *a* must have the same size as the ones of the 
 
 To __multiply__ a sparse matrix by a vector as, *y = alpha \* mat(trans) \* v + val \* y* , the method *multbyv* must be used:  
 
-````
+````  
 call mat%multbyv(alpha,trans,v,val,y)  
 ````  
 where *alpha* and *val* are double-precision real values, *v* and *y* are vectors, and *trans* (= 'n' or 't') relates to the transposition of the matrix.   
@@ -130,50 +130,50 @@ nonzeros=mat%nonzero()
 To __print__ a sparse matrix as stored __to default output__ (screen), the method *print* must be used, e.g.:  
 
 
-````
+````  
 call mat%print()  
-````
+````  
 
 To __print__ a sparse matrix as stored __to a file__ called *file.dat*, the method *printtofile* must be used, e.g.:  
 
 
-````
+````  
 call mat%printtofile('file.dat')  
-````
+````  
 
 
 To __save__ a matrix in the internal format, the method *save* can be used:  
 
-````
+````  
 call mat%save('file.stream')  
-````
+````  
 
 To __set__ an entry to a specified value (even __0__), the method *set* can be used:  
 
-````
+````  
 call mat%set(row,col,val)  
-````
+````  
 
 
 To __solve__ a linear system of equations of the form *mat \* x = y*, the method *solve* must be used:  
 
-````
+````  
 call mat%solve(x,y)  
-````
+````  
 The method *solve* is based on Intel MKL Pardiso.  
 
 
 To __sort__ a column (in an ascending order) within a row of a CRS sparse matrix, the method *sort* must be used:  
 
-````
+````  
 call crsmat%sort()  
-````
+````  
 
 To check if the sparse matrix is a *square* matrix, the method __lsquare__ must be used:  
 
-````
-square=mat%lsquare()
-````
+````  
+square=mat%lsquare()  
+````  
 
 where the variable __square__ is a logial.  
 
@@ -194,6 +194,8 @@ where *log* is a logical to extract the full matrix (lupper=.false.) or the uppe
 For the compilation, go in the directory *libsparse/src/lib* and type *make* for the default options.  
 
 Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
+
+Compilation for single precision is possible by adding the argument `DPENABLE=0`.  
 
 
 ## Acknowledgements  
@@ -218,7 +220,7 @@ This library was inspired by several sources:
  * https://software.intel.com/en-us/forums/intel-visual-fortran-compiler-for-windows/topic/755612  
 
 
- * https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2 
+ * https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2   
 
 
  * and by many courses related to object-oriented programming and Fortran 2003/2008.  
