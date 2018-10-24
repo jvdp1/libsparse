@@ -2,7 +2,7 @@ program test2
 #if (_DP==0)
  use iso_fortran_env,only:int32,int64,real64,wp=>real32
 #else
- use iso_fortran_env,only:int32,int64,wp=>real64
+ use iso_fortran_env,only:int32,int64,real64,wp=>real64
 #endif
  !$ use omp_lib
  use modsparse
