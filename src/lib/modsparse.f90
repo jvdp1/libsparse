@@ -89,6 +89,8 @@ module modsparse
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!COO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+ real(kind=real32),parameter::maxratiofilled_par=0.80
+
  !> @brief Object for COOrdinate storage
  type,extends(gen_sparse)::coosparse
   private
@@ -431,7 +433,7 @@ recursive subroutine add_coo(sparse,row,col,val)
  real(kind=wp),intent(in)::val
 
  integer(kind=int64)::hash,i8
- real(kind=real32),parameter::maxratiofilled=0.80
+ real(kind=real32),parameter::maxratiofilled=maxratiofilled_par
  real(kind=real32)::ratiofilled
  type(coosparse)::sptmp
  
@@ -632,7 +634,7 @@ recursive subroutine set_coo(sparse,row,col,val)
  real(kind=wp),intent(in)::val
 
  integer(kind=int64)::hash,i8
- real(kind=real32),parameter::maxratiofilled=0.80
+ real(kind=real32),parameter::maxratiofilled=maxratiofilled_par
  real(kind=real32)::ratiofilled
  type(coosparse)::sptmp
  
