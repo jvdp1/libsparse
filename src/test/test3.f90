@@ -1,12 +1,16 @@
 program test3
- use modkind
+#if (_DP==0)
+ use iso_fortran_env,only:int32,int64,wp=>real32
+#else
+ use iso_fortran_env,only:int32,int64,wp=>real64
+#endif
  use modsparse
  implicit none
- integer(kind=int4)::nrow
- integer(kind=int4)::row
- integer(kind=int4)::col
- integer(kind=int4)::iunit, istat
- real(kind=real8)::val
+ integer(kind=int32)::nrow
+ integer(kind=int32)::row
+ integer(kind=int32)::col
+ integer(kind=int32)::iunit, istat
+ real(kind=wp)::val
  logical::lup=.false.
  type(coosparse)::coo
  type(crssparse)::crs,subcrs
@@ -16,7 +20,7 @@ program test3
  open(newunit=iunit,file='crsinput.ascii',status='old',action='read')
  read(iunit,*) nrow
 
- coo=coosparse(nrow,nel=4_int8,lupper=.false.)
+ coo=coosparse(nrow,nel=4_int64,lupper=.false.)
 
  do
   read(iunit,*,iostat=istat) row,col,val
@@ -79,7 +83,7 @@ program test3
  open(newunit=iunit,file='crsinput.ascii',status='old',action='read')
  read(iunit,*) nrow
 
- coo=coosparse(nrow,nel=4_int8,lupper=.true.)
+ coo=coosparse(nrow,nel=4_int64,lupper=.true.)
 
  do
   read(iunit,*,iostat=istat) row,col,val

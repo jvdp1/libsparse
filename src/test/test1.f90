@@ -1,12 +1,16 @@
 program test1
- use modkind
+#if (_DP==0)
+ use iso_fortran_env,only:int32,int64,wp=>real32
+#else
+ use iso_fortran_env,only:int32,int64,wp=>real64
+#endif
  use modsparse
  implicit none
- integer(kind=int4)::nrow
- integer(kind=int4)::row
- integer(kind=int4)::col
- integer(kind=int4)::iunit, istat
- real(kind=real8)::val
+ integer(kind=int32)::nrow
+ integer(kind=int32)::row
+ integer(kind=int32)::col
+ integer(kind=int32)::iunit, istat
+ real(kind=wp)::val
  logical::lup=.false.
  type(llsparse)::ll
  type(coosparse)::coo
@@ -50,7 +54,7 @@ program test1
  open(newunit=iunit,file='crsinput.ascii',status='old',action='read')
  read(iunit,*) nrow
 
- coo=coosparse(nrow,nel=4_int8,lupper=lup)
+ coo=coosparse(nrow,nel=4_int64,lupper=lup)
 
  do
   read(iunit,*,iostat=istat) row,col,val
@@ -74,7 +78,7 @@ program test1
  call crs%printtofile('crscoo.dat')
 
 
- call coo%add(1,1,150.d0)
+ call coo%add(1,1,150._wp)
 
 ! crs=coo
 ! call crs%printstats
@@ -111,9 +115,9 @@ program test1
 
  print*,'aaaaaaaaaaaaaaCOO modifaaaaaaaaaaaaaaaa'
 
- call coo%set(4,4,-1.d0)
- call coo%set(3,4,-1.d0)
- call coo%set(4,3,0.d0)
+ call coo%set(4,4,-1._wp)
+ call coo%set(3,4,-1._wp)
+ call coo%set(4,3,0._wp)
 
 
  call coo%print()
@@ -139,10 +143,10 @@ program test1
  call coo%destroy()
 
  print*,'aaaaaaaaaaaaa add to CRS aaaaaaaaaa'
- call crs%set(4,4,100.d0,row)
+ call crs%set(4,4,100._wp,row)
  print*,'error: ',row
 
- call crs%set(1,4,100.d0,row)
+ call crs%set(1,4,100._wp,row)
  print*,'error: ',row
  call crs%print()
 
@@ -161,7 +165,7 @@ program test1
  crs=crs1
 
  print*,'aaaaaaaaaaaaaaaCRSaaaaaaaaaaaaaaa'
- call crs%add(1,1,130._real8)
+ call crs%add(1,1,130._wp)
  call crs%printstats()
  call crs%print()
 

@@ -6,6 +6,12 @@ else
  DEBUG=
 endif
 
+ifeq ($(DPENABLE),0)
+ DP=0
+else
+ DP=1
+endif
+
 LIBSPARSEROOT=../../../
 LIBSPARSE=libsparse/src/lib/
 
@@ -16,19 +22,19 @@ EXEC=test1 test2 test3 test4 test1_ll
 all:	$(EXEC)
 
 test1:	test1.f90 
-	$(f90)  $(F90FLAGS) $(DEBUG) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
 
 test1_ll:	test1_ll.f90 
-	$(f90)  $(F90FLAGS) $(DEBUG) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
 
 test2:	test2.f90
-	$(f90)  $(F90FLAGS) $(DEBUG) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
 
 test3:	test3.f90
-	$(f90)  $(F90FLAGS) $(DEBUG) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
 
 test4:	test4.f90
-	$(f90)  $(F90FLAGS) $(DEBUG) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)/libsparse.a -o $@
 
 clean:
 	rm -fv *.dat *.o *.optrpt $(EXEC)

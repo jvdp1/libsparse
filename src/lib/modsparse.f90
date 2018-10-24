@@ -11,7 +11,11 @@ include 'mkl_pardiso.f90'
 #endif
 
 module modsparse
- use modkind
+#if (_DP==0)
+ use iso_fortran_env,only:int32,int64,real32,real64,wp=>real32
+#else
+ use iso_fortran_env,only:int32,int64,real32,real64,wp=>real64
+#endif
  use modhash
 #if (_PARDISO==1)
  use mkl_pardiso
@@ -23,13 +27,13 @@ module modsparse
  public::assignment(=)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
- integer(kind=int4),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
+ integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
 
  !> @brief Generic object containing dimensions, storage format, and output unit
  type,abstract::gen_sparse
   private
-  integer(kind=int4)::unlog=6
-  integer(kind=int4)::dim1,dim2
+  integer(kind=int32)::unlog=6
+  integer(kind=int32)::dim1,dim2
   character(len=15)::namemat='UNKNOWN'
   logical::lupperstorage
   contains
@@ -60,38 +64,40 @@ module modsparse
    class(gen_sparse),intent(inout)::sparse
   end subroutine
   function get_gen(sparse,row,col) result(val)
-   import::int4,real8,gen_sparse
+   import::int32,wp,gen_sparse
    class(gen_sparse),intent(inout)::sparse
-   integer(kind=int4),intent(in)::row,col
-   real(kind=real8)::val
+   integer(kind=int32),intent(in)::row,col
+   real(kind=wp)::val
   end function
   function nonzero_gen(sparse) result(nel)
-   import::int8,gen_sparse
+   import::int64,gen_sparse
    class(gen_sparse),intent(in)::sparse
-   integer(kind=int8)::nel
+   integer(kind=int64)::nel
   end function
   subroutine print_gen(sparse,lint,output)
-   import::int4,gen_sparse
+   import::int32,gen_sparse
    class(gen_sparse),intent(in)::sparse
-   integer(kind=int4),intent(in),optional::output
+   integer(kind=int32),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
   subroutine printsquare_gen(sparse,output)
-   import::int4,gen_sparse
+   import::int32,gen_sparse
    class(gen_sparse),intent(inout)::sparse
-   integer(kind=int4),intent(in),optional::output
+   integer(kind=int32),intent(in),optional::output
    end subroutine
  end interface
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!COO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+ real(kind=real32),parameter::maxratiofilled_par=0.80
+
  !> @brief Object for COOrdinate storage
  type,extends(gen_sparse)::coosparse
   private
-  integer(kind=int4),allocatable::ij(:,:)
-  integer(kind=int8)::nel
-  integer(kind=int8)::filled
-  real(kind=real8),allocatable::a(:)
+  integer(kind=int32),allocatable::ij(:,:)
+  integer(kind=int64)::nel
+  integer(kind=int64)::filled
+  real(kind=wp),allocatable::a(:)
   contains
   private
   !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
@@ -133,9 +139,9 @@ module modsparse
  !> @brief Object for Compressed Row Storage
  type,extends(gen_sparse)::crssparse
   private
-  integer(kind=int4),allocatable::ia(:)
-  integer(kind=int4),allocatable::ja(:)
-  real(kind=real8),allocatable::a(:)
+  integer(kind=int32),allocatable::ia(:)
+  integer(kind=int32),allocatable::ja(:)
+  real(kind=wp),allocatable::a(:)
   contains
   private
   !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
@@ -213,8 +219,8 @@ module modsparse
  end type
 
  type::node
-  integer(kind=int4)::col
-  real(kind=real8)::val
+  integer(kind=int32)::col
+  real(kind=wp)::val
   type(ptrnode)::next
   contains
   private
@@ -254,8 +260,8 @@ end subroutine
 !**GET ELEMENTS
 function getdim_gen(sparse,dim1) result(dimget)
  class(gen_sparse),intent(in)::sparse
- integer(kind=int4),intent(in)::dim1
- integer(kind=int4)::dimget
+ integer(kind=int32),intent(in)::dim1
+ integer(kind=int32)::dimget
 
  select case(dim1)
   case(1)
@@ -273,7 +279,7 @@ end function
 subroutine print_dim_gen(sparse)
  class(gen_sparse),intent(in)::sparse
 
- integer(kind=int8)::nel
+ integer(kind=int64)::nel
 
  write(sparse%unlog,'(/" Type of the matrix           : ",a)')trim(sparse%namemat)
  write(sparse%unlog,'( "  Output unit                 : ",i0)')sparse%unlog
@@ -294,7 +300,7 @@ subroutine printtofile_gen(sparse,namefile,lint)
  character(len=*),intent(in)::namefile
  logical,intent(in),optional::lint
 
- integer(kind=int4)::un
+ integer(kind=int32)::un
  logical::linternal
 
  linternal=.true.
@@ -310,7 +316,7 @@ subroutine printsquaretofile_gen(sparse,namefile)
  class(gen_sparse),intent(inout)::sparse
  character(len=*),intent(in)::namefile
 
- integer(kind=int4)::un
+ integer(kind=int32)::un
  logical::linternal
 
  open(newunit=un,file=namefile,status='replace',action='write')
@@ -322,7 +328,7 @@ end subroutine
 !**SET OUTPUT UNIT
 subroutine setoutputunit(sparse,unlog)
  class(gen_sparse),intent(inout)::sparse
- integer(kind=int4)::unlog
+ integer(kind=int32)::unlog
 
  sparse%unlog=unlog
 
@@ -344,9 +350,9 @@ end function
 !**CONSTRUCTOR
 function constructor_coo(m,n,nel,lupper,unlog) result(sparse)
  type(coosparse)::sparse
- integer(kind=int4),intent(in)::m
- integer(kind=int4),intent(in),optional::n,unlog
- integer(kind=int8),intent(in),optional::nel
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in),optional::n,unlog
+ integer(kind=int64),intent(in),optional::nel
  logical,intent(in),optional::lupper
 
  sparse%namemat='COO'
@@ -354,13 +360,13 @@ function constructor_coo(m,n,nel,lupper,unlog) result(sparse)
  sparse%dim2=m
  if(present(n))sparse%dim2=n
 
- sparse%filled=0_int8
+ sparse%filled=0_int64
 
- sparse%nel=roundinguppower2(100_int8)
- if(present(nel))sparse%nel=roundinguppower2(int(nel,int8))
+ sparse%nel=roundinguppower2(100_int64)
+ if(present(nel))sparse%nel=roundinguppower2(int(nel,int64))
  allocate(sparse%ij(2,sparse%nel),sparse%a(sparse%nel))
  sparse%ij=0
- sparse%a=0._real8
+ sparse%a=0._wp
 
  sparse%lupperstorage=.false.
  if(present(lupper))sparse%lupperstorage=lupper
@@ -375,8 +381,8 @@ subroutine destroy_scal_coo(sparse)
 
  call sparse%destroy_gen_gen()
 
- sparse%nel=-1_int8
- sparse%filled=-1_int8
+ sparse%nel=-1_int64
+ sparse%filled=-1_int64
  if(allocated(sparse%ij))deallocate(sparse%ij)
  if(allocated(sparse%a))deallocate(sparse%a)
 
@@ -385,14 +391,14 @@ end subroutine
 !**DIAGONAL ELEMENTS
 function diag_vect_coo(sparse) result(array)
  class(coosparse),intent(inout)::sparse
- real(kind=real8),allocatable::array(:)
+ real(kind=wp),allocatable::array(:)
 
- integer(kind=int4)::ndiag,i
+ integer(kind=int32)::ndiag,i
 
  ndiag=min(sparse%dim1,sparse%dim2)
 
  allocate(array(ndiag))
- array=0_real8
+ array=0.0_wp
  
  do i=1,ndiag
   array(i)=sparse%get(i,i)
@@ -402,14 +408,14 @@ end function
 
 function diag_mat_coo(sparse,noff) result(diagsparse)
  class(coosparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::noff
+ integer(kind=int32),intent(in)::noff
  type(coosparse)::diagsparse
 
- integer(kind=int4)::ndiag,i,j
+ integer(kind=int32)::ndiag,i,j
 
  ndiag=min(sparse%dim1,sparse%dim2)
 
- diagsparse=coosparse(ndiag,ndiag,int(ndiag,int8),lupper=.true.)
+ diagsparse=coosparse(ndiag,ndiag,int(ndiag,int64),lupper=.true.)
  
  do i=1,ndiag
   call diagsparse%add(i,i,sparse%get(i,i))
@@ -423,12 +429,12 @@ end function
 !**ADD ELEMENTS
 recursive subroutine add_coo(sparse,row,col,val)
  class(coosparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=int8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp),intent(in)::val
 
- integer(kind=int8)::hash,i8
- real(kind=real4),parameter::maxratiofilled=0.80
- real(kind=real4)::ratiofilled
+ integer(kind=int64)::hash,i8
+ real(kind=real32),parameter::maxratiofilled=maxratiofilled_par
+ real(kind=real32)::ratiofilled
  type(coosparse)::sptmp
  
  if(.not.validvalue_gen(sparse,row,col))return
@@ -442,7 +448,7 @@ recursive subroutine add_coo(sparse,row,col,val)
   !matrix probably full, or nothing available within the n requested searches
   !1. Copy matrix
   sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)
-  do i8=1_int8,sparse%nel
+  do i8=1_int64,sparse%nel
    call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
   !2. reallocate matrix using move_alloc
@@ -459,7 +465,7 @@ recursive subroutine add_coo(sparse,row,col,val)
   ratiofilled=real(sparse%filled)/real(sparse%nel)
  endif
 
- if(hash.gt.0_int8)then!.and.ratiofilled.le.maxratiofilled)then
+ if(hash.gt.0_int64)then!.and.ratiofilled.le.maxratiofilled)then
   sparse%a(hash)=sparse%a(hash)+val
  else
   !is it possible?
@@ -472,13 +478,13 @@ end subroutine
 !**GET ELEMENTS
 function get_coo(sparse,row,col) result(val)
  class(coosparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=real8)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp)::val
  
- integer(kind=int4)::trow,tcol
- integer(kind=int8)::hash
+ integer(kind=int32)::trow,tcol
+ integer(kind=int64)::hash
 
- val=0_real8
+ val=0.0_wp
  
  trow=row
  tcol=col
@@ -490,7 +496,7 @@ function get_coo(sparse,row,col) result(val)
 
  hash=hashf(trow,tcol,sparse%ij,sparse%nel,sparse%filled,.true.)
  
- if(hash.gt.0)val=sparse%a(hash)
+ if(hash.gt.0_int64)val=sparse%a(hash)
 
 end function
 
@@ -500,10 +506,10 @@ end function
 function load_coo(namefile,unlog) result(sparse)
  type(coosparse)::sparse
  character(len=*),intent(in)::namefile
- integer(kind=int4),intent(in),optional::unlog
+ integer(kind=int32),intent(in),optional::unlog
 
- integer(kind=int4)::un,dim1,dim2
- integer(kind=int8)::nonzero,nel
+ integer(kind=int32)::un,dim1,dim2
+ integer(kind=int64)::nonzero,nel
  logical::lupperstorage
 
  open(newunit=un,file=namefile,action='read',status='old',access='stream',buffered='yes')
@@ -512,10 +518,10 @@ function load_coo(namefile,unlog) result(sparse)
   write(*,'(a)')' ERROR: the proposed file is not a COO file'
   stop
  endif
- read(un)dim1            !int4
- read(un)dim2            !int4
- read(un)nonzero         !int8
- read(un)nel             !int8
+ read(un)dim1            !int32
+ read(un)dim2            !int32
+ read(un)nonzero         !int64
+ read(un)nel             !int64
  read(un)lupperstorage   !logical
 
  if(present(unlog))then
@@ -525,8 +531,8 @@ function load_coo(namefile,unlog) result(sparse)
  endif
 
  sparse%filled=nonzero
- read(un)sparse%ij              !int4
- read(un)sparse%a               !real8
+ read(un)sparse%ij              !int32
+ read(un)sparse%a               !wp
  close(un)
 
 end function
@@ -536,7 +542,7 @@ end function
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_coo(sparse) result(nel)
  class(coosparse),intent(in)::sparse
- integer(kind=int8)::nel
+ integer(kind=int64)::nel
 
  nel=sparse%filled
 
@@ -545,12 +551,12 @@ end function
 !**PRINT
 subroutine print_coo(sparse,lint,output)
  class(coosparse),intent(in)::sparse
- integer(kind=int4),intent(in),optional::output
+ integer(kind=int32),intent(in),optional::output
  logical,intent(in),optional::lint
 
- integer(kind=int4)::un,row,col
- integer(kind=int8)::i8
- real(kind=real8)::val
+ integer(kind=int32)::un,row,col
+ integer(kind=int64)::i8
+ real(kind=wp)::val
  character(len=30)::frm='(2(i0,1x),g0)'
  logical::linternal
 
@@ -577,11 +583,11 @@ end subroutine
 
 subroutine printsquare_coo(sparse,output)
  class(coosparse),intent(inout)::sparse
- integer(kind=int4),intent(in),optional::output
+ integer(kind=int32),intent(in),optional::output
 
- integer(kind=int4)::i,j,un
- real(kind=real8)::val
- real(kind=real8),allocatable::tmp(:)
+ integer(kind=int32)::i,j,un
+ real(kind=wp)::val
+ real(kind=wp),allocatable::tmp(:)
 
  un=sparse%unlog
  if(present(output))un=output
@@ -589,7 +595,7 @@ subroutine printsquare_coo(sparse,output)
  allocate(tmp(sparse%dim2))
 
  do i=1,sparse%dim1
-  tmp=0.d0
+  tmp=0._wp
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
@@ -605,17 +611,17 @@ subroutine save_coo(sparse,namefile)
  class(coosparse),intent(in)::sparse
  character(len=*),intent(in)::namefile
 
- integer(kind=int4)::un
+ integer(kind=int32)::un
 
  open(newunit=un,file=namefile,action='write',status='replace',access='stream',buffered='yes')
- write(un)typecoo                !int4
- write(un)sparse%dim1            !int4
- write(un)sparse%dim2            !int4
- write(un)sparse%nonzero()       !int8
- write(un)sparse%nel             !int8
+ write(un)typecoo                !int32
+ write(un)sparse%dim1            !int32
+ write(un)sparse%dim2            !int32
+ write(un)sparse%nonzero()       !int64
+ write(un)sparse%nel             !int64
  write(un)sparse%lupperstorage   !logical
- write(un)sparse%ij              !int4
- write(un)sparse%a               !real8
+ write(un)sparse%ij              !int32
+ write(un)sparse%a               !wp
  close(un)
 
 end subroutine
@@ -624,12 +630,12 @@ end subroutine
 recursive subroutine set_coo(sparse,row,col,val)
  !from add_coo
  class(coosparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=int8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp),intent(in)::val
 
- integer(kind=int8)::hash,i8
- real(kind=real4),parameter::maxratiofilled=0.80
- real(kind=real4)::ratiofilled
+ integer(kind=int64)::hash,i8
+ real(kind=real32),parameter::maxratiofilled=maxratiofilled_par
+ real(kind=real32)::ratiofilled
  type(coosparse)::sptmp
  
  if(.not.validvalue_gen(sparse,row,col))return
@@ -643,7 +649,7 @@ recursive subroutine set_coo(sparse,row,col,val)
   !matrix probably full, or nothing available within the n requested searches
   !1. Copy matrix
   sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)
-  do i8=1_int8,sparse%nel
+  do i8=1_int64,sparse%nel
    call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
   !2. reallocate matrix using move_alloc
@@ -660,7 +666,7 @@ recursive subroutine set_coo(sparse,row,col,val)
   ratiofilled=real(sparse%filled)/real(sparse%nel)
  endif
 
- if(hash.gt.0_int8)then!.and.ratiofilled.le.maxratiofilled)then
+ if(hash.gt.0_int64)then!.and.ratiofilled.le.maxratiofilled)then
   sparse%a(hash)=val
  else
   !is it possible?
@@ -679,12 +685,12 @@ function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  !Not programmed efficiently, but it should do the job
  class(coosparse),intent(in)::sparse
  type(coosparse)::subsparse
- integer(kind=int4),intent(in)::startdim1,enddim1,startdim2,enddim2
- integer(kind=int4),intent(in),optional::unlog
+ integer(kind=int32),intent(in)::startdim1,enddim1,startdim2,enddim2
+ integer(kind=int32),intent(in),optional::unlog
  logical,intent(in),optional::lupper
  
- integer(kind=int4)::i,j,k,un
- integer(kind=int8)::i8,nel=10000
+ integer(kind=int32)::i,j,k,un
+ integer(kind=int64)::i8,nel=10000
  logical::lincludediag,lupperstorage
 
  if(.not.validvalue_gen(sparse,startdim1,startdim2))return
@@ -715,9 +721,9 @@ function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
 
 
  if(present(unlog))then
-  subsparse=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage,unlog)
+  subsparse=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage,unlog)
  else
-  subsparse=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage)
+  subsparse=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage)
  endif
 
 
@@ -775,9 +781,9 @@ end subroutine
 !**CONSTRUCTOR
 function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
  type(crssparse)::sparse
- integer(kind=int4),intent(in)::m
- integer(kind=int4),intent(in)::nel
- integer(kind=int4),intent(in),optional::n,unlog
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in)::nel
+ integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
 
  sparse%namemat='CRS'
@@ -789,7 +795,7 @@ function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
  sparse%ia=0
  sparse%ia(sparse%dim1+1)=-nel
  sparse%ja=0
- sparse%a=0._real8
+ sparse%a=0._wp
 
  sparse%lupperstorage=.false.
  if(present(lupper))sparse%lupperstorage=lupper
@@ -813,14 +819,14 @@ end subroutine
 !**DIAGONAL ELEMENTS
 function diag_vect_crs(sparse) result(array)
  class(crssparse),intent(inout)::sparse
- real(kind=real8),allocatable::array(:)
+ real(kind=wp),allocatable::array(:)
 
- integer(kind=int4)::ndiag,i
+ integer(kind=int32)::ndiag,i
 
  ndiag=min(sparse%dim1,sparse%dim2)
 
  allocate(array(ndiag))
- array=0_real8
+ array=0.0_wp
  
  do i=1,ndiag
   array(i)=sparse%get(i,i)
@@ -830,11 +836,11 @@ end function
 
 function diag_mat_crs(sparse,noff) result(diagsparse)
  class(crssparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::noff
+ integer(kind=int32),intent(in)::noff
  type(crssparse)::diagsparse
 
- integer(kind=int4)::ndiag,i,j,k,startoff,endoff,nel
- integer(kind=int4),allocatable::rowpos(:)
+ integer(kind=int32)::ndiag,i,j,k,startoff,endoff,nel
+ integer(kind=int32),allocatable::rowpos(:)
 
  ndiag=min(sparse%dim1,sparse%dim2)
 
@@ -866,7 +872,6 @@ function diag_mat_crs(sparse,noff) result(diagsparse)
   diagsparse%ja(diagsparse%ia(i))=i   !set diagonal element for the case it would not be present
  enddo
 
-
  !add the non-zero elements to crs (diagsparse)
  rowpos=diagsparse%ia(1:diagsparse%dim1)
  do i=1,ndiag
@@ -892,12 +897,12 @@ end function
 subroutine add_crs(sparse,row,col,val,error)
  !add a value only to an existing one
  class(crssparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- integer(kind=int4),intent(out),optional::error
- real(kind=int8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ integer(kind=int32),intent(out),optional::error
+ real(kind=wp),intent(in)::val
 
- integer(kind=int4)::i
- integer(kind=int4)::ierror    !added: error=0;Not existing: error=-1;matrix not inited: error=-10
+ integer(kind=int32)::i
+ integer(kind=int32)::ierror    !added: error=0;Not existing: error=-1;matrix not inited: error=-10
  
  if(present(error))error=0
 
@@ -925,12 +930,12 @@ end subroutine
 !**GET ELEMENTS
 function get_crs(sparse,row,col) result(val)
  class(crssparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=real8)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp)::val
  
- integer(kind=int4)::i,trow,tcol
+ integer(kind=int32)::i,trow,tcol
 
- val=0_real8
+ val=0.0_wp
  
  trow=row
  tcol=col
@@ -952,8 +957,8 @@ end function
 !**EXTERNAL
 subroutine external_crs(sparse,ia,ja,a)
  class(crssparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::ia(:),ja(:)
- real(kind=real8),intent(in)::a(:)
+ integer(kind=int32),intent(in)::ia(:),ja(:)
+ real(kind=wp),intent(in)::a(:)
 
  if(size(ia).ne.size(sparse%ia))then
   write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
@@ -977,11 +982,11 @@ end subroutine
 !**LOAD
 function load_crs(namefile,unlog)  result(sparse)
  type(crssparse)::sparse
- integer(kind=int4),intent(in),optional::unlog
+ integer(kind=int32),intent(in),optional::unlog
  character(len=*),intent(in)::namefile
 
- integer(kind=int4)::un,dim1,dim2
- integer(kind=int8)::nonzero
+ integer(kind=int32)::un,dim1,dim2
+ integer(kind=int64)::nonzero
  logical::lupperstorage
 
  open(newunit=un,file=namefile,action='read',status='old',access='stream',buffered='yes')
@@ -990,20 +995,20 @@ function load_crs(namefile,unlog)  result(sparse)
   write(*,'(a)')' ERROR: the proposed file is not a CRS file'
   stop
  endif
- read(un)dim1            !int4
- read(un)dim2            !int4
- read(un)nonzero         !int8
+ read(un)dim1            !int32
+ read(un)dim2            !int32
+ read(un)nonzero         !int64
  read(un)lupperstorage   !logical
 
  if(present(unlog))then
-  sparse=crssparse(dim1,int(nonzero,int4),dim2,lupperstorage,unlog)
+  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage,unlog)
  else
-  sparse=crssparse(dim1,int(nonzero,int4),dim2,lupperstorage)
+  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage)
  endif
 
- read(un)sparse%ia              !int4
- read(un)sparse%ja              !int4
- read(un)sparse%a               !real8
+ read(un)sparse%ia              !int32
+ read(un)sparse%ja              !int32
+ read(un)sparse%a               !wp
 
  close(un)
 
@@ -1013,9 +1018,9 @@ end function
 subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
  !Computes y=val*y+alpha*sparse(tranposition)*x
  class(crssparse),intent(in)::sparse
- real(kind=real8),intent(in)::val,alpha
- real(kind=real8),intent(in)::x(:)
- real(kind=real8),intent(out)::y(:)
+ real(kind=wp),intent(in)::val,alpha
+ real(kind=wp),intent(in)::x(:)
+ real(kind=wp),intent(out)::y(:)
  character(len=1),intent(in)::trans
 
  character(len=1)::matdescra(6)
@@ -1036,20 +1041,20 @@ end subroutine
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_crs(sparse) result(nel)
  class(crssparse),intent(in)::sparse
- integer(kind=int8)::nel
+ integer(kind=int64)::nel
 
- nel=int(sparse%ia(sparse%dim1+1),int8)-1_int8
+ nel=int(sparse%ia(sparse%dim1+1),int64)-1_int64
 
 end function
 
 !**PRINT
 subroutine print_crs(sparse,lint,output)
  class(crssparse),intent(in)::sparse
- integer(kind=int4),intent(in),optional::output
+ integer(kind=int32),intent(in),optional::output
  logical,intent(in),optional::lint
 
- integer(kind=int4)::i
- integer(kind=int4)::un,j
+ integer(kind=int32)::i
+ integer(kind=int32)::un,j
  character(len=30)::frm='(2(i0,1x),g0)'
  logical::linternal
 
@@ -1072,11 +1077,11 @@ end subroutine
 
 subroutine printsquare_crs(sparse,output)
  class(crssparse),intent(inout)::sparse
- integer(kind=int4),intent(in),optional::output
+ integer(kind=int32),intent(in),optional::output
 
- integer(kind=int4)::i,j,un
- real(kind=real8)::val
- real(kind=real8),allocatable::tmp(:)
+ integer(kind=int32)::i,j,un
+ real(kind=wp)::val
+ real(kind=wp),allocatable::tmp(:)
 
  un=sparse%unlog
  if(present(output))un=output
@@ -1084,7 +1089,7 @@ subroutine printsquare_crs(sparse,output)
  allocate(tmp(sparse%dim2))
 
  do i=1,sparse%dim1
-  tmp=0.d0
+  tmp=0.0_wp
   !could be implemented in a more efficient way
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
@@ -1101,17 +1106,17 @@ subroutine save_crs(sparse,namefile)
  class(crssparse),intent(in)::sparse
  character(len=*),intent(in)::namefile
 
- integer(kind=int4)::un
+ integer(kind=int32)::un
 
  open(newunit=un,file=namefile,action='write',status='replace',access='stream',buffered='yes')
- write(un)typecrs                !int4
- write(un)sparse%dim1            !int4
- write(un)sparse%dim2            !int4
- write(un)sparse%nonzero()       !int8
+ write(un)typecrs                !int32
+ write(un)sparse%dim1            !int32
+ write(un)sparse%dim2            !int32
+ write(un)sparse%nonzero()       !int64
  write(un)sparse%lupperstorage   !logical
- write(un)sparse%ia              !int4
- write(un)sparse%ja              !int4
- write(un)sparse%a               !real8
+ write(un)sparse%ia              !int32
+ write(un)sparse%ja              !int32
+ write(un)sparse%a               !wp
  close(un)
 
 end subroutine
@@ -1120,12 +1125,12 @@ end subroutine
 subroutine set_crs(sparse,row,col,val,error)
  !add a value only to an existing one
  class(crssparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- integer(kind=int4),intent(out),optional::error
- real(kind=int8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ integer(kind=int32),intent(out),optional::error
+ real(kind=wp),intent(in)::val
 
- integer(kind=int4)::i
- integer(kind=int4)::ierror    !added: error=0;Not existing: error=-1;matrix not inited: error=-10
+ integer(kind=int32)::i
+ integer(kind=int32)::ierror    !added: error=0;Not existing: error=-1;matrix not inited: error=-10
  
  if(present(error))error=0
 
@@ -1155,21 +1160,21 @@ end subroutine
 subroutine solve_crs(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
- real(kind=real8),intent(out)::x(:)
- real(kind=real8),intent(inout)::y(:)
+ real(kind=wp),intent(out)::x(:)
+ real(kind=wp),intent(inout)::y(:)
 
  !Pardiso variables
- integer(kind=int4)::mtype=-2
- !integer(kind=int4)::mtype=11
- integer(kind=int4)::solver=0,error,phase,maxfct=1,mnum=1,nrhs=1
- integer(kind=int4)::idum(1)
- integer(kind=int4),save::iparm(64),msglvl=1
- real(kind=real8)::ddum(1)
+ integer(kind=int32)::mtype=-2
+ !integer(kind=int32)::mtype=11
+ integer(kind=int32)::solver=0,error,phase,maxfct=1,mnum=1,nrhs=1
+ integer(kind=int32)::idum(1)
+ integer(kind=int32),save::iparm(64),msglvl=1
+ real(kind=wp)::ddum(1)
  type(MKL_PARDISO_HANDLE),allocatable,save::pt(:)
  logical,save::lpardisofirst=.true.
 
- integer(kind=int4)::i
- !$ real(kind=real8)::t1
+ integer(kind=int32)::i
+ !$ real(kind=real64)::t1
 
  if(.not.sparse%lsquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
@@ -1195,6 +1200,11 @@ subroutine solve_crs(sparse,x,y)
   phase=12
   iparm(2)=3
   iparm(27)=1
+#if (_DP==0)
+  iparm(28)=1
+#else
+  iparm(28)=0
+#endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
   call pardiso(pt,maxfct,mnum,mtype,phase,&
                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
@@ -1220,7 +1230,7 @@ subroutine solve_crs(sparse,x,y)
 contains
 
  subroutine checkparido(phase,error)
-  integer(kind=int4),intent(in)::phase,error
+  integer(kind=int32),intent(in)::phase,error
   if(error.ne.0)then
    write(sparse%unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
    stop
@@ -1232,8 +1242,8 @@ end subroutine
 subroutine solve_crs(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
- real(kind=real8),intent(out)::x(:)
- real(kind=real8),intent(in)::y(:)
+ real(kind=wp),intent(out)::x(:)
+ real(kind=wp),intent(in)::y(:)
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
@@ -1246,13 +1256,13 @@ subroutine sort_crs(sparse)
  ! sort vectors ja and a by increasing order
  class(crssparse),intent(inout)::sparse
 
- integer(kind=int4)::dir,endd,i,j,k,n,start,stkpnt
- integer(kind=int4)::d1,d2,d3,dmnmx,tmp
- integer(kind=int4)::stack(2,32)
- integer(kind=int4),allocatable::d(:)
- integer(kind=int4),parameter::select=20
- real(kind=real8)::umnmx,tmpu
- real(kind=real8),allocatable::u(:)
+ integer(kind=int32)::dir,endd,i,j,k,n,start,stkpnt
+ integer(kind=int32)::d1,d2,d3,dmnmx,tmp
+ integer(kind=int32)::stack(2,32)
+ integer(kind=int32),allocatable::d(:)
+ integer(kind=int32),parameter::select=20
+ real(kind=wp)::umnmx,tmpu
+ real(kind=wp),allocatable::u(:)
 
  do k=1,sparse%dim1
   n=sparse%ia(k+1)-sparse%ia(k)
@@ -1359,11 +1369,11 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  !Not programmed efficiently, but it should do the job
  class(crssparse),intent(in)::sparse
  type(crssparse)::subsparse
- integer(kind=int4),intent(in)::startdim1,enddim1,startdim2,enddim2
- integer(kind=int4),intent(in),optional::unlog
+ integer(kind=int32),intent(in)::startdim1,enddim1,startdim2,enddim2
+ integer(kind=int32),intent(in),optional::unlog
  logical,intent(in),optional::lupper
  
- integer(kind=int4)::i,j,k,nel,un
+ integer(kind=int32)::i,j,k,nel,un
  logical::lincludediag,lupperstorage
  type(coosparse)::subcoo
 
@@ -1467,9 +1477,9 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  elseif(sparse%lupperstorage.and..not.lupperstorage)then
   ! upper -> full
   if(present(unlog))then
-   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage,unlog)
+   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage,unlog)
   else
-   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int8),lupperstorage)
+   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage)
   endif
   do i=1,sparse%dim1
    do j=sparse%ia(i),sparse%ia(i+1)-1
@@ -1530,8 +1540,8 @@ end subroutine
 !**CONSTRUCTOR
 function constructor_ll(m,n,lupper,unlog) result(sparse)
  type(llsparse)::sparse
- integer(kind=int4),intent(in)::m
- integer(kind=int4),intent(in),optional::n,unlog
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
 
  sparse%namemat='LINKED LIST'
@@ -1565,7 +1575,7 @@ end subroutine
 
 subroutine destroy_ll(sparse)
  class(llsparse),intent(inout)::sparse
- integer(kind=int4)::i
+ integer(kind=int32)::i
 
  call sparse%destroy_gen_gen()
 
@@ -1593,8 +1603,8 @@ end subroutine
 !**ADD ELEMENTS
 subroutine addtohead_ptrnode(pnode,col,val)
  type(ptrnode),intent(inout),pointer::pnode
- integer(kind=int4),intent(in)::col
- real(kind=real8),intent(in)::val
+ integer(kind=int32),intent(in)::col
+ real(kind=wp),intent(in)::val
 
  type(ptrnode)::cursor
 
@@ -1608,8 +1618,8 @@ end subroutine
 
 subroutine addtohead_ll(sparse,row,col,val)
  class(llsparse),intent(inout),target::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=real8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp),intent(in)::val
 
  type(ptrnode)::cursor
 
@@ -1627,8 +1637,8 @@ end subroutine
 
 subroutine addinorder_ll(sparse,row,col,val)
  class(llsparse),intent(inout),target::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=real8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp),intent(in)::val
 
  type(ptrnode),pointer::cursor
 
@@ -1656,8 +1666,8 @@ end subroutine
 
 subroutine addtotail_ll(sparse,row,col,val)
  class(llsparse),intent(inout),target::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=real8),intent(in)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp),intent(in)::val
 
  type(ptrnode),pointer::cursor
 
@@ -1678,15 +1688,15 @@ end subroutine
 !**GET ELEMENTS
 function get_ll(sparse,row,col) result(val)
  class(llsparse),intent(inout)::sparse
- integer(kind=int4),intent(in)::row,col
- real(kind=real8)::val
+ integer(kind=int32),intent(in)::row,col
+ real(kind=wp)::val
 
- integer(kind=int4)::trow,tcol
- integer(kind=int4)::i,un
+ integer(kind=int32)::trow,tcol
+ integer(kind=int32)::i,un
  type(ptrnode),pointer::cursor
  type(ptrnode),target::replacecursor
 
- val=0_real8
+ val=0.0_wp
  
  trow=row
  tcol=col
@@ -1719,9 +1729,9 @@ end function
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_ptrnode(pnode) result(nel)
  class(ptrnode),intent(in),target::pnode
- integer(kind=int8)::nel
+ integer(kind=int64)::nel
 
- integer(kind=int4)::i
+ integer(kind=int32)::i
  type(ptrnode),pointer::cursor
 
  nel=0
@@ -1735,9 +1745,9 @@ end function
 
 function totalnumberofelements_ll(sparse) result(nel)
  class(llsparse),intent(in)::sparse
- integer(kind=int8)::nel
+ integer(kind=int64)::nel
 
- integer(kind=int4)::i
+ integer(kind=int32)::i
 
  nel=0
  do i=1,sparse%dim1
@@ -1759,10 +1769,10 @@ end function
 !**PRINT
 subroutine print_ll(sparse,lint,output)
  class(llsparse),intent(in)::sparse
- integer(kind=int4),intent(in),optional::output
+ integer(kind=int32),intent(in),optional::output
  logical,intent(in),optional::lint
 
- integer(kind=int4)::i,un
+ integer(kind=int32)::i,un
  character(len=20)::frm='(2(i0,1x),g0)'
  logical::linternal
  type(ptrnode),pointer::cursor
@@ -1791,11 +1801,11 @@ end subroutine
 
 subroutine printsquare_ll(sparse,output)
  class(llsparse),intent(inout)::sparse
- integer(kind=int4),intent(in),optional::output
+ integer(kind=int32),intent(in),optional::output
 
- integer(kind=int4)::i,j,un
- real(kind=real8)::val
- real(kind=real8),allocatable::tmp(:)
+ integer(kind=int32)::i,j,un
+ real(kind=wp)::val
+ real(kind=wp),allocatable::tmp(:)
 
  un=sparse%unlog
  if(present(output))un=output
@@ -1820,7 +1830,7 @@ end subroutine
 !CHECKS
 function validvalue_gen(sparse,row,col) result(lvalid)
  class(gen_sparse),intent(in)::sparse
- integer(kind=int4),intent(in)::row,col
+ integer(kind=int32),intent(in)::row,col
  logical::lvalid
 
  lvalid=.true.
@@ -1830,7 +1840,7 @@ end function
 
 function validnonzero_gen(sparse,val) result(lvalid)
  class(gen_sparse),intent(in)::sparse
- real(kind=real8),intent(in)::val
+ real(kind=wp),intent(in)::val
  logical::lvalid
 
  lvalid=.true.
@@ -1839,7 +1849,7 @@ function validnonzero_gen(sparse,val) result(lvalid)
 end function
 
 function uppervalue_gen(row,col) result(lvalid)
- integer(kind=int4),intent(in)::row,col
+ integer(kind=int32),intent(in)::row,col
  logical::lvalid
 
  lvalid=.true.
@@ -1852,7 +1862,7 @@ subroutine convertfromlltocoo(othersparse,sparse)
  type(coosparse),intent(out)::othersparse
  type(llsparse),intent(in),target::sparse
  
- integer(kind=int4)::i
+ integer(kind=int32)::i
  type(ptrnode),pointer::cursor
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
@@ -1873,11 +1883,11 @@ subroutine convertfromlltocrs(othersparse,sparse)
  type(crssparse),intent(out)::othersparse
  type(llsparse),intent(in),target::sparse
  
- integer(kind=int4)::i,ndiag,nel,col
- integer(kind=int4),allocatable::rowpos(:)
+ integer(kind=int32)::i,ndiag,nel,col
+ integer(kind=int32),allocatable::rowpos(:)
  type(ptrnode),pointer::cursor
 
- if(sparse%nonzero().ge.2_int8**31)then
+ if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due a too large number of non-zero elements'
   stop
  endif
@@ -1947,11 +1957,11 @@ subroutine convertfromcootocrs(othersparse,sparse)
  type(crssparse),intent(out)::othersparse
  type(coosparse),intent(in)::sparse
  
- integer(kind=int4)::i,ndiag,nel,row,col
- integer(kind=int4),allocatable::rowpos(:)
- integer(kind=int8)::i8
+ integer(kind=int32)::i,ndiag,nel,row,col
+ integer(kind=int32),allocatable::rowpos(:)
+ integer(kind=int64)::i8
 
- if(sparse%nonzero().ge.2_int8**31)then
+ if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due a too large number of non-zero elements'
   stop
  endif
@@ -1965,7 +1975,7 @@ subroutine convertfromcootocrs(othersparse,sparse)
  allocate(rowpos(sparse%dim1))
  rowpos=0
 
- do i8=1_int8,sparse%nel
+ do i8=1_int64,sparse%nel
   row=sparse%ij(1,i8)
   if(row.ne.0.and.row.ne.sparse%ij(2,i8))then
    rowpos(row)=rowpos(row)+1
@@ -1996,7 +2006,7 @@ subroutine convertfromcootocrs(othersparse,sparse)
  !add the non-zero elements to crs (othersparse)
  !allocate(rowpos(othersparse%dim1))
  rowpos=othersparse%ia(1:othersparse%dim1)
- do i8=1_int8,sparse%nel
+ do i8=1_int64,sparse%nel
   row=sparse%ij(1,i8)
   if(row.gt.0)then
    col=sparse%ij(2,i8)
@@ -2020,12 +2030,12 @@ subroutine convertfromcootoll(othersparse,sparse)
  type(llsparse),intent(out)::othersparse
  type(coosparse),intent(in)::sparse
  
- integer(kind=int4)::row
- integer(kind=int8)::i8
+ integer(kind=int32)::row
+ integer(kind=int64)::i8
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
 
- do i8=1_int8,sparse%nel
+ do i8=1_int64,sparse%nel
   row=sparse%ij(1,i8)
   if(row.ne.0)then
    call othersparse%add(row,sparse%ij(2,i8),sparse%a(i8))
@@ -2040,7 +2050,7 @@ subroutine convertfromcrstocoo(othersparse,sparse)
  type(coosparse),intent(out)::othersparse
  type(crssparse),intent(in)::sparse
  
- integer(kind=int4)::i,j
+ integer(kind=int32)::i,j
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
 
@@ -2058,7 +2068,7 @@ subroutine convertfromcrstoll(othersparse,sparse)
  type(llsparse),intent(out)::othersparse
  type(crssparse),intent(in)::sparse
  
- integer(kind=int4)::i,j
+ integer(kind=int32)::i,j
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
 
