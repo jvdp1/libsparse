@@ -28,10 +28,9 @@ ifeq ($(METISENABLE),0)
  METIS=0
  LIBMETISROOT=
  LIBMETIS=
+ LMETIS=
 else
  METIS=1
- LIBMETISROOT=../../../
- LIBMETIS=metis-5.1.0/build/Linux-x86_64/libmetis/
  F90FLAGS+=-I$(LIBMETISROOT)$(LIBMETIS)
  OBJ+=modmetis.o
 endif
