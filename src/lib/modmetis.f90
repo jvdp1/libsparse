@@ -10,7 +10,8 @@ module modmetis
 
  !options, possible values
  integer(kind=c_int),parameter,public::METIS_OPTION_CTYPE=2      ,METIS_CTYPE_RM=0,METIS_CTYPE_SHEM=1
- integer(kind=c_int),parameter,public::METIS_OPTION_RTYPE=4      ,METIS_RTYPE_FM=0,METIS_RTYPE_GREEDY=1,METIS_RTYPE_SEP2SIDED=2,METIS_RTYPE_SEP1SIDED=3
+ integer(kind=c_int),parameter,public::METIS_OPTION_RTYPE=4      ,METIS_RTYPE_FM=0,METIS_RTYPE_GREEDY=1&
+                                                                 ,METIS_RTYPE_SEP2SIDED=2,METIS_RTYPE_SEP1SIDED=3
  integer(kind=c_int),parameter,public::METIS_OPTION_NO2HOP=9     !0 or 1
  integer(kind=c_int),parameter,public::METIS_OPTION_NSEPS=15     !default: 1
  integer(kind=c_int),parameter,public::METIS_OPTION_NITER=6      !default: 10
@@ -20,7 +21,8 @@ module modmetis
  integer(kind=c_int),parameter,public::METIS_OPTION_SEED=8      
  integer(kind=c_int),parameter,public::METIS_OPTION_PFACTOR=14   
  integer(kind=c_int),parameter,public::METIS_OPTION_NUMBERING=17 !0 or 1
- integer(kind=c_int),parameter,public::METIS_OPTION_DBGLVL=5     ,METIS_DBG_INFO=1,METIS_DBG_TIME=2,METIS_DBG_COARSEN=4,METIS_DBG_REFINE=8&
+ integer(kind=c_int),parameter,public::METIS_OPTION_DBGLVL=5     ,METIS_DBG_INFO=1,METIS_DBG_TIME=2&
+                                                                 ,METIS_DBG_COARSEN=4,METIS_DBG_REFINE=8&
                                                                  ,METIS_DBG_IPART=16,METIS_DBG_MOVEINFO=32,METIS_DBG_SEPINFO=64&
                                                                  ,METIS_DBG_CONNINFO=128,METIS_DBG_CONTIGINFO=256
 
