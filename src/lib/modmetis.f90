@@ -4,7 +4,7 @@ module modmetis
  use iso_c_binding,only:c_int,c_ptr
  implicit none
  private
- public::METIS_NodeND,METIS_SetOptions,METIS_CheckError
+ public::metis_nodend,metis_setoptions,metis_checkerror
 
  integer(kind=c_int),parameter::METIS_NOPTIONS=40
 
@@ -44,7 +44,7 @@ module modmetis
   ![5] 0(no compress+no order) 1(compress) 2(order) 3(compress + order) -> COMPRESS +  CCORDER
   ![6] remove vertices                 -> PFACTOR
   ![7] separators                      -> NSEPS
-  function METIS_NodeND(nvtxs,xadj,adjncy,vwgt,options,perm,iperm) result(err) bind(C,name='METIS_NodeND')
+  function metis_nodend(nvtxs,xadj,adjncy,vwgt,options,perm,iperm) result(err) bind(C,name='METIS_NodeND')
    import c_int,c_ptr,METIS_NOPTIONS
    integer(kind=c_int),intent(in)::nvtxs
    integer(kind=c_int),intent(in)::xadj(*),adjncy(*)
@@ -57,7 +57,7 @@ module modmetis
 
 contains
 
-function METIS_SetOptions(options,dbglvl) result(err)
+function metis_setoptions(options,dbglvl) result(err)
  integer(kind=c_int),allocatable,intent(out)::options(:)
  integer(kind=c_int),intent(in),optional::dbglvl
  integer(kind=c_int)::err
@@ -74,7 +74,7 @@ function METIS_SetOptions(options,dbglvl) result(err)
 
 end function
 
-subroutine METIS_CheckError(err,unlog)
+subroutine metis_checkerror(err,unlog)
  integer(kind=c_int),intent(in)::err
  integer(kind=int32),intent(in),optional::unlog
 
@@ -85,7 +85,7 @@ subroutine METIS_CheckError(err,unlog)
  
  select case(err)
   case(METIS_OK)
-   write(un,'(/a/)')' METIS_OK'
+   !write(un,'(/a/)')' METIS_OK'
   case(METIS_ERROR_INPUT)
    write(un,'(/a/)')' METIS_ERROR_INPUT'
    stop
