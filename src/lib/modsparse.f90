@@ -38,6 +38,7 @@ module modsparse
   private
   integer(kind=int32)::unlog=6
   integer(kind=int32)::dim1,dim2
+  integer(kind=int32),allocatable::perm(:)  !Ap(i,:)=A(perm(i),:)
   character(len=15)::namemat='UNKNOWN'
   logical::lupperstorage
   contains
@@ -59,6 +60,8 @@ module modsparse
   procedure,public::printstats=>print_dim_gen
   !> @brief Sets the output unit to value; e.g., call mat%setouputunit(unlog)
   procedure,public::setoutputunit
+  !> @brief Sets the permutation vector; e.g., call mat%setpermutation(array)
+  procedure,public::setpermutation
   procedure::destroy_gen_gen
  end type
  
@@ -286,6 +289,7 @@ subroutine destroy_gen_gen(sparse)
  sparse%dim2=-1
  sparse%unlog=6
  sparse%lupperstorage=.false.
+ if(allocated(sparse%perm))deallocate(sparse%perm)
 
 end subroutine
 
@@ -318,12 +322,14 @@ subroutine print_dim_gen(sparse)
  write(sparse%unlog,'( "  Dimension of the matrix     : ",i0," x ",i0)')sparse%dim1,sparse%dim2
  write(sparse%unlog,'( "  Upper storage               : ",l1)')sparse%lupperstorage
  write(sparse%unlog,'( "  Number of non-zero elements : ",i0)')sparse%nonzero()
+ write(sparse%unlog,'( "  Permutation array provided  : ",l1)')allocated(sparse%perm)
  
  select type(sparse)
   type is(coosparse)
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
   class default
  end select
+ write(sparse%unlog,'(a)')' '
 
 end subroutine
 
@@ -363,6 +369,22 @@ subroutine setoutputunit(sparse,unlog)
  integer(kind=int32)::unlog
 
  sparse%unlog=unlog
+
+end subroutine
+
+!** SET PERMUTATION VECTOR
+subroutine setpermutation(sparse,array)
+ class(gen_sparse),intent(inout)::sparse
+ integer(kind=int32)::array(:)
+
+ if(size(array).ne.sparse%getdim(1))then
+  write(sparse%unlog,'(a)')' ERROR: The permutation array has a wrong size.'
+  stop
+ endif
+
+ !Probably pointer would be better???
+ if(.not.allocated(sparse%perm))allocate(sparse%perm(sparse%getdim(1)))
+ sparse%perm=array
 
 end subroutine
 
@@ -1081,24 +1103,24 @@ end function
 
 !**GET ORDER
 #if (_METIS==1)
-function getordering_crs(sparse) result(iperm)
+function getordering_crs(sparse) result(perm)
  class(crssparse),intent(in)::sparse
- integer(kind=int32),allocatable::iperm(:)
+ integer(kind=int32),allocatable::perm(:)
 
  integer(kind=int32)::err
  integer(kind=int32),allocatable::options(:)
- integer(kind=int32),allocatable::perm(:)
+ integer(kind=int32),allocatable::iperm(:)
  type(metisgraph)::metis
 
  metis=sparse
 
- err=METIS_SetOptions(options,dbglvl=METIS_DBG_INFO)
- call METIS_CheckERROR(err,sparse%unlog)
+ err=metis_setoptions(options,dbglvl=METIS_DBG_INFO)
+ call metis_checkerror(err,sparse%unlog)
  
  allocate(perm(metis%nvertices),iperm(metis%nvertices))
 
- err=METIS_NodeND(metis%nvertices,metis%xadj,metis%adjncy,metis%vwgt,options,perm,iperm)
- call METIS_CheckERROR(err,sparse%unlog)
+ err=metis_nodend(metis%nvertices,metis%xadj,metis%adjncy,metis%vwgt,options,perm,iperm)
+ call metis_checkerror(err,sparse%unlog)
 
 end function
 #endif 
@@ -1215,7 +1237,7 @@ end subroutine
 #if (_PARDISO==1)
 subroutine solve_crs(sparse,x,y)
  !sparse*x=y
- class(crssparse),intent(in)::sparse
+ class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out)::x(:)
  real(kind=wp),intent(inout)::y(:)
 
@@ -1262,9 +1284,16 @@ subroutine solve_crs(sparse,x,y)
   iparm(28)=0
 #endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
-  call pardiso(pt,maxfct,mnum,mtype,phase,&
-               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-               idum,nrhs,iparm,msglvl,ddum,ddum,error)
+  if(allocated(sparse%perm))then
+   iparm(5)=1;iparm(31)=0;iparm(36)=0
+   call pardiso(pt,maxfct,mnum,mtype,phase,&
+                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+                sparse%perm,nrhs,iparm,msglvl,ddum,ddum,error)
+  else
+   call pardiso(pt,maxfct,mnum,mtype,phase,&
+                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+                idum,nrhs,iparm,msglvl,ddum,ddum,error)
+  endif
   call checkparido(phase,error) 
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',iparm(18)
