@@ -13,12 +13,15 @@ The Fortran 2003 library __libsparse__ is a library that provides objects to cre
  * Compressed Row Storage (CRS).   
 
 
-The library is written following an object-oriented approach. It has been tested only on small datasets.  
+The library is written following an object-oriented approach. It has been tested mainly on small datasets.  
 
 
 
 ## Compilation  
-For compilation of the Fortran 2003 library: `make`  
+The library relies on different libraries, such as BLAS/LAPACK libraries, PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5] (http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
+
+For compilation, go in the directory *libsparse/src/lib* and type *make* for the default options. By default, it will not be compiled against METIS 5. To compile with METIS 5, *make METISENABLE=1*  
+
 
 Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
 
@@ -55,7 +58,6 @@ This library was inspired by several sources:
 
 
  * and by many courses related to object-oriented programming and Fortran 2003/2008.  
-
 
 
 

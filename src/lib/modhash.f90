@@ -1,3 +1,5 @@
+!> Module containing functions for hashing
+
 module modhash
  use iso_fortran_env,only:int32,int64,real64
  implicit none
@@ -9,6 +11,7 @@ contains
 !Simplifications made by Jeremie Vandenplas - 2018
 
 !PUBLIC
+!> @brief Function hashing a row and a column to return a hash address
 function hashf(row,col,mat,dim2,filled,getval) result(address)
  !address: address (column) of mat
  !mat of size dim1 (=2) x dim2
@@ -61,6 +64,7 @@ function hashf(row,col,mat,dim2,filled,getval) result(address)
 
 end function
   
+!> @brief Function returning the next power of 2 of a number
 function roundinguppower2(x) result(next)
  integer(kind=int64),intent(in)::x
  integer(kind=int64)::next

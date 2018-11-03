@@ -1,5 +1,7 @@
 !> Module containing interfaces for METIS 5
 
+!> @todo Currently supports only ordering. Should be extended to the other options.
+
 module modmetis
  !based on https://glaros.dtc.umn.edu/gkhome/node/877
  use iso_fortran_env,only:int32
@@ -39,7 +41,7 @@ module modmetis
  integer(kind=c_int),parameter::METIS_OK=1,METIS_ERROR_INPUT=-2,METIS_ERROR_MEMORY=-3,METIS_ERROR=-4
 
  interface
-  function METIS_SetDefaultOptions(options) result(err) bind(C,name='METIS_SetDefaultOptions')
+  function metis_setdefaultoptions(options) result(err) bind(C,name='METIS_SetDefaultOptions')
    import c_int,METIS_NOPTIONS
    integer(kind=c_int),intent(inout)::options(0:METIS_NOPTIONS)
    integer(kind=c_int)::err
@@ -80,7 +82,7 @@ function metis_setoptions(options&
  if(allocated(options))deallocate(options)
  allocate(options(0:METIS_NOPTIONS))
 
- err=METIS_SetDefaultOptions(options)
+ err=metis_setdefaultoptions(options)
  !DEFAULT
  options(METIS_OPTION_NUMBERING)=1
 
