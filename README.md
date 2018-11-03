@@ -20,12 +20,8 @@ The library is written following an object-oriented approach. It has been tested
 ## Compilation  
 The library relies on different libraries, such as BLAS/LAPACK libraries, PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5] (http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
 
-For compilation, go in the directory *libsparse/src/lib* and type *make* for the default options. By default, it will not be compiled against METIS 5. To compile with METIS 5, *make METISENABLE=1*  
 
-
-Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
-
-Compilation for single precision is possible by adding the argument `DPENABLE=0`.  
+See the [documentation] (documentation.md) for more details regarding the compilation.  
 
 
 ## Documentation  
