@@ -1,3 +1,5 @@
+!> Module containing interfaces for METIS 5
+
 module modmetis
  !based on https://glaros.dtc.umn.edu/gkhome/node/877
  use iso_fortran_env,only:int32
@@ -9,22 +11,29 @@ module modmetis
  integer(kind=c_int),parameter::METIS_NOPTIONS=40
 
  !options, possible values
+ integer(kind=c_int),parameter,public::METIS_OPTION_PTYPE=0      ,METIS_PTYPE_RB=0,METIS_PTYPE_KWAY=1
+ integer(kind=c_int),parameter,public::METIS_OPTION_OBJTYPE=1    ,METIS_OBJTYPE_CUT=1,METIS_OBJTYPE_VOL=1 
  integer(kind=c_int),parameter,public::METIS_OPTION_CTYPE=2      ,METIS_CTYPE_RM=0,METIS_CTYPE_SHEM=1
+ integer(kind=c_int),parameter,public::METIS_OPTION_IPTYPE=3     ,METIS_IPTYPE_GROW=0,METIS_IPTYPE_RANDOM=1&
+                                                                 ,METIS_IPTYPE_EDGE=2,METIS_IPTYPE_NODE=3
  integer(kind=c_int),parameter,public::METIS_OPTION_RTYPE=4      ,METIS_RTYPE_FM=0,METIS_RTYPE_GREEDY=1&
                                                                  ,METIS_RTYPE_SEP2SIDED=2,METIS_RTYPE_SEP1SIDED=3
- integer(kind=c_int),parameter,public::METIS_OPTION_NO2HOP=9     !0 or 1
- integer(kind=c_int),parameter,public::METIS_OPTION_NSEPS=15     !default: 1
- integer(kind=c_int),parameter,public::METIS_OPTION_NITER=6      !default: 10
- integer(kind=c_int),parameter,public::METIS_OPTION_UFACTOR=16   !default: 1 or 30
- integer(kind=c_int),parameter,public::METIS_OPTION_COMPRESS=12  !0 or 1
- integer(kind=c_int),parameter,public::METIS_OPTION_CCORDER=13   !0 or 1
- integer(kind=c_int),parameter,public::METIS_OPTION_SEED=8      
- integer(kind=c_int),parameter,public::METIS_OPTION_PFACTOR=14   
- integer(kind=c_int),parameter,public::METIS_OPTION_NUMBERING=17 !0 or 1
  integer(kind=c_int),parameter,public::METIS_OPTION_DBGLVL=5     ,METIS_DBG_INFO=1,METIS_DBG_TIME=2&
                                                                  ,METIS_DBG_COARSEN=4,METIS_DBG_REFINE=8&
                                                                  ,METIS_DBG_IPART=16,METIS_DBG_MOVEINFO=32,METIS_DBG_SEPINFO=64&
                                                                  ,METIS_DBG_CONNINFO=128,METIS_DBG_CONTIGINFO=256
+ integer(kind=c_int),parameter,public::METIS_OPTION_NITER=6      !default: 10
+ integer(kind=c_int),parameter,public::METIS_OPTION_NCUTS=7      !default: 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_SEED=8      
+ integer(kind=c_int),parameter,public::METIS_OPTION_NO2HOP=9     !0 or 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_MINCONN=10   !0 or 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_CONTIG=11    !0 or 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_COMPRESS=12  !0 or 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_CCORDER=13   !0 or 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_PFACTOR=14   
+ integer(kind=c_int),parameter,public::METIS_OPTION_NSEPS=15     !default: 1
+ integer(kind=c_int),parameter,public::METIS_OPTION_UFACTOR=16   !default: 1 or 30
+ integer(kind=c_int),parameter,public::METIS_OPTION_NUMBERING=17 !0 or 1
 
  !error values
  integer(kind=c_int),parameter::METIS_OK=1,METIS_ERROR_INPUT=-2,METIS_ERROR_MEMORY=-3,METIS_ERROR=-4
@@ -57,9 +66,15 @@ module modmetis
 
 contains
 
-function metis_setoptions(options,dbglvl) result(err)
+function metis_setoptions(options&
+                           ,ptype,objtype,ctype,iptype,rtype,ncuts&
+                           ,nseps,niter,seed,minconn,no2hop,contig&
+                           ,compress,ccorder,pfactor,ufactor,dbglvl&
+                           ) result(err)
  integer(kind=c_int),allocatable,intent(out)::options(:)
- integer(kind=c_int),intent(in),optional::dbglvl
+ integer(kind=c_int),intent(in),optional::ptype,objtype,ctype,iptype,rtype,ncuts,&
+                                           nseps,niter,seed,minconn,no2hop,&
+                                           contig,compress,ccorder,pfactor,ufactor,dbglvl
  integer(kind=c_int)::err
 
  if(allocated(options))deallocate(options)
@@ -70,6 +85,22 @@ function metis_setoptions(options,dbglvl) result(err)
  options(METIS_OPTION_NUMBERING)=1
 
  !OPTIONAL
+ if(present(ptype))options(METIS_OPTION_PTYPE)=ptype
+ if(present(objtype))options(METIS_OPTION_OBJTYPE)=objtype
+ if(present(ctype))options(METIS_OPTION_CTYPE)=ctype
+ if(present(iptype))options(METIS_OPTION_IPTYPE)=iptype
+ if(present(rtype))options(METIS_OPTION_RTYPE)=rtype
+ if(present(ncuts))options(METIS_OPTION_NCUTS)=ncuts
+ if(present(nseps))options(METIS_OPTION_NSEPS)=nseps
+ if(present(niter))options(METIS_OPTION_NITER)=niter
+ if(present(seed))options(METIS_OPTION_SEED)=seed
+ if(present(minconn))options(METIS_OPTION_MINCONN)=minconn
+ if(present(no2hop))options(METIS_OPTION_NO2HOP)=no2hop
+ if(present(contig))options(METIS_OPTION_CONTIG)=contig
+ if(present(compress))options(METIS_OPTION_COMPRESS)=compress
+ if(present(ccorder))options(METIS_OPTION_CCORDER)=ccorder
+ if(present(pfactor))options(METIS_OPTION_PFACTOR)=pfactor
+ if(present(ufactor))options(METIS_OPTION_UFACTOR)=ufactor
  if(present(dbglvl))options(METIS_OPTION_DBGLVL)=dbglvl
 
 end function

@@ -103,6 +103,14 @@ val=mat%getdim(x)
 ````  
 where *x* is 1 (=*number of rows*) or 2 (=*number of columns*).  
 
+To __get a permutation vector__ from the METIS 5 fill-reducing ordering approach, the method *getordering* can be used:  
+
+````  
+permarray=mat%getordering()  
+````  
+
+Options for METIS 5 can be changed through optional arguments of this method.  
+
 
 To __create__ a CRS matrix from __existing arrays__, the method *external* must be used:  
 
@@ -154,13 +162,25 @@ To __set__ an entry to a specified value (even __0__), the method *set* can be u
 call mat%set(row,col,val)  
 ````  
 
+To __set a permutation vector__,the method *setpermutation* can be used:  
+
+````  
+ call mat%setpermutation(array)  
+````  
+
+It is possible to get and set a permutation vector in one go as follows:  
+
+````  
+ call mat%setpermutation(mat%getordering())  
+````  
+
 
 To __solve__ a linear system of equations of the form *mat \* x = y*, the method *solve* must be used:  
 
 ````  
 call mat%solve(x,y)  
 ````  
-The method *solve* is based on Intel MKL Pardiso.  
+The method *solve* is based on Intel MKL Pardiso. If a permutation vector was provided with the method `setpermutation`, this permutation vector will be used by Intel MKL Pardiso (instead of determining it internally).  
 
 
 To __sort__ a column (in an ascending order) within a row of a CRS sparse matrix, the method *sort* must be used:  

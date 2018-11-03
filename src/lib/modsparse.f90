@@ -5,6 +5,7 @@
 
 !> @todo Use of submodules (one submodule for each type of matrix)
 !> @todo Implementation of parameterized derived-type declarations to allow single- and double-precision sparse matrices
+!> @todo Implementation of ordering for ll and coo
 
 #if (_PARDISO==1)
 include 'mkl_pardiso.f90'
@@ -1103,18 +1104,56 @@ end function
 
 !**GET ORDER
 #if (_METIS==1)
-function getordering_crs(sparse) result(perm)
+function getordering_crs(sparse&
+                          ,ctype,iptype,rtype,compress,ccorder&
+                          ,pfactor,nseps,bglvl&
+                          ) result(perm)
  class(crssparse),intent(in)::sparse
+ integer(kind=int32),intent(in),optional::ctype,iptype,rtype,compress,ccorder,pfactor,nseps,bglvl
  integer(kind=int32),allocatable::perm(:)
 
  integer(kind=int32)::err
+ integer(kind=int32)::pctype,piptype,prtype,pcompress,pccorder,ppfactor,pnseps,pbglvl
  integer(kind=int32),allocatable::options(:)
  integer(kind=int32),allocatable::iperm(:)
  type(metisgraph)::metis
 
  metis=sparse
 
- err=metis_setoptions(options,dbglvl=METIS_DBG_INFO)
+ pctype=METIS_CTYPE_RM
+ if(present(ctype))pctype=ctype
+
+ piptype=METIS_IPTYPE_EDGE
+ if(present(iptype))piptype=iptype
+
+ prtype=METIS_RTYPE_SEP2SIDED
+ if(present(rtype))prtype=rtype
+
+ pcompress=0
+ if(present(compress))pcompress=compress
+
+ pccorder=0
+ if(present(ccorder))pccorder=ccorder
+
+ ppfactor=0
+ if(present(pfactor))ppfactor=pfactor
+
+ if(sparse%getdim(1).lt.50000)then
+  pnseps=1
+ elseif(sparse%getdim(1).lt.200000)then
+  pnseps=5
+ else
+  pnseps=10
+ endif
+ if(present(nseps))pnseps=nseps
+
+ pbglvl=METIS_DBG_INFO
+ if(present(bglvl))pbglvl=bglvl
+
+ err=metis_setoptions(options&
+                      ,ctype=pctype,iptype=piptype,rtype=prtype,compress=pcompress&
+                      ,ccorder=pccorder,pfactor=ppfactor,nseps=pnseps,dbglvl=pbglvl&
+                      )
  call metis_checkerror(err,sparse%unlog)
  
  allocate(perm(metis%nvertices),iperm(metis%nvertices))
@@ -1995,6 +2034,8 @@ subroutine convertfromlltocoo(othersparse,sparse)
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  do i=1,sparse%dim1
   cursor=>sparse%heads(i)
   do while(associated(cursor%p))
@@ -2039,6 +2080,8 @@ subroutine convertfromlltocrs(othersparse,sparse)
  nel=ndiag+sum(rowpos)
 
  othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
 
@@ -2114,6 +2157,8 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
  othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
 
  !determine the number of non-zero off-diagonal elements per row
@@ -2163,6 +2208,8 @@ subroutine convertfromcootoll(othersparse,sparse)
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  do i8=1_int64,sparse%nel
   row=sparse%ij(1,i8)
   if(row.ne.0)then
@@ -2182,6 +2229,8 @@ subroutine convertfromcrstocoo(othersparse,sparse)
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
    call othersparse%add(i,sparse%ja(j),sparse%a(j))
@@ -2199,6 +2248,8 @@ subroutine convertfromcrstoll(othersparse,sparse)
  integer(kind=int32)::i,j
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1

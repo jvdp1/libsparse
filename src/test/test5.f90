@@ -4,6 +4,7 @@ program test5
 #else
  use iso_fortran_env,only:int32,int64,wp=>real64
 #endif
+ use modmetis,only:METIS_CTYPE_SHEM
  use modsparse
  implicit none
  integer(kind=int32)::nrow
@@ -24,7 +25,7 @@ program test5
  open(newunit=iunit,file='crsinput.ascii',status='old',action='read')
  read(iunit,*) nrow
 
- coo=coosparse(nrow,nel=4_int64,lupper=.true.)
+ coo=coosparse(5,nel=4_int64,lupper=.true.)
 
  do
   read(iunit,*,iostat=istat) row,col,val
@@ -33,12 +34,17 @@ program test5
  end do
  close(iunit)
 
+ call coo%add(5,5,10._wp)
+ call coo%add(2,5,11._wp)
+ call coo%add(5,2,11._wp)
+
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
  !CSR UPPER
  crs=coo
  call crs%print(lint=.true.)
 
- perm=crs%getordering()
+ !perm=crs%getordering()
+ perm=crs%getordering(compress=1,ctype=METIS_CTYPE_SHEM)
  print*,'perm',perm
  
  call crs%printstats()
