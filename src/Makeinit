@@ -1,5 +1,6 @@
 #VARIABLES
 DEBUGENABLE=0
+METISENABLE=0
 
 #COMPILERS
 CC=icc
@@ -13,4 +14,11 @@ F90FLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/li
 F90FLAGS+=-lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core 
 F90FLAGS+=-lpthread -ldl
 
+LIBMETISROOT=../../../
+LIBMETIS=metis-5.1.0/build/Linux-x86_64/libmetis/
+LMETIS=libmetis.a
+
+LIBSPARSEROOT=../../../
+LIBSPARSE=libsparse/src/lib/
+LSPARSE=libsparse.a
 

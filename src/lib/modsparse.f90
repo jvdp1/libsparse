@@ -5,6 +5,7 @@
 
 !> @todo Use of submodules (one submodule for each type of matrix)
 !> @todo Implementation of parameterized derived-type declarations to allow single- and double-precision sparse matrices
+!> @todo Implementation of ordering for ll and coo
 
 #if (_PARDISO==1)
 include 'mkl_pardiso.f90'
@@ -17,6 +18,10 @@ module modsparse
  use iso_fortran_env,only:int32,int64,real32,real64,wp=>real64
 #endif
  use modhash
+#if (_METIS==1)
+ use modmetis
+ use iso_c_binding,only:c_int,c_ptr,c_null_ptr
+#endif
 #if (_PARDISO==1)
  use mkl_pardiso
 #endif
@@ -34,6 +39,7 @@ module modsparse
   private
   integer(kind=int32)::unlog=6
   integer(kind=int32)::dim1,dim2
+  integer(kind=int32),allocatable::perm(:)  !Ap(i,:)=A(perm(i),:)
   character(len=15)::namemat='UNKNOWN'
   logical::lupperstorage
   contains
@@ -55,6 +61,8 @@ module modsparse
   procedure,public::printstats=>print_dim_gen
   !> @brief Sets the output unit to value; e.g., call mat%setouputunit(unlog)
   procedure,public::setoutputunit
+  !> @brief Sets the permutation vector; e.g., call mat%setpermutation(array)
+  procedure,public::setpermutation
   procedure::destroy_gen_gen
  end type
  
@@ -160,6 +168,10 @@ module modsparse
   procedure,public::multbyv=>multgenv_csr
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_crs
+#if (_METIS==1)
+  !> @brief Returns the ordering array obtained from METIS
+  procedure,public::getordering=>getordering_crs
+#endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
   procedure,public::print=>print_crs
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
@@ -233,11 +245,35 @@ module modsparse
   module procedure constructor_ll
  end interface
 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!METIS GRAPH DATA STRUCTURE!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+#if (_METIS==1)
+ type::metisgraph
+  private
+  integer(kind=int32)::unlog
+  integer(kind=int32)::nvertices,medges
+  integer(kind=int32),allocatable::xadj(:),adjncy(:)
+  type(c_ptr)::vwgt
+  type(c_ptr)::adjwgt
+  contains
+  private
+  procedure,public::destroy=>destroy_metisgraph
+  final::deallocate_scall_metisgraph
+ end type
+
+ interface metisgraph
+  module procedure constructor_metisgraph
+ end interface
+#endif
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GENERAL INTERFACES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  !> @brief Converts sparse matrices from one format to another one; e.g., crsmat=coomat
  interface assignment(=)
   module procedure convertfromlltocoo,convertfromlltocrs&
                   ,convertfromcootocrs,convertfromcootoll&
+#if (_METIS==1)
+                  ,convertfromcrstometisgraph&
+#endif
                   ,convertfromcrstocoo,convertfromcrstoll
  end interface
 
@@ -254,6 +290,7 @@ subroutine destroy_gen_gen(sparse)
  sparse%dim2=-1
  sparse%unlog=6
  sparse%lupperstorage=.false.
+ if(allocated(sparse%perm))deallocate(sparse%perm)
 
 end subroutine
 
@@ -286,12 +323,14 @@ subroutine print_dim_gen(sparse)
  write(sparse%unlog,'( "  Dimension of the matrix     : ",i0," x ",i0)')sparse%dim1,sparse%dim2
  write(sparse%unlog,'( "  Upper storage               : ",l1)')sparse%lupperstorage
  write(sparse%unlog,'( "  Number of non-zero elements : ",i0)')sparse%nonzero()
+ write(sparse%unlog,'( "  Permutation array provided  : ",l1)')allocated(sparse%perm)
  
  select type(sparse)
   type is(coosparse)
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
   class default
  end select
+ write(sparse%unlog,'(a)')' '
 
 end subroutine
 
@@ -331,6 +370,22 @@ subroutine setoutputunit(sparse,unlog)
  integer(kind=int32)::unlog
 
  sparse%unlog=unlog
+
+end subroutine
+
+!** SET PERMUTATION VECTOR
+subroutine setpermutation(sparse,array)
+ class(gen_sparse),intent(inout)::sparse
+ integer(kind=int32)::array(:)
+
+ if(size(array).ne.sparse%getdim(1))then
+  write(sparse%unlog,'(a)')' ERROR: The permutation array has a wrong size.'
+  stop
+ endif
+
+ !Probably pointer would be better???
+ if(.not.allocated(sparse%perm))allocate(sparse%perm(sparse%getdim(1)))
+ sparse%perm=array
 
 end subroutine
 
@@ -512,7 +567,7 @@ function load_coo(namefile,unlog) result(sparse)
  integer(kind=int64)::nonzero,nel
  logical::lupperstorage
 
- open(newunit=un,file=namefile,action='read',status='old',access='stream',buffered='yes')
+ open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
  read(un)dim1
  if(dim1.ne.typecoo)then
   write(*,'(a)')' ERROR: the proposed file is not a COO file'
@@ -613,7 +668,7 @@ subroutine save_coo(sparse,namefile)
 
  integer(kind=int32)::un
 
- open(newunit=un,file=namefile,action='write',status='replace',access='stream',buffered='yes')
+ open(newunit=un,file=namefile,action='write',status='replace',access='stream')!,buffered='yes')
  write(un)typecoo                !int32
  write(un)sparse%dim1            !int32
  write(un)sparse%dim2            !int32
@@ -989,7 +1044,7 @@ function load_crs(namefile,unlog)  result(sparse)
  integer(kind=int64)::nonzero
  logical::lupperstorage
 
- open(newunit=un,file=namefile,action='read',status='old',access='stream',buffered='yes')
+ open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
  read(un)dim1
  if(dim1.ne.typecrs)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS file'
@@ -1046,6 +1101,68 @@ function totalnumberofelements_crs(sparse) result(nel)
  nel=int(sparse%ia(sparse%dim1+1),int64)-1_int64
 
 end function
+
+!**GET ORDER
+#if (_METIS==1)
+function getordering_crs(sparse&
+                          ,ctype,iptype,rtype,compress,ccorder&
+                          ,pfactor,nseps,bglvl&
+                          ) result(perm)
+ class(crssparse),intent(in)::sparse
+ integer(kind=int32),intent(in),optional::ctype,iptype,rtype,compress,ccorder,pfactor,nseps,bglvl
+ integer(kind=int32),allocatable::perm(:)
+
+ integer(kind=int32)::err
+ integer(kind=int32)::pctype,piptype,prtype,pcompress,pccorder,ppfactor,pnseps,pbglvl
+ integer(kind=int32),allocatable::options(:)
+ integer(kind=int32),allocatable::iperm(:)
+ type(metisgraph)::metis
+
+ metis=sparse
+
+ pctype=METIS_CTYPE_RM
+ if(present(ctype))pctype=ctype
+
+ piptype=METIS_IPTYPE_EDGE
+ if(present(iptype))piptype=iptype
+
+ prtype=METIS_RTYPE_SEP2SIDED
+ if(present(rtype))prtype=rtype
+
+ pcompress=0
+ if(present(compress))pcompress=compress
+
+ pccorder=0
+ if(present(ccorder))pccorder=ccorder
+
+ ppfactor=0
+ if(present(pfactor))ppfactor=pfactor
+
+ if(sparse%getdim(1).lt.50000)then
+  pnseps=1
+ elseif(sparse%getdim(1).lt.200000)then
+  pnseps=5
+ else
+  pnseps=10
+ endif
+ if(present(nseps))pnseps=nseps
+
+ pbglvl=METIS_DBG_INFO
+ if(present(bglvl))pbglvl=bglvl
+
+ err=metis_setoptions(options&
+                      ,ctype=pctype,iptype=piptype,rtype=prtype,compress=pcompress&
+                      ,ccorder=pccorder,pfactor=ppfactor,nseps=pnseps,dbglvl=pbglvl&
+                      )
+ call metis_checkerror(err,sparse%unlog)
+ 
+ allocate(perm(metis%nvertices),iperm(metis%nvertices))
+
+ err=metis_nodend(metis%nvertices,metis%xadj,metis%adjncy,metis%vwgt,options,perm,iperm)
+ call metis_checkerror(err,sparse%unlog)
+
+end function
+#endif 
 
 !**PRINT
 subroutine print_crs(sparse,lint,output)
@@ -1108,7 +1225,7 @@ subroutine save_crs(sparse,namefile)
 
  integer(kind=int32)::un
 
- open(newunit=un,file=namefile,action='write',status='replace',access='stream',buffered='yes')
+ open(newunit=un,file=namefile,action='write',status='replace',access='stream')!,buffered='yes')
  write(un)typecrs                !int32
  write(un)sparse%dim1            !int32
  write(un)sparse%dim2            !int32
@@ -1159,7 +1276,7 @@ end subroutine
 #if (_PARDISO==1)
 subroutine solve_crs(sparse,x,y)
  !sparse*x=y
- class(crssparse),intent(in)::sparse
+ class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out)::x(:)
  real(kind=wp),intent(inout)::y(:)
 
@@ -1206,9 +1323,16 @@ subroutine solve_crs(sparse,x,y)
   iparm(28)=0
 #endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
-  call pardiso(pt,maxfct,mnum,mtype,phase,&
-               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-               idum,nrhs,iparm,msglvl,ddum,ddum,error)
+  if(allocated(sparse%perm))then
+   iparm(5)=1;iparm(31)=0;iparm(36)=0
+   call pardiso(pt,maxfct,mnum,mtype,phase,&
+                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+                sparse%perm,nrhs,iparm,msglvl,ddum,ddum,error)
+  else
+   call pardiso(pt,maxfct,mnum,mtype,phase,&
+                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+                idum,nrhs,iparm,msglvl,ddum,ddum,error)
+  endif
   call checkparido(phase,error) 
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',iparm(18)
@@ -1825,6 +1949,49 @@ subroutine deallocate_scal_ll(sparse)
 end subroutine
 
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!METIS GRAPH DATA STRUCTURE!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+#if (_METIS==1)
+!**CONSTRUCTOR
+function constructor_metisgraph(n,m,unlog) result(metis)
+ type(metisgraph)::metis
+ integer(kind=int32),intent(in)::n,m
+ integer(kind=int32),intent(in),optional::unlog
+
+ metis%unlog=6
+ if(present(unlog))metis%unlog=unlog
+
+ metis%nvertices=n
+ metis%medges=m
+ allocate(metis%xadj(metis%nvertices+1),metis%adjncy(2*metis%medges))
+ metis%xadj=0
+ metis%adjncy=0
+ metis%vwgt=c_null_ptr
+ metis%adjwgt=c_null_ptr
+
+end function
+
+!**DESTROY
+subroutine destroy_metisgraph(metis)
+ class(metisgraph),intent(inout)::metis
+
+ metis%unlog=6
+ metis%nvertices=-1
+ metis%medges=-1
+ metis%vwgt=c_null_ptr
+ metis%adjwgt=c_null_ptr
+ if(allocated(metis%xadj))deallocate(metis%xadj)
+ if(allocated(metis%adjncy))deallocate(metis%adjncy)
+
+end subroutine
+
+!FINAL
+subroutine deallocate_scall_metisgraph(metis)
+ type(metisgraph),intent(inout)::metis
+ 
+ call destroy_metisgraph(metis)
+
+end subroutine
+#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!OTHER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !CHECKS
@@ -1866,6 +2033,8 @@ subroutine convertfromlltocoo(othersparse,sparse)
  type(ptrnode),pointer::cursor
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  do i=1,sparse%dim1
   cursor=>sparse%heads(i)
@@ -1911,6 +2080,8 @@ subroutine convertfromlltocrs(othersparse,sparse)
  nel=ndiag+sum(rowpos)
 
  othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
 
@@ -1986,6 +2157,8 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
  othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
 
  !determine the number of non-zero off-diagonal elements per row
@@ -2035,6 +2208,8 @@ subroutine convertfromcootoll(othersparse,sparse)
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  do i8=1_int64,sparse%nel
   row=sparse%ij(1,i8)
   if(row.ne.0)then
@@ -2054,6 +2229,8 @@ subroutine convertfromcrstocoo(othersparse,sparse)
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
    call othersparse%add(i,sparse%ja(j),sparse%a(j))
@@ -2072,6 +2249,8 @@ subroutine convertfromcrstoll(othersparse,sparse)
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
 
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
    call othersparse%add(i,sparse%ja(j),sparse%a(j))
@@ -2082,5 +2261,57 @@ subroutine convertfromcrstoll(othersparse,sparse)
 
 end subroutine
 
+#if (_METIS==1)
+subroutine convertfromcrstometisgraph(metis,sparse)
+ type(metisgraph),intent(out)::metis
+ type(crssparse),intent(in)::sparse
 
+ integer(kind=int32)::i,j,k
+ integer(kind=int32)::n,nvertices,medges
+ integer(kind=int32),allocatable::rowpos(:)
+ 
+ if(.not.sparse%lupperstorage.or..not.sparse%lsquare())then
+  write(sparse%unlog,'(a)')' ERROR: the CRS matrix must be square and upper triangular stored'
+  stop
+ endif
+
+ n=sparse%getdim(1)
+ nvertices=n
+
+ medges=sparse%nonzero()-n  !number of off-diagonal elements
+ 
+ metis=metisgraph(nvertices,medges,unlog=sparse%unlog)
+
+ allocate(rowpos(n))
+ rowpos=0
+ do i=1,n
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   k=sparse%ja(j)
+   if(i.ne.k)then
+    rowpos(i)=rowpos(i)+1
+    rowpos(k)=rowpos(k)+1
+   endif
+  enddo
+ enddo
+
+ metis%xadj(1)=1
+ do i=1,n
+  metis%xadj(i+1)=metis%xadj(i)+rowpos(i)
+ enddo
+
+ rowpos=0
+ do i=1,n
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   k=sparse%ja(j)
+   if(i.ne.k)then
+     metis%adjncy(metis%xadj(i)+rowpos(i))=k
+     metis%adjncy(metis%xadj(k)+rowpos(k))=i
+     rowpos(i)=rowpos(i)+1
+     rowpos(k)=rowpos(k)+1
+   endif
+  enddo
+ enddo
+
+end subroutine
+#endif
 end module
