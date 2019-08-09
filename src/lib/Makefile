@@ -35,6 +35,13 @@ else
  OBJ+=modmetis.o
 endif
 
+ifeq ($(SPAINVENABLE),0)
+ SPAINV=0
+else
+ SPAINV=1
+ OBJ+=smbfct.o modspainv.o
+endif
+
 
 all: libsparse.a
 
@@ -43,8 +50,11 @@ OBJ+=modhash.o modsparse.o
 libsparse.a: $(OBJ)
 	ar cr  libsparse.a $(OBJ)
 
-%.o:	%.f90 
-	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) $<
+%.o:	%.f90
+	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV) $<
+
+%.o:	%.f
+	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV) $<
 
 clean:
 	rm -fv *.o *.optrpt *.a *.mod

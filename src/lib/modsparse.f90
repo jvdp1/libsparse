@@ -22,6 +22,9 @@ module modsparse
  use modmetis
  use iso_c_binding,only:c_int,c_ptr,c_null_ptr
 #endif
+#if (_METIS==1 .AND. _SPAINV==1)
+ use modspainv
+#endif
 #if (_PARDISO==1)
  use mkl_pardiso
 #endif
@@ -184,6 +187,10 @@ module modsparse
   procedure,public::solve=>solve_crs
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
+  !> @brief Computes and replaces by the sparse inverse
+#if (_METIS==1 .AND. _SPAINV==1)
+  procedure,public::spainv=>getspainv_crs
+#endif
   !> @brief Gets a submatrix from a sparse matrix
   procedure,public::submatrix=>submatrix_crs
   final::deallocate_scal_crs
@@ -1164,6 +1171,24 @@ function getordering_crs(sparse&
 end function
 #endif 
 
+!**GET SPARSE INVERSE
+#if (_METIS==1 .AND. _SPAINV==1)
+subroutine getspainv_crs(sparse)
+ class(crssparse),intent(inout)::sparse
+ type(metisgraph)::metis
+
+ call sparse%sort()
+
+ metis=sparse
+
+ !Ordering
+ if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
+
+ call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm)
+
+end subroutine
+#endif
+ 
 !**PRINT
 subroutine print_crs(sparse,lint,output)
  class(crssparse),intent(in)::sparse
