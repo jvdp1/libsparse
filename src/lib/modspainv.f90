@@ -7,9 +7,9 @@
 
 module modspainv
 #if (_DP==0)
- use iso_fortran_env,only:int32,int64,real32,real64,wp=>real32
+ use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
 #else
- use iso_fortran_env,only:int32,int64,real32,real64,wp=>real64
+ use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
  !$ use omp_lib
  implicit none
@@ -37,118 +37,73 @@ module modspainv
 contains
 
 !PUBLIC
-subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm)
+subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
  integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
  integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
  
- integer(kind=int32)::i,neqns
+ integer(kind=int32)::unlog,i,neqns
  integer(kind=int32)::nnode
  integer(kind=int32)::maxsub,flag,maxlnz!,maxsubinit
  !integer(kind=int32),allocatable::invp(:)
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)!,rchlnk(:),mrglnk(:),marker(:)
  integer(kind=int32),allocatable::inode(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
-
- real(wp),dimension(size(ia)-1,size(ia)-1) :: hh, hh1, hh2, hh3
-
- print*,' start inverse aaaaaaaaaaaa'
+ !$ real(kind=int64)::t1,time(5)
+ 
+ unlog=output_unit
+ if(present(un))unlog=un
 
  neqns=size(ia)-1
 
  !symbolic factorization
+ !$ t1=omp_get_wtime()
 
-! allocate(invp,source=perm)
-! 
-! do i=1,size(perm)
-!  invp(perm(i))=i
-! enddo
-!
-! allocate(xlnz(neqns+1),xnzsub(neqns+1),rchlnk(neqns),mrglnk(neqns),marker(neqns))
-! maxsub=ia(neqns+1)-1
-!
-! do
-!  maxsubinit=maxsub
-!  if(allocated(nzsub))deallocate(nzsub)
-!  allocate(nzsub(maxsub))
-!  call smbfct(neqns,xadj,adjncy,perm,invp,xlnz,maxlnz,xnzsub,nzsub,maxsub,&
-!              rchlnk,mrglnk,marker,flag&
-!              )
-!  if(maxsub.eq.maxsubinit)exit
-!  if(flag.eq.0)then
-!   exit
-!  else
-!   write(*,*)' ERROR: smbfct ', flag
-!   error stop
-!  endif
-! enddo
-! deallocate(rchlnk,mrglnk,marker)
- 
  call symbolicfact(neqns,ia(neqns+1)-1,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
- write(*,*)' Symbolic factorization: ',flag,maxsub
+ !$ time(1)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
 
  !super following Karin Meyer
  allocate(xspars(ia(neqns+1)),diag(neqns))
 
  call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,xspars,diag,perm)
 
-call expand( neqns, xlnz, xspars, xnzsub, nzsub, diag,hh,.true.)
-write(*,*)'matrix init';call print_matrix(neqns,hh)
-
-print*,'xlnz',xlnz
-print*,'xnzsub',xnzsub
-print*,'ixsub',nzsub
-print*,'xspars xspars',xspars
-print*,'diag',diag
-
-call expand( neqns, xlnz, xspars, xnzsub, nzsub, diag,hh,.true.)
-write(*,*)'matrix init';call print_matrix(neqns,hh)
-write(*,*)'matrix init2';call print_matrix(neqns,hh-hh1)
-
  allocate(inode(neqns))
  call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode)
- write(*,*) 'no. of rows =',neqns,'  no. of super-nodes =',nnode
+ !$ time(2)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
 
- do i = 1, nnode
-  write(*,'(1x,3(a,i3))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i)
- end do
+ !do i = 1, nnode
+ ! write(*,'(1x,3(a,i3))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i)
+ !end do
 
- ! Cholesky factorisation
-print*,'ixlnz',xlnz
-print*,'ixnzsub',xnzsub
-print*,'iixsub',nzsub
-print*,'idiag',diag
-print*,'innode',nnode
-print*,'iinode',inode
-
+ ! Cholesky factorization
  call super_gsfct( neqns, xlnz, xspars, xnzsub, nzsub, diag, nnode, inode )
-
-call expand( neqns, xlnz, xspars, xnzsub, nzsub, diag,hh1,.false.)
-hh2 = matmul( hh1, transpose(hh1) )
-write(*,*)'Cholesky factor'; call print_matrix(neqns, hh1 )
-write(*,*)'Matrix';call print_matrix(neqns,hh2)
-
-print*,'diff   ',sum(abs(hh2-hh))
-print*,'diff   ',hh2-hh
-do i=1,neqns
- write(*,'(1000(f10.4,x))')hh2(i,:)-hh(i,:)
-enddo
+ !$ time(3)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
 
  ! Matrix inverse
  call super_sparsinv( neqns, xlnz, xspars, xnzsub, nzsub, diag, nnode, inode )
- 
-call expand( neqns, xlnz, xspars, xnzsub, nzsub, diag,hh3,.true.)
-write(*,*)'"Inverse" '; call print_matrix(neqns, hh3 )
- 
-print*,'xlnz',xlnz
-print*,'xspars',xspars
-print*,'xnzsub',xnzsub
-print*,'nzsub',nzsub
+ !$ time(4)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
  
  !Convert to ija
  call converttoija( neqns, xlnz, xspars, xnzsub, nzsub, diag,ia,ja,a,perm)
+ !$ time(5)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+
+ !$ write(unlog,'(/a)')' CRS MATRIX INVERSION (elapsed time (seconds))'
+ !$ write(unlog,'(2x,a,t30,f0.3)')'Symbolic factorization',time(1)
+ !$ write(unlog,'(2x,a,t30,f0.3)')'Node determination',time(2)
+ !$ write(unlog,'(2x,a,t30,f0.3)')'Cholesky factorization',time(3)
+ !$ write(unlog,'(2x,a,t30,f0.3)')'Matrix inversion',time(4)
+ !$ write(unlog,'(2x,a,t30,f0.3)')'Conversion to CRS',time(5)
+ !$ write(unlog,'(2x,a,t30,f0.3/)')'Total time',sum(time)
+ !$ write(unlog,'(2x,a,i0)')'Flag symbolic factorization : ',flag
+ !$ write(unlog,'(2x,a,i0/)')'Number of super-nodes       : ',nnode
 
 end subroutine
 
@@ -190,7 +145,6 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
  deallocate(rchlnk,mrglnk,marker)
 
 end subroutine
-
 
 subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode )
  integer(kind=int32),intent(in)::neqns
@@ -525,41 +479,5 @@ subroutine alloc_err()
  write(*,'(a,i0,3a)')' ERROR (',__LINE__,',',__FILE__,'): failed allocation'
  error stop
 end subroutine 
-
-!TO BE DELETED
-subroutine print_matrix(neqns, hh )
-  real(8), dimension(neqns,neqns), intent(in) :: hh
-  integer                                     :: i,neqns
-
-  do i = 1, neqns
-     write(*,'(1000(f10.3,x))') hh(i,:)
-  end do
-
-end subroutine print_matrix
-
-subroutine expand(neqns,xlnz,xspars,xnzsub,ixsub,diag, hhh, opt )
-  real(8), intent(inout), dimension(neqns) :: diag
-  real(8),  intent(inout)     :: xspars(:)
-  integer,  intent(in)        :: ixsub(:) ,xlnz(:), xnzsub(:)
-  integer,  intent(in)        :: neqns
- 
-  real(8), dimension(neqns,neqns), intent(out) :: hhh
-  logical, intent(in)                          :: opt
-  integer                                      :: irow, ksub, i, icol
-
-! expand sparse-stored matrix into two-dimensional array
-  hhh = 0.d0
-  do irow = 1, neqns
-     hhh(irow,irow) = diag(irow)
-     ksub = xnzsub(irow)
-     do i = xlnz(irow), xlnz(irow+1)-1
-        icol = ixsub(ksub)
-        ksub = ksub + 1
-        hhh(icol,irow) = xspars(i); if( opt ) hhh(irow,icol) = xspars(i)
-     end do
-  end do
-
-end subroutine expand
-
 
 end module

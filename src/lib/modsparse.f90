@@ -13,9 +13,9 @@ include 'mkl_pardiso.f90'
 
 module modsparse
 #if (_DP==0)
- use iso_fortran_env,only:int32,int64,real32,real64,wp=>real32
+ use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
 #else
- use iso_fortran_env,only:int32,int64,real32,real64,wp=>real64
+ use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
  use modhash
 #if (_METIS==1)
@@ -40,7 +40,7 @@ module modsparse
  !> @brief Generic object containing dimensions, storage format, and output unit
  type,abstract::gen_sparse
   private
-  integer(kind=int32)::unlog=6
+  integer(kind=int32)::unlog=output_unit
   integer(kind=int32)::dim1,dim2
   integer(kind=int32),allocatable::perm(:)  !Ap(i,:)=A(perm(i),:)
   character(len=15)::namemat='UNKNOWN'
@@ -1175,6 +1175,7 @@ end function
 #if (_METIS==1 .AND. _SPAINV==1)
 subroutine getspainv_crs(sparse)
  class(crssparse),intent(inout)::sparse
+
  type(metisgraph)::metis
 
  call sparse%sort()
@@ -1184,7 +1185,7 @@ subroutine getspainv_crs(sparse)
  !Ordering
  if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
 
- call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm)
+ call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,sparse%unlog)
 
 end subroutine
 #endif

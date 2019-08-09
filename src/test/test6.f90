@@ -44,7 +44,7 @@ program test5
 
  call crs%printsquare()
 
- call crs%setpermutation(crs%getordering())
+ call crs%setpermutation(crs%getordering(bglvl=0))
  call crs%printstats()
 
 !!!!!!!!!!!!!!!!
@@ -64,7 +64,7 @@ program test5
 
  write(*,*)'Permuted matrix'
  
- perm=crs%getordering()
+ perm=crs%getordering(bglvl=0)
  iarray=0
  do i=1,crs%getdim(1)
   do j=1,crs%getdim(2)
@@ -82,5 +82,20 @@ program test5
  call crs%spainv()
 
  call crs%printsquare()
+
+
+!!!!!!
+ crs=coo
+  
+ call crs%sort()
+ 
+ call crs%setpermutation(crs%getordering(bglvl=0))
+ call crs%printstats()
+
+ allocate(x(crs%getdim(1)),y(crs%getdim(1)))
+ x=1.;y=1.
+
+ call crs%solve(x,y)
+
 
 end program
