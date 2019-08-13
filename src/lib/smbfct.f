@@ -3,6 +3,7 @@ c#      this is subroutine "SMBFCT" as given in : 'Computer Solutions  #
 c#      of Large Sparse Positive Definite Systems' by A. George and    #
 c#      J.W.-H. Liu, 1981, Prentice Hall, Inc. Englewood Cliffs,       #
 c#      New Jersey 07632, pp. 149-151;                                 #
+c#      Modified for my own                                            #
 c#######################################################################
 
 	
@@ -63,9 +64,9 @@ C                                                                         50.
 C                                                                         54.
 C****************************************************************         55.
 C                                                                         56.
-         INTEGER ADJNCY(*), INVP(*), MRGLNK(*), NZSUB(*),                 57.
-     1           PERM(*), RCHLNK(*), MARKER(*)                            58.
-         INTEGER XADJ(*), XLNZ(*), XNZSUB(*),                             59.
+         INTEGER ADJNCY(:), INVP(:), MRGLNK(:), NZSUB(:),                 57.
+     1           PERM(:), RCHLNK(:), MARKER(:)                            58.
+         INTEGER XADJ(:), XLNZ(:), XNZSUB(:),                             59.
      1           FLAG, I, INZ, J, JSTOP, JSTRT, K, KNZ,                   60.
      1           KXSUB, MRGK, LMAX, M, MAXLNZ, MAXSUB,                    61.
      1           NABOR, NEQNS, NODE, NP1, NZBEG, NZEND,                   62.
