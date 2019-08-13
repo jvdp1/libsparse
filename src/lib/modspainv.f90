@@ -25,12 +25,11 @@ module modspainv
               xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )
-   import::int32
-   integer(kind=int32),intent(in)::neqns
-   integer(kind=int32)::maxsub,maxsubinit,flag,maxlnz
-   integer(kind=int32),intent(in)::xadj(*),adjncy(*)
-   integer(kind=int32),intent(in)::perm(*),invp(*)
-   integer(kind=int32)::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
+   integer,intent(in)::neqns
+   integer::maxsub,flag,maxlnz
+   integer,intent(in)::xadj(:),adjncy(:)
+   integer,intent(in)::perm(:),invp(:)
+   integer::xlnz(:),xnzsub(:),nzsub(:),rchlnk(:),mrglnk(:),marker(:)
   end subroutine
  end interface
 
@@ -47,13 +46,12 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  
  integer(kind=int32)::unlog,i,neqns
  integer(kind=int32)::nnode
- integer(kind=int32)::maxsub,flag,maxlnz!,maxsubinit
- !integer(kind=int32),allocatable::invp(:)
- integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)!,rchlnk(:),mrglnk(:),marker(:)
+ integer(kind=int32)::maxsub,flag,maxlnz
+ integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
  integer(kind=int32),allocatable::inode(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=int64)::t1,time(5)
- 
+
  unlog=output_unit
  if(present(un))unlog=un
 
@@ -63,14 +61,11 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !$ t1=omp_get_wtime()
 
  call symbolicfact(neqns,ia(neqns+1)-1,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
+ call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  !$ time(1)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
  !super following Karin Meyer
- allocate(xspars(ia(neqns+1)),diag(neqns))
-
- call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,xspars,diag,perm)
-
  allocate(inode(neqns))
  call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode)
  !$ time(2)=omp_get_wtime()-t1
@@ -95,15 +90,21 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !$ time(5)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
- !$ write(unlog,'(/a)')' CRS MATRIX INVERSION (elapsed time (seconds))'
- !$ write(unlog,'(2x,a,t30,f0.3)')'Symbolic factorization',time(1)
- !$ write(unlog,'(2x,a,t30,f0.3)')'Node determination',time(2)
- !$ write(unlog,'(2x,a,t30,f0.3)')'Cholesky factorization',time(3)
- !$ write(unlog,'(2x,a,t30,f0.3)')'Matrix inversion',time(4)
- !$ write(unlog,'(2x,a,t30,f0.3)')'Conversion to CRS',time(5)
- !$ write(unlog,'(2x,a,t30,f0.3/)')'Total time',sum(time)
- !$ write(unlog,'(2x,a,i0)')'Flag symbolic factorization : ',flag
- !$ write(unlog,'(2x,a,i0/)')'Number of super-nodes       : ',nnode
+ write(unlog,'(/a)')' CRS MATRIX INVERSION'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Symbolic factorization',':',time(1),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Node determination',':',time(2),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Cholesky factorization',':',time(3),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Matrix inversion',':',time(4),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Conversion to CRS',':',time(5),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Total time',':',sum(time),' s'
+
+ write(unlog,'(2x,a,i0)')'Flag symbolic factorization : ',flag
+ write(unlog,'(2x,a,i0)')'Number of super-nodes       : ',nnode
+ maxsub=0
+ do i=1,nnode
+  maxsub=max(maxsub,inode(i)-inode(i+1)+1)
+ end do
+ write(unlog,'(2x,a,i0/)')'Max size of super-nodes     : ',maxsub
 
 end subroutine
 
@@ -124,6 +125,11 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
 
  allocate(xlnz(neqns+1),xnzsub(neqns+1))
  allocate(rchlnk(neqns),mrglnk(neqns),marker(neqns))
+ xlnz=0
+ xnzsub=0
+ rchlnk=0
+ mrglnk=0
+ marker=0
  !maxsub=ia(neqns+1)-1
  maxsub=nnzeros
 
@@ -410,22 +416,26 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
 end subroutine 
 
-subroutine computexsparsdiag(n,ia,ja,a,iu,ju,iju,xspars,diag,ip)
- integer:: n,ia(:),ja(:),ip(:),i,j,k,kk
- integer::iu(:),ju(:),iju(:)
- real(kind=wp)::xspars(:)
- real(kind=wp)::a(:),diag(:)
+subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
+ integer(kind=int32),intent(in)::neqns,maxlnz
+ integer(kind=int32)::ia(:),ja(:),perm(:),xlnz(:),nzsub(:),xnzsub(:)
+ real(kind=wp),intent(in)::a(:)
+ real(kind=wp),intent(out),allocatable::xspars(:),diag(:)
 
- integer(kind=int32)::irow,iirow,icol
+ integer(kind=int32)::irow,iirow,icol,i,j,k,kk
  integer(kind=int32),allocatable::tmp(:)
  real(kind=wp),allocatable::rtmp(:)
 
- do i=1,n
-  irow=ip(i)
+ allocate(xspars(maxlnz),diag(neqns))
+ xspars=0._wp
+ diag=0._wp
+
+ do i=1,neqns
+  irow=perm(i)
   diag(i)=a(ia(irow))
-  do k=iu(i),iu(i+1)-1
+  do k=xlnz(i),xlnz(i+1)-1
    iirow=irow
-   icol=ip(ju(iju(i)+k-iu(i)))
+   icol=perm(nzsub(xnzsub(i)+k-xlnz(i)))
    if(iirow.gt.icol)then
     iirow=icol
     icol=irow
