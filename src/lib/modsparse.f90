@@ -1124,8 +1124,18 @@ function getordering_crs(sparse&
  integer(kind=int32),allocatable::options(:)
  integer(kind=int32),allocatable::iperm(:)
  type(metisgraph)::metis
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1
 
+ !$ t1=omp_get_wtime()
+#endif
+ 
  metis=sparse
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
 
  pctype=METIS_CTYPE_RM
  if(present(ctype))pctype=ctype
@@ -1162,11 +1172,25 @@ function getordering_crs(sparse&
                       ,ccorder=pccorder,pfactor=ppfactor,nseps=pnseps,dbglvl=pbglvl&
                       )
  call metis_checkerror(err,sparse%unlog)
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS options setting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
  
  allocate(perm(metis%nvertices),iperm(metis%nvertices))
 
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS arrays allocation',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
  err=metis_nodend(metis%nvertices,metis%xadj,metis%adjncy,metis%vwgt,options,perm,iperm)
  call metis_checkerror(err,sparse%unlog)
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS ordering',': Elapsed time = ',omp_get_wtime()-t1
+#endif
 
 end function
 #endif 
@@ -1177,15 +1201,39 @@ subroutine getspainv_crs(sparse)
  class(crssparse),intent(inout)::sparse
 
  type(metisgraph)::metis
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1
+
+ !$ t1=omp_get_wtime()
+#endif
 
  call sparse%sort()
 
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
  metis=sparse
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
 
  !Ordering
  if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
 
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
  call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,sparse%unlog)
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CRS inversion',': Elapsed time = ',omp_get_wtime()-t1
+#endif
 
 end subroutine
 #endif

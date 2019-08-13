@@ -76,17 +76,17 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !end do
 
  ! Cholesky factorization
- call super_gsfct( neqns, xlnz, xspars, xnzsub, nzsub, diag, nnode, inode )
+ call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
  ! Matrix inverse
- call super_sparsinv( neqns, xlnz, xspars, xnzsub, nzsub, diag, nnode, inode )
+ call super_sparsinv(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
  !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
  
  !Convert to ija
- call converttoija( neqns, xlnz, xspars, xnzsub, nzsub, diag,ia,ja,a,perm)
+ call converttoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
  !$ time(5)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
@@ -168,7 +168,8 @@ subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode )
     ii = xnzsub(i)
     n = 0
     do j = xlnz(i), xlnz(i+1)-1
-       kk = ixsub(ii); ii = ii + 1
+       kk = ixsub(ii)
+       ii = ii + 1
        if(  kk > ilast ) exit
        n = n + 1
     end do
@@ -194,47 +195,47 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
 
- allocate( jvec(neqns), kvec(neqns),stat = ii )
+ allocate(jvec(neqns),kvec(neqns),stat=ii)
  if( ii /= 0 ) call alloc_err
 
  do jnode = nnode, 1, -1
-    icol1 = inode(jnode+1) + 1
-    icol2 = inode(jnode)
-    mm = icol2 - icol1 +1
+  icol1 = inode(jnode+1) + 1
+  icol2 = inode(jnode)
+  mm = icol2 - icol1 +1
 
-    !pick out diaggonal block
-    allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
-    if( ii /= 0 ) call alloc_err
-    ttt = 0.d0; jvec = 0
-    do irow = icol1, icol2
-       ttt(irow,irow) = diag(irow)
-       ksub = xnzsub(irow)
-       do i = xlnz(irow), xlnz(irow+1)-1
-          jcol = ixsub(ksub); ksub = ksub + 1
-          if( jcol <= icol2 ) then
-              ttt(jcol,irow) = xspars(i) 
-          else
-              jvec(jcol) = 1
-          end if
-       end do
-     end do
+  !pick out diagonal block
+  allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
+  if( ii /= 0 ) call alloc_err
+  ttt=0.d0
+  jvec=0
+  n=0
+  do irow = icol1, icol2
+   ttt(irow,irow) = diag(irow)
+   ksub = xnzsub(irow)
+   do i = xlnz(irow), xlnz(irow+1)-1
+    jcol = ixsub(ksub)
+    ksub = ksub + 1
+    if( jcol <= icol2 ) then
+     ttt(jcol,irow) = xspars(i) 
+    else
+     if(jvec(jcol).eq.0)then
+      n=n+1
+      jvec(jcol)=n
+      kvec(n)=jcol
+     endif
+    end if
+   end do
+  end do
 
-     !factorise
-     call dpotrf( 'L', mm, ttt, mm, ii )
-     if( ii /= 0 ) then
-         write(*,*)'Dense fact: Routine DPOTRF returned error code', ii
-         write(*,*)'... coefficient matrix must be positive definite'; stop
-     end if
+  !factorise
+  call dpotrf( 'L', mm, ttt, mm, ii )
+  if( ii /= 0 ) then
+   write(*,*)'Dense fact: Routine DPOTRF returned error code', ii
+   write(*,*)'... coefficient matrix must be positive definite'
+   error stop
+  end if
 
-     !adjust block below diaggonal
-     !.. count no. of rows
-     n = 0
-     do i = icol2+1, neqns
-        if( jvec(i) == 0 ) cycle
-        n = n + 1
-        jvec(i) = n
-        kvec(n) = i
-     end do
+  !adjust block below diagonal
      if( n > 0 ) then
          !... pick out rows
          allocate( s21(n, icol1:icol2), stat = ii )
@@ -243,9 +244,11 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          do irow = icol1, icol2
             ksub = xnzsub(irow)
             do i = xlnz(irow), xlnz(irow+1)-1
-               jcol = ixsub(ksub); ksub = ksub + 1
+               jcol = ixsub(ksub)
+               ksub = ksub + 1
                if( jcol <= icol2 ) cycle
-               jj = jvec(jcol); s21(jj,irow) = xspars(i)
+               jj = jvec(jcol)
+               s21(jj,irow) = xspars(i)
             end do
          end do
 
@@ -253,16 +256,26 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1.d0, ttt, mm, s21, n )
 
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
-         allocate( s22(n,n), stat = ii ); if( ii /= 0 ) call alloc_err
+         allocate( s22(n,n), stat = ii )
+         if( ii /= 0 ) call alloc_err
          call dsyrk( 'L', 'N', n, mm, 1.d0, s21, n, 0.d0, s22, n )
-         kk = kvec(n)
+         kk = maxval(kvec(1:n))
          do i = 1, n
-             jrow = kvec(i); diag(jrow) = diag(jrow) - s22(i,i)
+             jrow = kvec(i)
+             diag(jrow) = diag(jrow) - s22(i,i)
              ksub = xnzsub(jrow)
              do j = xlnz(jrow), xlnz(jrow+1)-1
-                jcol = ixsub(ksub); if( jcol > kk ) exit
-                ksub = ksub + 1; ii = jvec(jcol)
-                if( ii > 0 ) xspars(j) = xspars(j) - s22(ii,i)
+                jcol = ixsub(ksub)
+                if( jcol > kk ) exit
+                ksub = ksub + 1
+                ii = jvec(jcol)
+                if( ii > 0 ) then
+                 if(ii>i)then
+                  xspars(j) = xspars(j) - s22(ii,i)
+                 else
+                  xspars(j) = xspars(j) - s22(i,ii)
+                 endif
+                endif
              end do
          end do
          deallocate( s22 )
@@ -273,7 +286,8 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
        diag(irow) = ttt(irow,irow)
         ksub = xnzsub(irow)
         do i = xlnz(irow), xlnz(irow+1)-1
-           jcol = ixsub(ksub); ksub = ksub + 1
+           jcol = ixsub(ksub)
+           ksub = ksub + 1
            if( jcol <= icol2 ) then
                xspars(i) = ttt(jcol,irow)
            else
@@ -306,42 +320,50 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
 ! backwards flops: determine inverse using supernodal blocks
   do jnode = 1, nnode
-     icol1 = inode(jnode+1) + 1; icol2 = inode(jnode);  mm = icol2 - icol1 +1
-      
-!    pick out diagonal block
+     icol1 = inode(jnode+1) + 1
+     icol2 = inode(jnode)
+     mm = icol2 - icol1 +1
+     
+     !pick out diagonal block
      allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
      if( ii /= 0 ) call alloc_err
-     ttt = 0.d0; jvec = 0
-     do irow = icol1, icol2
-        ttt(irow,irow) = diag(irow);  ksub = xnzsub(irow)
-        do i = xlnz(irow), xlnz(irow+1)-1
-           jcol = ixsub(ksub); ksub = ksub + 1
-           if( jcol <= icol2 ) then
-               ttt(jcol,irow) = xspars(i) 
-          else 
-               jvec(jcol) = 1
-           end if
-        end do
+     ttt=0._wp
+     jvec=0
+     n21=0
+     do irow=icol1,icol2
+      ttt(irow,irow)=diag(irow)
+      ksub=xnzsub(irow)
+      do i=xlnz(irow),xlnz(irow+1)-1
+       jcol=ixsub(ksub)
+       ksub=ksub+1
+       if(jcol<=icol2)then
+        ttt(jcol,irow)=xspars(i) 
+       else 
+        if(jvec(jcol).eq.0)then
+         n21=n21+1
+         jvec(jcol)=n21
+         kvec(n21)=jcol
+        endif
+       end if
+      end do
      end do
 
-!    pick out lead columns (condensed)
-     n21 = 0
-     do i = icol2+1, neqns
-        if( jvec(i) == 0 ) cycle
-        n21 = n21 + 1; jvec(i) = n21; kvec(n21) = i
-     end do
+     !pick out lead columns (condensed)
      if( n21 > 0 ) then
          allocate( s21(n21, icol1:icol2), stat = ii )
          if( ii /= 0 ) call alloc_err
          allocate( f21(n21, icol1:icol2), stat = ii )
          if( ii /= 0 ) call alloc_err
-         s21 = 0.d0; f21 = 0.d0
+         s21 = 0.d0
+         f21 = 0.d0
          do irow = icol1, icol2
             ksub = xnzsub(irow)
             do i = xlnz(irow), xlnz(irow+1)-1
-               jcol = ixsub(ksub); ksub = ksub + 1
+               jcol = ixsub(ksub)
+               ksub = ksub + 1
                if( jcol <= icol2 ) cycle
-               jj = jvec(jcol); s21(jj,irow) = xspars(i)
+               jj = jvec(jcol)
+               s21(jj,irow) = xspars(i)
             end do
          end do
 !        ... post-multiply with inverse Chol factor -> solve
@@ -349,7 +371,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 !        ... invert Cholesky factor
          call dpotri( 'L',  mm, ttt, mm, ii )
          if( ii /= 0 ) then
-             write(*,*) 'Routine DPOTRI returned error code', ii; stop
+             write(*,*) 'Routine DPOTRI returned error code', ii
+             stop
          end if
 !        ... pre-multiply by already inverted submatrix
          iopt = 2
@@ -358,12 +381,17 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
             if( ii /= 0 ) call alloc_err
             f21 = 0.d0
             do k = 1, n21
-               jrow = kvec(k); rr = s21(k,:); qx =  diag(jrow) * rr 
+               jrow = kvec(k)
+               rr = s21(k,:)
+               qx =  diag(jrow) * rr 
                ksub = xnzsub(jrow)
                do i = xlnz(jrow), xlnz(jrow+1)-1
-                  jcol = ixsub(ksub); ksub = ksub + 1
-                  m = jvec(jcol); if( m < 1 ) cycle
-                  xx = xspars(i); f21(m,:) = f21(m,:) + xx * rr
+                  jcol = ixsub(ksub)
+                  ksub = ksub + 1
+                  m = jvec(jcol)
+                  if( m < 1 ) cycle
+                  xx = xspars(i)
+                  f21(m,:) = f21(m,:) + xx * rr
                   qx = qx + xx * s21(m,:) 
                end do
                f21(k,:) = f21(k,:) + qx 
@@ -372,15 +400,25 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          else
             allocate( s22(n21,n21), stat = ii )
             if( ii /= 0 ) then
-                iopt = 1; go to 44
+                iopt = 1
+                go to 44
             end if
             s22 = 0.d0
             do k = 1, n21
-               jrow = kvec(k); s22(k,k) = diag(jrow)
+               jrow = kvec(k)
+               s22(k,k) = diag(jrow)
                ksub = xnzsub(jrow)
                do i = xlnz(jrow), xlnz(jrow+1)-1
-                  jcol = ixsub(ksub); ksub = ksub + 1
-                  m = jvec(jcol); if( m > 0 ) s22(m,k) = xspars(i)
+                  jcol = ixsub(ksub)
+                  ksub = ksub + 1
+                  m = jvec(jcol)
+                  if( m > 0 )then
+                   if(m>k)then
+                    s22(m,k) = xspars(i)
+                   else
+                    s22(k,m) = xspars(i)
+                   endif
+                  endif
                end do
             end do
             call dsymm( 'L', 'L', n21, mm, 1.d0, s22, n21, s21, n21, 0.d0,     &
@@ -393,15 +431,18 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
      else
          call dpotri( 'L',  mm, ttt, mm, ii )
          if( ii /= 0 ) then
-             write(*,*) 'Routine DPOTRI returned error code', ii; stop
+             write(*,*) 'Routine DPOTRI returned error code', ii
+             stop
          end if
      end if
 
 !    save current block  
      do irow = icol1, icol2
-        diag(irow) = ttt(irow,irow); ksub = xnzsub(irow)
+        diag(irow) = ttt(irow,irow)
+        ksub = xnzsub(irow)
         do i = xlnz(irow), xlnz(irow+1)-1
-           jcol = ixsub(ksub); ksub = ksub + 1
+           jcol = ixsub(ksub)
+           ksub = ksub + 1
            if( jcol <= icol2 ) then
                xspars(i) = ttt(jcol,irow) 
            else 
@@ -409,7 +450,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
            end if
         end do
      end do
-     deallocate( ttt ); if( n21 > 0 ) deallocate( s21, f21 )
+     deallocate( ttt )
+     if( n21 > 0 ) deallocate( s21, f21 )
   end do ! jnode
 
   deallocate( jvec, kvec )
