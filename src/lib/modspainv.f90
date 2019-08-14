@@ -16,6 +16,8 @@ module modspainv
  private
  public::get_spainv
 
+ integer(kind=int32)::minsizesupernode=20
+
  interface get_spainv
   module procedure get_spainv_crs
  end interface
@@ -68,12 +70,15 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !super following Karin Meyer
  allocate(inode(neqns))
  call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode)
+
+#if (_VERBOSE >1)
+ do i = 1, nnode
+  write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
+ end do
+#endif
+
  !$ time(2)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
-
- !do i = 1, nnode
- ! write(*,'(1x,3(a,i3))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i)
- !end do
 
  ! Cholesky factorization
  call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
@@ -134,19 +139,16 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
  maxsub=nnzeros
 
  do
+  flag=0
   maxsubinit=maxsub
   if(allocated(nzsub))deallocate(nzsub)
   allocate(nzsub(maxsub))
   call smbfct(neqns,xadj,adjncy,perm,invp,xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )
-  if(maxsub.eq.maxsubinit)exit
-  if(flag.eq.0)then
-   exit
-  else
-   write(*,*)' ERROR: smbfct ', flag
-   error stop
-  endif
+  if(maxsub.ne.maxsubinit)cycle
+  if(flag.eq.0)exit
+  maxsub=maxsub*2
  enddo
  deallocate(rchlnk,mrglnk,marker)
 
@@ -174,7 +176,7 @@ subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode )
        n = n + 1
     end do
     xx = dble( n ) / dble( ilast - i )
-    if( xx < 1._wp ) then
+    if( xx < 1._wp .and. (ilast-i)>minsizesupernode ) then
      nnode = nnode +1
      inode(nnode) = ilast
      ilast = i
