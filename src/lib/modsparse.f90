@@ -1164,7 +1164,9 @@ function getordering_crs(sparse&
  endif
  if(present(nseps))pnseps=nseps
 
+#if (_VERBOSE>1)
  pbglvl=METIS_DBG_INFO
+#endif
  if(present(bglvl))pbglvl=bglvl
 
  err=metis_setoptions(options&
@@ -1202,22 +1204,16 @@ subroutine getspainv_crs(sparse)
 
  type(metisgraph)::metis
 #if (_VERBOSE>0)
- !$ real(kind=real64)::t1
+ !$ real(kind=real64)::t1,t2
 
  !$ t1=omp_get_wtime()
+ !$ t2=t1
 #endif
 
  call sparse%sort()
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
- !$ t1=omp_get_wtime()
-#endif
-
- metis=sparse
-
-#if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1225,14 +1221,22 @@ subroutine getspainv_crs(sparse)
  if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ metis=sparse
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
  call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,sparse%unlog)
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CRS inversion',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Total   time = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
