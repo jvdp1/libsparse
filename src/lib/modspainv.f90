@@ -16,7 +16,7 @@ module modspainv
  private
  public::get_spainv
 
- integer(kind=int32)::minsizesupernode=20
+ integer(kind=int32)::minsizesupernode=256
 
  interface get_spainv
   module procedure get_spainv_crs
@@ -29,9 +29,9 @@ module modspainv
               )
    integer,intent(in)::neqns
    integer::maxsub,flag,maxlnz
-   integer,intent(in)::xadj(:),adjncy(:)
-   integer,intent(in)::perm(:),invp(:)
-   integer::xlnz(:),xnzsub(:),nzsub(:),rchlnk(:),mrglnk(:),marker(:)
+   integer,intent(in)::xadj(*),adjncy(*)
+   integer,intent(in)::perm(*),invp(*)
+   integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
   end subroutine
  end interface
 
@@ -52,7 +52,7 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
  integer(kind=int32),allocatable::inode(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
- !$ real(kind=int64)::t1,time(5)
+ !$ real(kind=int64)::t1,time(6)
 
  unlog=output_unit
  if(present(un))unlog=un
@@ -63,8 +63,10 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !$ t1=omp_get_wtime()
 
  call symbolicfact(neqns,ia(neqns+1)-1,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
- call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  !$ time(1)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+ call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
+ !$ time(2)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
  !super following Karin Meyer
@@ -77,30 +79,31 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  end do
 #endif
 
- !$ time(2)=omp_get_wtime()-t1
+ !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
  ! Cholesky factorization
  call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
- !$ time(3)=omp_get_wtime()-t1
+ !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
  ! Matrix inverse
  call super_sparsinv(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
- !$ time(4)=omp_get_wtime()-t1
+ !$ time(5)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
  
  !Convert to ija
  call converttoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
- !$ time(5)=omp_get_wtime()-t1
+ !$ time(6)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
  write(unlog,'(/a)')' CRS MATRIX INVERSION'
  !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Symbolic factorization',':',time(1),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Node determination',':',time(2),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Cholesky factorization',':',time(3),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Matrix inversion',':',time(4),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Conversion to CRS',':',time(5),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Setup of tmp arrays',':',time(2),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Node determination',':',time(3),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Cholesky factorization',':',time(4),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Matrix inversion',':',time(5),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Conversion to CRS',':',time(6),' s'
  !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Total time',':',sum(time),' s'
 
  write(unlog,'(2x,a,i0)')'Flag symbolic factorization : ',flag
@@ -143,6 +146,7 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
   maxsubinit=maxsub
   if(allocated(nzsub))deallocate(nzsub)
   allocate(nzsub(maxsub))
+  nzsub=0
   call smbfct(neqns,xadj,adjncy,perm,invp,xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )

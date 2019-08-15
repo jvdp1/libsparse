@@ -64,9 +64,9 @@ C                                                                         50.
 C                                                                         54.
 C****************************************************************         55.
 C                                                                         56.
-         INTEGER ADJNCY(:), INVP(:), MRGLNK(:), NZSUB(:),                 57.
-     1           PERM(:), RCHLNK(:), MARKER(:)                            58.
-         INTEGER XADJ(:), XLNZ(:), XNZSUB(:),                             59.
+         INTEGER ADJNCY(*), INVP(*), MRGLNK(*), NZSUB(*),                 57.
+     1           PERM(*), RCHLNK(*), MARKER(*)                            58.
+         INTEGER XADJ(*), XLNZ(*), XNZSUB(*),                             59.
      1           FLAG, I, INZ, J, JSTOP, JSTRT, K, KNZ,                   60.
      1           KXSUB, MRGK, LMAX, M, MAXLNZ, MAXSUB,                    61.
      1           NABOR, NEQNS, NODE, NP1, NZBEG, NZEND,                   62.
