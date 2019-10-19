@@ -167,6 +167,12 @@ module modsparse
   procedure,public::get=>get_crs
   !> @brief Initiate the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs
+#if (_METIS==1 .AND. _SPAINV==1)
+  !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
+  procedure,public::ichol=>getichol_crs
+  !> @brief Solver with incomplete Cholesky factor
+  procedure,public::isolve=>isolve_crs
+#endif
   !> @brief Multiplication with a vector
   procedure,public::multbyv=>multgenv_csr
   !> @brief Returns the number of non-zero elements
@@ -187,8 +193,8 @@ module modsparse
   procedure,public::solve=>solve_crs
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
-  !> @brief Computes and replaces by the sparse inverse
 #if (_METIS==1 .AND. _SPAINV==1)
+  !> @brief Computes and replaces by the sparse inverse
   procedure,public::spainv=>getspainv_crs
 #endif
   !> @brief Gets a submatrix from a sparse matrix
@@ -1197,8 +1203,51 @@ function getordering_crs(sparse&
 end function
 #endif 
 
-!**GET SPARSE INVERSE
 #if (_METIS==1 .AND. _SPAINV==1)
+!**GET CHOLESKY
+subroutine getichol_crs(sparse)
+ class(crssparse),intent(inout)::sparse
+
+ type(metisgraph)::metis
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1,t2
+
+ !$ t1=omp_get_wtime()
+ !$ t2=t1
+#endif
+
+ call sparse%sort()
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ !Ordering
+ if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ metis=sparse
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ call get_ichol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,sparse%unlog)
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Total   time = ',omp_get_wtime()-t2
+#endif
+
+end subroutine
+
+!**GET SPARSE INVERSE
 subroutine getspainv_crs(sparse)
  class(crssparse),intent(inout)::sparse
 
@@ -1289,7 +1338,7 @@ subroutine printsquare_crs(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(10000(f9.3,1x))')tmp
+  write(un,'(10000(g0.6,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -1449,6 +1498,25 @@ subroutine solve_crs(sparse,x,y)
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
+
+end subroutine
+#endif
+
+#if (_METIS==1 .AND. _SPAINV==1)
+!**SOLVE WITH INCOMPLETE CHOL
+subroutine isolve_crs(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(in)::sparse
+ real(kind=wp),intent(out)::x(:)
+ real(kind=wp),intent(in)::y(:)
+
+ real(kind=wp),allocatable::x_(:)
+
+ allocate(x_(1:size(x)))
+ x_=0._wp
+ call mkl_dcsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,y,x_)
+
+ call mkl_dcsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 
 end subroutine
 #endif

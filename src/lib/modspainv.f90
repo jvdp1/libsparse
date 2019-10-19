@@ -14,9 +14,13 @@ module modspainv
  !$ use omp_lib
  implicit none
  private
- public::get_spainv
+ public::get_ichol,get_spainv
 
  integer(kind=int32)::minsizesupernode=256
+
+ interface get_ichol
+  module procedure get_ichol_crs
+ end interface
 
  interface get_spainv
   module procedure get_spainv_crs
@@ -38,6 +42,28 @@ module modspainv
 contains
 
 !PUBLIC
+subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,un)
+ integer(kind=int32),intent(in)::ia(:)
+ integer(kind=int32),intent(in)::ja(:)
+ integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
+ integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in),optional::un
+ real(kind=wp),intent(inout)::a(:)
+ 
+ integer(kind=int32)::unlog,neqns
+ real(kind=real64)::time(6)
+
+ unlog=output_unit
+ if(present(un))unlog=un
+
+ neqns=size(ia)-1
+
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,time)
+
+ call writetime(unlog,time,'CHOL FACT.')
+
+end subroutine
+
 subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
@@ -46,25 +72,44 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
  
- integer(kind=int32)::unlog,i,neqns
- integer(kind=int32)::nnode
- integer(kind=int32)::maxsub,flag,maxlnz
- integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
- integer(kind=int32),allocatable::inode(:)
- real(kind=wp),allocatable::xspars(:),diag(:)
- !$ real(kind=int64)::t1,time(6)
+ integer(kind=int32)::unlog,neqns
+ real(kind=real64)::time(6)
 
  unlog=output_unit
  if(present(un))unlog=un
 
  neqns=size(ia)-1
 
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,time)
+
+ call writetime(unlog,time,'INVERSION')
+
+end subroutine
+
+subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,time)
+ integer(kind=int32),intent(in)::neqns
+ integer(kind=int32),intent(in)::ia(:)
+ integer(kind=int32),intent(in)::ja(:)
+ integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
+ integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ real(kind=wp),intent(inout)::a(:)
+ real(kind=real64),intent(inout)::time(:)
+ logical,intent(in)::lspainv
+ 
+ integer(kind=int32)::i
+ integer(kind=int32)::nnode
+ integer(kind=int32)::maxsub,flag,maxlnz
+ integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ integer(kind=int32),allocatable::inode(:)
+ real(kind=wp),allocatable::xspars(:),diag(:)
+ !$ real(kind=real64)::t1
+
  !symbolic factorization
  !$ t1=omp_get_wtime()
-
  call symbolicfact(neqns,ia(neqns+1)-1,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
  !$ time(1)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
+
  call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  !$ time(2)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
@@ -72,13 +117,6 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !super following Karin Meyer
  allocate(inode(neqns))
  call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode)
-
-#if (_VERBOSE >1)
- do i = 1, nnode
-  write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
- end do
-#endif
-
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
@@ -87,34 +125,31 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
- ! Matrix inverse
- call super_sparsinv(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
- !$ time(5)=omp_get_wtime()-t1
- !$ t1=omp_get_wtime()
+ if(lspainv)then
+  ! Matrix inverse
+  call super_sparsinv(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
+  !$ time(5)=omp_get_wtime()-t1
+  !$ t1=omp_get_wtime()
+ endif
  
  !Convert to ija
  call converttoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
  !$ time(6)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 
- write(unlog,'(/a)')' CRS MATRIX INVERSION'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Symbolic factorization',':',time(1),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Setup of tmp arrays',':',time(2),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Node determination',':',time(3),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Cholesky factorization',':',time(4),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Matrix inversion',':',time(5),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Conversion to CRS',':',time(6),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Total time',':',sum(time),' s'
-
- write(unlog,'(2x,a,i0)')'Flag symbolic factorization : ',flag
- write(unlog,'(2x,a,i0)')'Number of super-nodes       : ',nnode
+#if (_VERBOSE >1)
+ write(*,'(2x,a,i0)')'Flag symbolic factorization : ',flag
+ write(*,'(2x,a,i0)')'Number of super-nodes       : ',nnode
  maxsub=0
  do i=1,nnode
   maxsub=max(maxsub,inode(i)-inode(i+1)+1)
+  write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
  end do
- write(unlog,'(2x,a,i0/)')'Max size of super-nodes     : ',maxsub
+ write(*,'(2x,a,i0/)')'Max size of super-nodes     : ',maxsub
+#endif
 
 end subroutine
+
 
 !PRIVATE
 subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
@@ -537,5 +572,21 @@ subroutine alloc_err()
  write(*,'(a,i0,3a)')' ERROR (',__LINE__,',',__FILE__,'): failed allocation'
  error stop
 end subroutine 
+
+subroutine writetime(unlog,time,a)
+ integer(kind=int32)::unlog
+ real(kind=real64),intent(in)::time(:)
+ character(len=*),intent(in)::a
+
+ write(unlog,'(/a)')' CRS MATRIX '//trim(a)
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Symbolic factorization',':',time(1),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Setup of tmp arrays',':',time(2),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Node determination',':',time(3),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Cholesky factorization',':',time(4),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Matrix inversion',':',time(5),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Conversion to CRS',':',time(6),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Total time',':',sum(time),' s'
+
+end subroutine
 
 end module
