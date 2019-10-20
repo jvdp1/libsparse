@@ -16,7 +16,7 @@ module modspainv
  private
  public::get_ichol,get_spainv
 
- integer(kind=int32)::minsizesupernode=256
+ integer(kind=int32),parameter::minsizesupernode=256
 
  interface get_ichol
   module procedure get_ichol_crs
@@ -42,15 +42,19 @@ module modspainv
 contains
 
 !PUBLIC
+!Should return the Cholesky factor in the permuted order
 subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,un)
- integer(kind=int32),intent(in)::ia(:)
- integer(kind=int32),intent(in)::ja(:)
+ integer(kind=int32),intent(inout)::ia(:)
+ integer(kind=int32),intent(inout)::ja(:)
  integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
  integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
  
  integer(kind=int32)::unlog,neqns
+ integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ real(kind=wp),allocatable::xspars(:),diag(:)
+ !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
 
  unlog=output_unit
@@ -58,7 +62,12 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,un)
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,time)
+
+ !Convert to ija
+ !$ t1=omp_get_wtime()
+ call converttoija_noperm(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'CHOL FACT.')
 
@@ -73,6 +82,9 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  real(kind=wp),intent(inout)::a(:)
  
  integer(kind=int32)::unlog,neqns
+ integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ real(kind=wp),allocatable::xspars(:),diag(:)
+ !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
 
  unlog=output_unit
@@ -80,13 +92,18 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,xlnz,xspars,xnzsub,nzsub,diag,time)
+
+ !Convert to ija
+ !$ t1=omp_get_wtime()
+ call converttoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'INVERSION')
 
 end subroutine
 
-subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,time)
+subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspars,xnzsub,nzsub,diag,time)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
@@ -95,14 +112,15 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,time)
  real(kind=wp),intent(inout)::a(:)
  real(kind=real64),intent(inout)::time(:)
  logical,intent(in)::lspainv
- 
+
+ integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
+ real(kind=wp),allocatable,intent(out)::xspars(:),diag(:)
+  
  integer(kind=int32)::i
  integer(kind=int32)::nnode
  integer(kind=int32)::maxsub,flag,maxlnz
- integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
  integer(kind=int32),allocatable::inode(:)
- real(kind=wp),allocatable::xspars(:),diag(:)
- !$ real(kind=real64)::t1
+!$ real(kind=real64)::t1
 
  !symbolic factorization
  !$ t1=omp_get_wtime()
@@ -132,11 +150,6 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,time)
   !$ t1=omp_get_wtime()
  endif
  
- !Convert to ija
- call converttoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
- !$ time(6)=omp_get_wtime()-t1
- !$ t1=omp_get_wtime()
-
 #if (_VERBOSE >1)
  write(*,'(2x,a,i0)')'Flag symbolic factorization : ',flag
  write(*,'(2x,a,i0)')'Number of super-nodes       : ',nnode
@@ -552,6 +565,89 @@ subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
    ppirow=pirow
    icol = ixsub(ksub)
    picol=perm(icol)
+   ksub = ksub + 1
+   if(ppirow.gt.picol)then
+    ppirow=picol
+    picol=pirow
+   endif
+   intloop: do ip=ia(ppirow)+1,ia(ppirow+1)-1
+    if(ja(ip).eq.picol)then
+     a(ip)=xspars(i)
+     exit intloop
+    endif
+   enddo intloop
+  end do
+ end do
+
+end subroutine 
+
+subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+ integer(kind=int32),intent(in)::neqns
+ integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::perm(:)
+ integer(kind=int32),intent(inout)::ia(:),ja(:)
+ real(kind=wp),intent(in)::xspars(:),diag(:)
+ real(kind=wp),intent(inout):: a(:)
+
+ integer(kind=int32)::irow,ksub,i,icol
+ integer(kind=int32)::pirow,ppirow,picol,ip
+ integer(kind=int32)::nel
+ integer(kind=int32),allocatable::iperm(:)
+ integer(kind=int32),allocatable::iia(:),jja(:)
+
+ 
+ !inefficient but it works
+ 
+ !1. Permute ia and ja
+ allocate(iperm,source=perm)
+ do i=1,neqns
+  iperm(perm(i))=i
+ enddo
+ nel=ia(neqns+1)-1
+ allocate(iia(nel),jja(nel))
+ 
+ do irow=1,neqns
+  pirow=iperm(irow)
+  do i=ia(irow),ia(irow+1)-1
+   if(pirow.lt.iperm(ja(i)))then
+    iia(i)=pirow
+    jja(i)=iperm(ja(i))
+   else
+    iia(i)=iperm(ja(i))
+    jja(i)=pirow
+   endif
+  enddo
+ enddo
+
+ ia=0
+ ia(1)=1
+ do i=1,nel
+  ia(iia(i)+1)=ia(iia(i)+1)+1
+ enddo
+
+ ja=0
+ do i=1,neqns
+  ia(i+1)=ia(i+1)+ia(i)
+  ja(ia(i))=i
+ enddo
+
+ iperm=1
+ do i=1,nel
+  if(iia(i).ne.jja(i))then
+   ja(ia(iia(i))+iperm(iia(i)))=jja(i)
+   iperm(iia(i))=iperm(iia(i))+1
+  endif
+ enddo
+
+ !2. Replace a
+ do irow = 1, neqns
+  pirow=irow
+  a(ia(pirow))=diag(irow)
+  ksub = xnzsub(irow)
+  do i = xlnz(irow), xlnz(irow+1)-1
+   ppirow=pirow
+   icol = ixsub(ksub)
+   picol=icol
    ksub = ksub + 1
    if(ppirow.gt.picol)then
     ppirow=picol

@@ -6,6 +6,7 @@
 !> @todo Use of submodules (one submodule for each type of matrix)
 !> @todo Implementation of parameterized derived-type declarations to allow single- and double-precision sparse matrices
 !> @todo Implementation of ordering for ll and coo
+!> @todo Move metisgraph to modmetisgraph. So modspainv does not depend on modmetis anymore
 
 #if (_PARDISO==1)
 include 'mkl_pardiso.f90'
@@ -826,7 +827,6 @@ function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
    i=sparse%ij(1,i8)
    if(i.eq.0)cycle
    j=sparse%ij(2,i8)
-print*,i,j,sparse%a(i8)
    if((j-startdim2+1.ge.i-startdim1+1).and.(i.ge.startdim1.and.i.le.enddim1).and.(j.ge.startdim2.and.j.le.enddim2))then
     call subsparse%add(i-startdim1+1,j-startdim2+1,sparse%a(i8))
    endif
@@ -1510,13 +1510,42 @@ subroutine isolve_crs(sparse,x,y)
  real(kind=wp),intent(out)::x(:)
  real(kind=wp),intent(in)::y(:)
 
+ integer(kind=int32)::i
  real(kind=wp),allocatable::x_(:)
+ !$ real(kind=real64)::t1,t2
 
+
+ !$ t1=omp_get_wtime()
+ !$ t2=omp_get_wtime()
  allocate(x_(1:size(x)))
- x_=0._wp
- call mkl_dcsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,y,x_)
+ 
+ do i=1,size(x)
+  x_(i)=y(sparse%perm(i))
+ enddo
+ !$ write(sparse%unlog,'(a,g0)')'  Elapsed time                   = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+
+!print*,'perm',sparse%perm
+!print*,'y',y
+!print*,'x_',x_
 
  call mkl_dcsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+!print*,'x',x
+ !$ write(sparse%unlog,'(a,g0)')'  Elapsed time                   = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+
+ call mkl_dcsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+!print*,'x_',x_
+ !$ write(sparse%unlog,'(a,g0)')'  Elapsed time                   = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+
+ do i=1,size(x)
+  x(sparse%perm(i))=x_(i)
+ enddo
+!print*,'x',x
+ !$ write(sparse%unlog,'(a,g0)')'  Elapsed time                   = ',omp_get_wtime()-t2
+
+ !$ write(sparse%unlog,'(a,g0)')' Elapsed time                   = ',omp_get_wtime()-t1
 
 end subroutine
 #endif
@@ -2279,7 +2308,7 @@ subroutine convertfromcootocrs(othersparse,sparse)
  integer(kind=int64)::i8
 
  if(sparse%nonzero().ge.2_int64**31)then
-  write(sparse%unlog,'(a)')' ERROR: impossible conversion due a too large number of non-zero elements'
+  write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
   stop
  endif
 
