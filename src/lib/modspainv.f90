@@ -46,8 +46,8 @@ contains
 subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,un)
  integer(kind=int32),intent(inout)::ia(:)
  integer(kind=int32),intent(inout)::ja(:)
- integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
- integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in)::xadj(:),adjncy(:)
+ integer(kind=int32),intent(in)::perm(:)  !Ap(i,:)=A(perm(i),:)
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
  
@@ -76,7 +76,7 @@ end subroutine
 subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
- integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
+ integer(kind=int32),intent(in)::xadj(:),adjncy(:)
  integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
@@ -107,8 +107,8 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
- integer(kind=int32),intent(inout)::xadj(:),adjncy(:)
- integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in)::xadj(:),adjncy(:)
+ integer(kind=int32),intent(in)::perm(:)  !Ap(i,:)=A(perm(i),:)
  real(kind=wp),intent(inout)::a(:)
  real(kind=real64),intent(inout)::time(:)
  logical,intent(in)::lspainv
@@ -514,7 +514,9 @@ end subroutine
 
 subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  integer(kind=int32),intent(in)::neqns,maxlnz
- integer(kind=int32)::ia(:),ja(:),perm(:),xlnz(:),nzsub(:),xnzsub(:)
+ integer(kind=int32),intent(in)::ia(:),ja(:)
+ integer(kind=int32),intent(in)::perm(:)
+ integer(kind=int32),intent(in)::xlnz(:),nzsub(:),xnzsub(:)
  real(kind=wp),intent(in)::a(:)
  real(kind=wp),intent(out),allocatable::xspars(:),diag(:)
 
