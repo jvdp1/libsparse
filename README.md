@@ -59,7 +59,7 @@ This library was inspired by several sources:
 
  * Check for symmetric matrix  
 
- * Set symmetric=true (needed for mkl_crsmv), lsort,linverted
+ * Set lsymmetric=true (needed for mkl_crsmv and spainv), lsort, linverted,...
  
  * Check for validity of the matrix in pardiso  
 
