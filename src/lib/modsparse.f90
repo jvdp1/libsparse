@@ -19,11 +19,11 @@ module modsparse
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
  use modhash
+ use iso_c_binding,only:c_int,c_ptr,c_null_ptr
 #if (_METIS==1)
  use modmetis
- use iso_c_binding,only:c_int,c_ptr,c_null_ptr
 #endif
-#if (_METIS==1 .AND. _SPAINV==1)
+#if (_SPAINV==1)
  use modspainv
 #endif
 #if (_PARDISO==1)
@@ -168,7 +168,7 @@ module modsparse
   procedure,public::get=>get_crs
   !> @brief Initiate the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs
-#if (_METIS==1 .AND. _SPAINV==1)
+#if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
   !> @brief Solver with incomplete Cholesky factor
@@ -194,7 +194,7 @@ module modsparse
   procedure,public::solve=>solve_crs
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
-#if (_METIS==1 .AND. _SPAINV==1)
+#if (_SPAINV==1)
   !> @brief Computes and replaces by the sparse inverse
   procedure,public::spainv=>getspainv_crs
 #endif
@@ -261,7 +261,6 @@ module modsparse
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!METIS GRAPH DATA STRUCTURE!!!!!!!!!!!!!!!!!!!!!!!!!aaa
-#if (_METIS==1)
  type::metisgraph
   private
   integer(kind=int32)::unlog
@@ -272,22 +271,19 @@ module modsparse
   contains
   private
   procedure,public::destroy=>destroy_metisgraph
-  final::deallocate_scall_metisgraph
+  final::deallocate_scal_metisgraph
  end type
 
  interface metisgraph
   module procedure constructor_metisgraph
  end interface
-#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GENERAL INTERFACES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  !> @brief Converts sparse matrices from one format to another one; e.g., crsmat=coomat
  interface assignment(=)
   module procedure convertfromlltocoo,convertfromlltocrs&
                   ,convertfromcootocrs,convertfromcootoll&
-#if (_METIS==1)
                   ,convertfromcrstometisgraph&
-#endif
                   ,convertfromcrstocoo,convertfromcrstoll
  end interface
 
@@ -1203,7 +1199,7 @@ function getordering_crs(sparse&
 end function
 #endif 
 
-#if (_METIS==1 .AND. _SPAINV==1)
+#if (_SPAINV==1)
 !**GET CHOLESKY
 subroutine getichol_crs(sparse)
  class(crssparse),intent(inout)::sparse
@@ -1224,7 +1220,14 @@ subroutine getichol_crs(sparse)
 #endif
 
  !Ordering
- if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
+ if(.not.allocated(sparse%perm))then
+#if (_METIS==1)
+  call sparse%setpermutation(sparse%getordering())
+#else
+  write(sparse%unlog,'(a)')' ERROR: A permutation vector must be set before calling ichol'
+  error stop
+#endif
+ endif
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
@@ -1267,7 +1270,14 @@ subroutine getspainv_crs(sparse)
 #endif
 
  !Ordering
- if(.not.allocated(sparse%perm))call sparse%setpermutation(sparse%getordering())
+ if(.not.allocated(sparse%perm))then
+#if (_METIS==1)
+  call sparse%setpermutation(sparse%getordering())
+#else
+  write(sparse%unlog,'(a)')' ERROR: A permutation vector must be set before calling spainv'
+  error stop
+#endif
+ endif
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
@@ -1502,7 +1512,7 @@ subroutine solve_crs(sparse,x,y)
 end subroutine
 #endif
 
-#if (_METIS==1 .AND. _SPAINV==1)
+#if (_SPAINV==1)
 !**SOLVE WITH INCOMPLETE CHOL
 subroutine isolve_crs(sparse,x,y)
  !sparse*x=y
@@ -2131,7 +2141,6 @@ end subroutine
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!METIS GRAPH DATA STRUCTURE!!!!!!!!!!!!!!!!!!!!!!!!!aaa
-#if (_METIS==1)
 !**CONSTRUCTOR
 function constructor_metisgraph(n,m,unlog) result(metis)
  type(metisgraph)::metis
@@ -2166,13 +2175,12 @@ subroutine destroy_metisgraph(metis)
 end subroutine
 
 !FINAL
-subroutine deallocate_scall_metisgraph(metis)
+subroutine deallocate_scal_metisgraph(metis)
  type(metisgraph),intent(inout)::metis
  
  call destroy_metisgraph(metis)
 
 end subroutine
-#endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!OTHER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !CHECKS
@@ -2442,7 +2450,6 @@ subroutine convertfromcrstoll(othersparse,sparse)
 
 end subroutine
 
-#if (_METIS==1)
 subroutine convertfromcrstometisgraph(metis,sparse)
  type(metisgraph),intent(out)::metis
  type(crssparse),intent(in)::sparse
@@ -2494,5 +2501,4 @@ subroutine convertfromcrstometisgraph(metis,sparse)
  enddo
 
 end subroutine
-#endif
 end module

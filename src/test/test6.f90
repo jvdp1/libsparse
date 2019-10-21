@@ -1,10 +1,9 @@
-program test5
+program test6
 #if (_DP==0)
  use iso_fortran_env,only:int32,int64,wp=>real32
 #else
  use iso_fortran_env,only:int32,int64,wp=>real64
 #endif
- use modmetis,only:METIS_CTYPE_SHEM
  use modsparse
  implicit none
  integer(kind=int32)::nrow
@@ -44,7 +43,11 @@ program test5
 
  call crs%printsquare()
 
+#if (_METIS==1)
  call crs%setpermutation(crs%getordering(bglvl=0))
+#else
+ call crs%setpermutation((/(i,i=1,crs%getdim(1))/))
+#endif
  call crs%printstats()
 
 !!!!!!!!!!!!!!!!
@@ -63,8 +66,12 @@ program test5
  enddo
 
  write(*,*)'Permuted matrix'
- 
+
+#if (_METIS==1)
  perm=crs%getordering(bglvl=0)
+#else
+ perm=(/(i,i=1,crs%getdim(1))/)
+#endif
  iarray=0
  do i=1,crs%getdim(1)
   do j=1,crs%getdim(2)
@@ -89,7 +96,11 @@ program test5
   
  call crs%sort()
  
+#if (_METIS==1)
  call crs%setpermutation(crs%getordering(bglvl=0))
+#else
+ call crs%setpermutation((/(i,i=1,crs%getdim(1))/))
+#endif
  call crs%printstats()
 
  allocate(x(crs%getdim(1)),y(crs%getdim(1)))
