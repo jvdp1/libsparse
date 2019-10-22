@@ -272,6 +272,8 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
  allocate(jvec(neqns),kvec(neqns),stat=ii)
  if( ii /= 0 ) call alloc_err
 
+ jvec=0 !it must be re-initialized to 0 only if it is modified, i.e, when n.gt.0
+
  do jnode = nnode, 1, -1
   icol1 = inode(jnode+1) + 1
   icol2 = inode(jnode)
@@ -281,7 +283,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
   if( ii /= 0 ) call alloc_err
   ttt=0._wp
-  jvec=0
+  !jvec=0
   n=0
   do irow = icol1, icol2
    ttt(irow,irow) = diag(irow)
@@ -369,12 +371,16 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
            end if
         end do
      end do
-     deallocate( ttt )
-     if( n > 0 ) deallocate( s21)
 
- end do ! jnode
+  deallocate( ttt )
+  if(n.gt.0)then
+   deallocate(s21)
+   jvec=0
+  endif
 
- deallocate( jvec, kvec )
+ enddo ! jnode
+
+ deallocate(jvec,kvec)
 
 end subroutine
 
@@ -391,6 +397,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
   allocate( jvec(neqns), kvec(neqns),stat = ii )
   if( ii /= 0 ) call alloc_err
+ 
+  jvec=0  !placed here and at the end of the loop to avoid to re-initialize it at each iteration and when n21=0
 
 ! backwards flops: determine inverse using supernodal blocks
   do jnode = 1, nnode
@@ -402,7 +410,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
      allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
      if( ii /= 0 ) call alloc_err
      ttt=0._wp
-     jvec=0
+     !jvec=0
      n21=0
      do irow=icol1,icol2
       ttt(irow,irow)=diag(irow)
@@ -524,11 +532,16 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
            end if
         end do
      end do
-     deallocate( ttt )
-     if( n21 > 0 ) deallocate( s21, f21 )
-  end do ! jnode
 
-  deallocate( jvec, kvec )
+   deallocate( ttt )
+   if(n21.gt.0)then
+    deallocate(s21,f21)
+    jvec=0
+   endif
+
+  enddo ! jnode
+
+  deallocate(jvec,kvec)
 
 end subroutine 
 
