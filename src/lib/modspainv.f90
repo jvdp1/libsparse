@@ -118,6 +118,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
   
  integer(kind=int32)::i
  integer(kind=int32)::nnode
+ integer(kind=int32)::maxnode
  integer(kind=int32)::maxsub,flag,maxlnz
  integer(kind=int32),allocatable::inode(:)
 !$ real(kind=real64)::t1
@@ -127,38 +128,54 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  call symbolicfact(neqns,ia(neqns+1)-1,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
  !$ time(1)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+ !$ write(*,'(x,a,t30,a,g0)')'CRS Symb. fact.',': Elapsed time = ',time(1)
+#endif
 
  call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  !$ time(2)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+ !$ write(*,'(x,a,t30,a,g0)')'CRS Compute xspars',': Elapsed time = ',time(2)
+#endif
 
  !super following Karin Meyer
  allocate(inode(neqns))
- call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode)
+ call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+ !$ write(*,'(x,a,t30,a,g0)')'CRS Super nodes',': Elapsed time = ',time(3)
+#endif
 
  ! Cholesky factorization
  call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
  !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+ !$ write(*,'(x,a,t30,a,g0)')'CRS Chol. fact.',': Elapsed time = ',time(4)
+#endif
 
  if(lspainv)then
   ! Matrix inverse
   call super_sparsinv(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
   !$ time(5)=omp_get_wtime()-t1
   !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+  !$ write(*,'(x,a,t30,a,g0)')'CRS Inversion',': Elapsed time = ',time(5)
+#endif
  endif
  
-#if (_VERBOSE >1)
- write(*,'(2x,a,i0)')'Flag symbolic factorization : ',flag
- write(*,'(2x,a,i0)')'Number of super-nodes       : ',nnode
- maxsub=0
+#if (_VERBOSE >0)
+ write(*,'(/2x,a,i0)')'Flag symbolic factorization    : ',flag
+ !write(*,'(2x,a,i0)')'Number of non-zero in the facor: ',maxlnz
+ write(*,'(2x,a,i0)')'Number of super-nodes          : ',nnode
+ write(*,'(2x,a,i0/)')'Max size of super-nodes        : ',maxnode
+#endif
+#if (_VERBOSE >2)
  do i=1,nnode
-  maxsub=max(maxsub,inode(i)-inode(i+1)+1)
   write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
  end do
- write(*,'(2x,a,i0/)')'Max size of super-nodes     : ',maxsub
 #endif
 
 end subroutine
@@ -206,10 +223,11 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
 
 end subroutine
 
-subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode )
+subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(out)::nnode
+ integer(kind=int32),intent(out)::maxnode
  integer(kind=int32),intent(out)::inode(:) !size=neqns
 
  integer(kind=int32)::i,ii,j,n,ilast,kk
@@ -218,6 +236,7 @@ subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode )
  ! establish boundaries between diaggonal blocks 100% full
  ilast = neqns
  nnode = 0
+ maxnode=0
  do i = neqns-1, 1, -1
     ii = xnzsub(i)
     n = 0
@@ -228,8 +247,9 @@ subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode )
        n = n + 1
     end do
     xx = dble( n ) / dble( ilast - i )
-    if( xx < 1._wp .and. (ilast-i)>minsizesupernode ) then
+    if( xx < 1._wp .and. (ilast-i).ge.minsizesupernode ) then
      nnode = nnode +1
+     maxnode=max(maxnode,ilast-i)
      inode(nnode) = ilast
      ilast = i
     end if
@@ -260,7 +280,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   !pick out diagonal block
   allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
   if( ii /= 0 ) call alloc_err
-  ttt=0.d0
+  ttt=0._wp
   jvec=0
   n=0
   do irow = icol1, icol2
