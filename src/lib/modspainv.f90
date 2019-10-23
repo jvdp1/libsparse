@@ -43,26 +43,31 @@ contains
 
 !PUBLIC
 !Should return the Cholesky factor in the permuted order
-subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,un)
+subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  integer(kind=int32),intent(inout)::ia(:)
  integer(kind=int32),intent(inout)::ja(:)
  integer(kind=int32),intent(in)::xadj(:),adjncy(:)
  integer(kind=int32),intent(in)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in),optional::minsizenode
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
  
  integer(kind=int32)::unlog,neqns
+ integer(kind=int32)::mssn
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
+
+ mssn=minsizesupernode
+ if(present(minsizenode))mssn=minsizenode
 
  unlog=output_unit
  if(present(un))unlog=un
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
 
  !Convert to ija
  !$ t1=omp_get_wtime()
@@ -73,26 +78,31 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,un)
 
 end subroutine
 
-subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
+subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
  integer(kind=int32),intent(in)::xadj(:),adjncy(:)
  integer(kind=int32),intent(inout)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in),optional::minsizenode
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout)::a(:)
  
  integer(kind=int32)::unlog,neqns
+ integer(kind=int32)::mssn
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
+
+ mssn=minsizesupernode
+ if(present(minsizenode))mssn=minsizenode
 
  unlog=output_unit
  if(present(un))unlog=un
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,xlnz,xspars,xnzsub,nzsub,diag,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
 
  !Convert to ija
  !$ t1=omp_get_wtime()
@@ -103,8 +113,9 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,un)
 
 end subroutine
 
-subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspars,xnzsub,nzsub,diag,time)
+subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
  integer(kind=int32),intent(in)::neqns
+ integer(kind=int32),intent(in)::mssn
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
  integer(kind=int32),intent(in)::xadj(:),adjncy(:)
@@ -141,7 +152,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 
  !super following Karin Meyer
  allocate(inode(neqns))
- call super_nodes(neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
+ call super_nodes(mssn,neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
@@ -223,7 +234,8 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
 
 end subroutine
 
-subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
+subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
+ integer(kind=int32),intent(in)::mssn
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(out)::nnode
@@ -247,7 +259,7 @@ subroutine super_nodes( neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
        n = n + 1
     end do
     xx = dble( n ) / dble( ilast - i )
-    if( xx < 1._wp .and. (ilast-i).ge.minsizesupernode ) then
+    if( xx < 1._wp .and. (ilast-i).ge.mssn ) then
      nnode = nnode +1
      maxnode=max(maxnode,ilast-i)
      inode(nnode) = ilast
@@ -266,6 +278,9 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
  real(kind=wp),intent(inout)::xspars(:),diag(:)
 
  integer(kind=int32)::i,j,k,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
+#if (_VERBOSE>0)
+ integer(kind=int32)::ninit
+#endif
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
 
@@ -273,6 +288,9 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
  if( ii /= 0 ) call alloc_err
 
  jvec=0 !it must be re-initialized to 0 only if it is modified, i.e, when n.gt.0
+#if (_VERBOSE>0)
+ ninit=0
+#endif
 
  do jnode = nnode, 1, -1
   icol1 = inode(jnode+1) + 1
@@ -376,12 +394,19 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   if(n.gt.0)then
    deallocate(s21)
    jvec=0
+#if (_VERBOSE>0)
+   ninit=ninit+1
+#endif
   endif
 
  enddo ! jnode
 
  deallocate(jvec,kvec)
-
+ 
+#if (_VERBOSE>0)
+ write(*,'(a,i0)')' Number of zeroing a large vector (jvec): ',ninit
+#endif
+ 
 end subroutine
 
 subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
