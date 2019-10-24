@@ -14,9 +14,13 @@ module modspainv
  !$ use omp_lib
  implicit none
  private
- public::get_ichol,get_spainv
+ public::get_chol,get_ichol,get_spainv
 
  integer(kind=int32),parameter::minsizesupernode=256
+
+ interface get_chol
+  module procedure get_chol_crs
+ end interface
 
  interface get_ichol
   module procedure get_ichol_crs
@@ -72,6 +76,41 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  !Convert to ija
  !$ t1=omp_get_wtime()
  call converttoija_noperm(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ !$ time(6)=omp_get_wtime()-t1
+
+ call writetime(unlog,time,'CHOL FACT.')
+
+end subroutine
+
+subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
+ integer(kind=int32),intent(inout),allocatable::ia(:)
+ integer(kind=int32),intent(inout),allocatable::ja(:)
+ integer(kind=int32),intent(in)::xadj(:),adjncy(:)
+ integer(kind=int32),intent(in)::perm(:)  !Ap(i,:)=A(perm(i),:)
+ integer(kind=int32),intent(in),optional::minsizenode
+ integer(kind=int32),intent(in),optional::un
+ real(kind=wp),intent(inout),allocatable::a(:)
+ 
+ integer(kind=int32)::unlog,neqns
+ integer(kind=int32)::mssn
+ integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ real(kind=wp),allocatable::xspars(:),diag(:)
+ !$ real(kind=real64)::t1
+ real(kind=real64)::time(6)
+
+ mssn=minsizesupernode
+ if(present(minsizenode))mssn=minsizenode
+
+ unlog=output_unit
+ if(present(un))unlog=un
+
+ neqns=size(ia)-1
+
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
+
+ !Convert to ija
+ !$ t1=omp_get_wtime()
+ call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
  !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'CHOL FACT.')
@@ -181,6 +220,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  write(*,'(/2x,a,i0)')'Flag symbolic factorization    : ',flag
  !write(*,'(2x,a,i0)')'Number of non-zero in the facor: ',maxlnz
  write(*,'(2x,a,i0)')'Number of super-nodes          : ',nnode
+ write(*,'(2x,a,i0)')'Min size of super-nodes        : ',mssn
  write(*,'(2x,a,i0/)')'Max size of super-nodes        : ',maxnode
 #endif
 #if (_VERBOSE >2)
@@ -190,7 +230,6 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 #endif
 
 end subroutine
-
 
 !PRIVATE
 subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
@@ -393,7 +432,19 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   deallocate( ttt )
   if(n.gt.0)then
    deallocate(s21)
-   jvec=0
+   !jvec=0
+   !this should be faster than jvec=0
+   do irow = icol1, icol2
+    ksub = xnzsub(irow)
+    do i = xlnz(irow), xlnz(irow+1)-1
+     jcol = ixsub(ksub)
+     ksub = ksub + 1
+     if( jcol <= icol2 ) then
+     else
+       jvec(jcol)=0
+     end if
+    end do
+   end do
 #if (_VERBOSE>0)
    ninit=ninit+1
 #endif
@@ -721,6 +772,40 @@ subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
    enddo intloop
   end do
  end do
+
+end subroutine 
+
+subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+ integer(kind=int32),intent(in)::neqns
+ integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(inout),allocatable::ia(:),ja(:)
+ integer(kind=int32),intent(in)::perm(:)
+ real(kind=wp),intent(in)::xspars(:),diag(:)
+ real(kind=wp),intent(inout),allocatable::a(:)
+
+ integer(kind=int32)::j,irow,ksub,icol
+
+ deallocate(ja)
+ deallocate(a)
+
+ allocate(ja(size(xspars)+neqns))
+ allocate(a(size(xspars)+neqns))
+ ja=0
+ a=0._wp
+
+ do irow=1,neqns
+  ia(irow)=xlnz(irow)+irow-1
+  ja(ia(irow))=irow
+  a(ia(irow))=diag(irow)
+  ksub=xnzsub(irow)
+  do j=xlnz(irow),xlnz(irow+1)-1
+   icol=ixsub(ksub)
+   ksub=ksub+1
+   ja(j+irow)=icol
+   a(j+irow)=xspars(j)
+  enddo
+ enddo
+ ia(neqns+1)=xlnz(neqns+1)+neqns
 
 end subroutine 
 

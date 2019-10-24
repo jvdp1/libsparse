@@ -158,6 +158,10 @@ module modsparse
   private
   !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
   procedure,public::add=>add_crs
+#if (_SPAINV==1)
+  !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
+  procedure,public::chol=>getchol_crs
+#endif
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_scal_crs
   procedure::diag_vect_crs
@@ -1111,6 +1115,63 @@ function totalnumberofelements_crs(sparse) result(nel)
 
 end function
 
+#if (_SPAINV==1)
+!**GET (COMPLETE) CHOLESKY FACTOR
+subroutine getchol_crs(sparse,minsizenode)
+ class(crssparse),intent(inout)::sparse
+ integer(kind=int32),intent(in),optional::minsizenode
+
+ type(metisgraph)::metis
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1,t2
+
+ !$ t1=omp_get_wtime()
+ !$ t2=t1
+#endif
+
+ call sparse%sort()
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ !Ordering
+ if(.not.allocated(sparse%perm))then
+#if (_METIS==1)
+  call sparse%setpermutation(sparse%getordering())
+#else
+  write(sparse%unlog,'(a)')' ERROR: A permutation vector must be set before calling chol'
+  error stop
+#endif
+ endif
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ metis=sparse
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ if(present(minsizenode))then
+  call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,minsizenode=minsizenode,un=sparse%unlog)
+ else
+  call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,un=sparse%unlog)
+ endif
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS Chol. fact.',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS',': Total   time = ',omp_get_wtime()-t2
+#endif
+
+end subroutine
+#endif
+
 !**GET ORDER
 #if (_METIS==1)
 function getordering_crs(sparse&
@@ -1200,9 +1261,10 @@ end function
 #endif 
 
 #if (_SPAINV==1)
-!**GET CHOLESKY
-subroutine getichol_crs(sparse)
+!**GET INCOMPLETE CHOLESKY FACTOR
+subroutine getichol_crs(sparse,minsizenode)
  class(crssparse),intent(inout)::sparse
+ integer(kind=int32),intent(in),optional::minsizenode
 
  type(metisgraph)::metis
 #if (_VERBOSE>0)
@@ -1241,18 +1303,23 @@ subroutine getichol_crs(sparse)
  !$ t1=omp_get_wtime()
 #endif
 
- call get_ichol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,sparse%unlog)
+ if(present(minsizenode))then
+  call get_ichol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,minsizenode=minsizenode,un=sparse%unlog)
+ else
+  call get_ichol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,un=sparse%unlog)
+ endif
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS Chol. fact.',': Elapsed time = ',omp_get_wtime()-t1
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS Chol. fact.',': Total   time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS',': Total   time = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
 
 !**GET SPARSE INVERSE
-subroutine getspainv_crs(sparse)
+subroutine getspainv_crs(sparse,minsizenode)
  class(crssparse),intent(inout)::sparse
+ integer(kind=int32),intent(in),optional::minsizenode
 
  type(metisgraph)::metis
 #if (_VERBOSE>0)
@@ -1291,11 +1358,15 @@ subroutine getspainv_crs(sparse)
  !$ t1=omp_get_wtime()
 #endif
 
- call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,sparse%unlog)
+ if(present(minsizenode))then
+  call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,minsizenode=minsizenode,un=sparse%unlog)
+ else
+  call get_spainv(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,un=sparse%unlog)
+ endif
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Elapsed time = ',omp_get_wtime()-t1
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Total   time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS',': Total   time = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
