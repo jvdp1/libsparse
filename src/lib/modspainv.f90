@@ -35,11 +35,14 @@ module modspainv
               xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )
+   import int64
    integer,intent(in)::neqns
-   integer::maxsub,flag,maxlnz
+   integer::maxsub,flag
+   integer(kind=int64)::maxlnz
    integer,intent(in)::xadj(*),adjncy(*)
    integer,intent(in)::perm(*),invp(*)
-   integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
+   integer::xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
+   integer(kind=int64)::xlnz(*)
   end subroutine
  end interface
 
@@ -58,7 +61,8 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
- integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ integer(kind=int32),allocatable::xnzsub(:),nzsub(:)
+ integer(kind=int64),allocatable::xlnz(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
@@ -93,7 +97,8 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
- integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ integer(kind=int32),allocatable::xnzsub(:),nzsub(:)
+ integer(kind=int64),allocatable::xlnz(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
@@ -128,7 +133,8 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
- integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
+ integer(kind=int32),allocatable::xnzsub(:),nzsub(:)
+ integer(kind=int64),allocatable::xlnz(:)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
@@ -163,13 +169,15 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  real(kind=real64),intent(inout)::time(:)
  logical,intent(in)::lspainv
 
- integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
+ integer(kind=int32),allocatable,intent(out)::xnzsub(:),nzsub(:)
+ integer(kind=int64),allocatable,intent(out)::xlnz(:)
  real(kind=wp),allocatable,intent(out)::xspars(:),diag(:)
   
  integer(kind=int32)::i
  integer(kind=int32)::nnode
  integer(kind=int32)::maxnode
- integer(kind=int32)::maxsub,flag,maxlnz
+ integer(kind=int32)::maxsub,flag
+ integer(kind=int64)::maxlnz
  integer(kind=int32),allocatable::inode(:)
 !$ real(kind=real64)::t1
 
@@ -218,7 +226,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  
 #if (_VERBOSE >0)
  write(*,'(/2x,a,i0)')'Flag symbolic factorization    : ',flag
- !write(*,'(2x,a,i0)')'Number of non-zero in the facor: ',maxlnz
+ write(*,'(2x,a,i0)')'Number of non-zero in the facor: ',size(xspars)+neqns
  write(*,'(2x,a,i0)')'Number of super-nodes          : ',nnode
  write(*,'(2x,a,i0)')'Min size of super-nodes        : ',mssn
  write(*,'(2x,a,i0/)')'Max size of super-nodes        : ',maxnode
@@ -235,8 +243,10 @@ end subroutine
 subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,maxsub,flag)
  integer(kind=int32),intent(in)::neqns,nnzeros
  integer(kind=int32),intent(in)::xadj(:),adjncy(:),perm(:)
- integer(kind=int32),intent(out)::maxlnz,maxsub,flag
- integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
+ integer(kind=int32),intent(out)::maxsub,flag
+ integer(kind=int64),intent(out)::maxlnz
+ integer(kind=int32),allocatable,intent(out)::xnzsub(:),nzsub(:)
+ integer(kind=int64),allocatable,intent(out)::xlnz(:)
 
  integer(kind=int32)::i,maxsubinit
  integer(kind=int32),allocatable::invp(:),rchlnk(:),mrglnk(:),marker(:)
@@ -248,7 +258,7 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
 
  allocate(xlnz(neqns+1),xnzsub(neqns+1))
  allocate(rchlnk(neqns),mrglnk(neqns),marker(neqns))
- xlnz=0
+ xlnz=0_int64
  xnzsub=0
  rchlnk=0
  mrglnk=0
@@ -271,17 +281,20 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
  enddo
  deallocate(rchlnk,mrglnk,marker)
 
+ write(*,'("aaa ",2x,a,i0)')'Number of non-zero in the facor: ',maxlnz+neqns
 end subroutine
 
 subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  integer(kind=int32),intent(in)::mssn
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::ixsub(:),xnzsub(:)
+ integer(kind=int64),intent(in)::xlnz(:)
  integer(kind=int32),intent(out)::nnode
  integer(kind=int32),intent(out)::maxnode
  integer(kind=int32),intent(out)::inode(:) !size=neqns
 
- integer(kind=int32)::i,ii,j,n,ilast,kk
+ integer(kind=int32)::i,ii,n,ilast,kk
+ integer(kind=int64)::j
  real(kind=wp)::xx
 
  ! establish boundaries between diaggonal blocks 100% full
@@ -313,10 +326,12 @@ end subroutine
 
 subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
  integer(kind=int32),intent(in)::neqns,nnode
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
+ integer(kind=int32),intent(in)::ixsub(:),xnzsub(:),inode(:)
+ integer(kind=int64),intent(in)::xlnz(:)
  real(kind=wp),intent(inout)::xspars(:),diag(:)
 
- integer(kind=int32)::i,j,k,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
+ integer(kind=int32)::k,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
+ integer(kind=int64)::i,j
 #if (_VERBOSE>0)
  integer(kind=int32)::ninit
 #endif
@@ -462,10 +477,12 @@ end subroutine
 
 subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   integer(kind=int32),intent(in)::neqns,nnode
-  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
+  integer(kind=int32),intent(in)::ixsub(:),xnzsub(:),inode(:)
+  integer(kind=int64),intent(in)::xlnz(:)
   real(kind=wp),intent(inout) ::xspars(:),diag(:)
 
-  integer(kind=int32)::irow,ksub,i,j,k,m,jcol,jrow, jnode, icol2, icol1, ii,jj, mm, n21, iopt
+  integer(kind=int32)::irow,ksub,j,k,m,jcol,jrow, jnode, icol2, icol1, ii,jj, mm, n21, iopt
+  integer(kind=int64)::i
   integer(kind=int32),allocatable::kvec(:),jvec(:)
   real(kind=wp)::tt,xx
   real(kind=wp),dimension(:,:),allocatable:: ttt, s21, s22, f21
@@ -622,14 +639,17 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 end subroutine 
 
 subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
- integer(kind=int32),intent(in)::neqns,maxlnz
+ integer(kind=int32),intent(in)::neqns
+ integer(kind=int64),intent(in)::maxlnz
  integer(kind=int32),intent(in)::ia(:),ja(:)
  integer(kind=int32),intent(in)::perm(:)
- integer(kind=int32),intent(in)::xlnz(:),nzsub(:),xnzsub(:)
+ integer(kind=int32),intent(in)::nzsub(:),xnzsub(:)
+ integer(kind=int64),intent(in)::xlnz(:)
  real(kind=wp),intent(in)::a(:)
  real(kind=wp),intent(out),allocatable::xspars(:),diag(:)
 
- integer(kind=int32)::irow,iirow,icol,i,j,k,kk
+ integer(kind=int32)::irow,iirow,icol,i,j,kk
+ integer(kind=int64)::k
  integer(kind=int32),allocatable::tmp(:)
  real(kind=wp),allocatable::rtmp(:)
 
@@ -642,7 +662,7 @@ subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,
   diag(i)=a(ia(irow))
   do k=xlnz(i),xlnz(i+1)-1
    iirow=irow
-   icol=perm(nzsub(xnzsub(i)+k-xlnz(i)))
+   icol=perm(nzsub(xnzsub(i)+(k-xlnz(i)))) !aaaa must be modified (As before) to avoid troubles with int64
    if(iirow.gt.icol)then
     iirow=icol
     icol=irow
@@ -660,12 +680,14 @@ end subroutine
 
 subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::ixsub(:),xnzsub(:)
+ integer(kind=int64),intent(in)::xlnz(:)
  integer(kind=int32),intent(in)::ia(:),ja(:),perm(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
  real(kind=wp),intent(inout):: a(:)
 
- integer(kind=int32)::irow,ksub,i,icol
+ integer(kind=int32)::irow,ksub,icol
+ integer(kind=int64)::i
  integer(kind=int32)::pirow,ppirow,picol,ip
 
  do irow = 1, neqns
@@ -694,13 +716,15 @@ end subroutine
 
 subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::ixsub(:),xnzsub(:)
+ integer(kind=int64),intent(in)::xlnz(:)
  integer(kind=int32),intent(in)::perm(:)
  integer(kind=int32),intent(inout)::ia(:),ja(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
  real(kind=wp),intent(inout):: a(:)
 
- integer(kind=int32)::irow,ksub,i,icol
+ integer(kind=int32)::irow,ksub,icol
+ integer(kind=int64)::i
  integer(kind=int32)::pirow,ppirow,picol,ip
  integer(kind=int32)::nel
  integer(kind=int32),allocatable::iperm(:)
@@ -777,13 +801,15 @@ end subroutine
 
 subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::ixsub(:),xnzsub(:)
+ integer(kind=int64),intent(in)::xlnz(:)
  integer(kind=int32),intent(inout),allocatable::ia(:),ja(:)
  integer(kind=int32),intent(in)::perm(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
  real(kind=wp),intent(inout),allocatable::a(:)
 
- integer(kind=int32)::j,irow,ksub,icol
+ integer(kind=int32)::irow,ksub,icol
+ integer(kind=int64)::j
 
  deallocate(ja)
  deallocate(a)

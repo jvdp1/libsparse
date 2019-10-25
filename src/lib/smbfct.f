@@ -66,11 +66,15 @@ C****************************************************************         55.
 C                                                                         56.
          INTEGER ADJNCY(*), INVP(*), MRGLNK(*), NZSUB(*),                 57.
      1           PERM(*), RCHLNK(*), MARKER(*)                            58.
-         INTEGER XADJ(*), XLNZ(*), XNZSUB(*),                             59.
-     1           FLAG, I, INZ, J, JSTOP, JSTRT, K, KNZ,                   60.
-     1           KXSUB, MRGK, LMAX, M, MAXLNZ, MAXSUB,                    61.
+         INTEGER XADJ(*), XNZSUB(*), 
+     1           FLAG, I, J, JSTOP, JSTRT, K, 
+     1           KXSUB, MRGK, LMAX, M, MAXSUB, 
      1           NABOR, NEQNS, NODE, NP1, NZBEG, NZEND,                   62.
      1           RCHM, MRKFLG                                             63.
+         INTEGER(kind=8) XLNZ(*),
+     1           INZ, KNZ,
+     1           MAXLNZ
+C
 C                                                                         64.
 C****************************************************************         65.
 C                                                                         66.
