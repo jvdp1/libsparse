@@ -18,6 +18,7 @@ program test7
  integer(kind=int32),allocatable::perm(:)
  real(kind=wp)::val
  real(kind=wp),allocatable::x(:),y(:)
+ real(kind=wp),allocatable::x2(:,:),y2(:,:)
  real(kind=wp),allocatable::xx(:)
  logical::lup=.false.
  type(coosparse)::coo
@@ -103,6 +104,25 @@ program test7
 
  do i=1,crs1%getdim(1)
   write(*,*)x(i),xx(i)
+ enddo
+
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+ !CSR UPPER
+ write(*,'(a)')' Multiple RHS'
+
+ allocate(x2(crs1%getdim(1),5),y2(crs1%getdim(1),5))
+ do j=1,5
+  do i=1,crs1%getdim(1)
+   y2(i,j)=real(i,kind=wp)/j
+  enddo
+ enddo
+ 
+ x2=0._wp
+ call crs1%solve(x2,y2)
+
+ do i=1,crs1%getdim(1)
+  write(*,*)x2(i,:)
  enddo
 
 end program

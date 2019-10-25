@@ -7,7 +7,7 @@
 !> @todo Implementation of parameterized derived-type declarations to allow single- and double-precision sparse matrices
 !> @todo Implementation of ordering for ll and coo
 !> @todo Move metisgraph to modmetisgraph. So modspainv does not depend on modmetis anymore
-!> @todo Generalization of the solve_crs method (for nrhs >1 and for different solvers)
+!> @todo Generalization of the solve_crs method (for different solvers)
 
 !#if (_PARDISO==1)
 !include 'mkl_pardiso.f90'
@@ -201,7 +201,9 @@ module modsparse
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs
   !> @brief MKL PARDISO solver
-  procedure,public::solve=>solve_crs
+  procedure,private::solve_crs_vector
+  procedure,private::solve_crs_array
+  generic,public::solve=>solve_crs_vector,solve_crs_array
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
 #if (_SPAINV==1)
@@ -1490,7 +1492,7 @@ end subroutine
 
 !**SOLVE
 #if (_PARDISO==1)
-subroutine solve_crs(sparse,x,y)
+subroutine solve_crs_vector(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out)::x(:)
@@ -1546,7 +1548,7 @@ subroutine solve_crs(sparse,x,y)
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
                 parvar%idum,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
   endif
-  call checkparido(parvar%phase,error) 
+  call checkpardiso(parvar%phase,error) 
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
@@ -1559,7 +1561,99 @@ subroutine solve_crs(sparse,x,y)
  call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
               parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
- call checkparido(parvar%phase,error) 
+ call checkpardiso(parvar%phase,error) 
+
+ parvar%msglvl=1
+ sparse%lpardisofirst=.false.
+
+ end associate
+
+contains
+
+ subroutine checkpardiso(phase,error)
+  integer(kind=int32),intent(in)::phase,error
+  if(error.ne.0)then
+   write(sparse%unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
+   stop
+  endif
+ end subroutine
+
+end subroutine
+
+subroutine solve_crs_array(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(inout)::sparse
+ real(kind=wp),intent(out)::x(:,:)
+ real(kind=wp),intent(inout)::y(:,:)
+
+ !Pardiso variables
+ integer(kind=int32)::error,phase
+ integer(kind=int32)::nrhs
+
+ integer(kind=int32)::i
+ !$ real(kind=real64)::t1
+
+ if(.not.sparse%lsquare())then
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+  return
+ endif
+
+ associate(parvar=>sparse%pardisovar)
+
+ nrhs=size(x,2)
+ if(nrhs.ne.size(y,2))then
+  write(sparse%unlog,'(a)')' ERROR: the number of colums of x and y provided to solve are different!'
+  error stop
+ endif
+
+ if(sparse%lpardisofirst)then
+  !$ t1=omp_get_wtime()
+  !Sort the matrix
+  call sparse%sort()
+
+  !Preparation of Cholesky of A with Pardiso
+  parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+
+  !initialize iparm
+  call pardisoinit(parvar%pt,parvar%mtype,parvar%iparm)
+!  do i=1,64
+!   write(sparse%unlog,*)'iparm',i,parvar%iparm(i)
+!  enddo
+  
+  !Ordering and factorization
+  parvar%phase=12
+  parvar%iparm(2)=3
+  parvar%iparm(27)=1
+#if (_DP==0)
+  parvar%iparm(28)=1
+#else
+  parvar%iparm(28)=0
+#endif
+  write(sparse%unlog,'(a)')' Start ordering and factorization'
+  if(allocated(sparse%perm))then
+   parvar%iparm(5)=1;parvar%iparm(31)=0;parvar%iparm(36)=0
+   call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+                sparse%perm,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+  else
+   call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+                sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+                parvar%idum,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+  endif
+  call checkpardiso(parvar%phase,error) 
+ 
+  write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
+  write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
+  !$ write(sparse%unlog,'(a,g0)')' Elapsed time                   = ',omp_get_wtime()-t1
+ endif 
+
+ !Solving
+ parvar%phase=33
+ parvar%iparm(27)=0
+ call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+              sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+              parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
+ call checkpardiso(parvar%phase,error) 
 
  parvar%msglvl=0
  sparse%lpardisofirst=.false.
@@ -1568,7 +1662,7 @@ subroutine solve_crs(sparse,x,y)
 
 contains
 
- subroutine checkparido(phase,error)
+ subroutine checkpardiso(phase,error)
   integer(kind=int32),intent(in)::phase,error
   if(error.ne.0)then
    write(sparse%unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
@@ -1578,11 +1672,22 @@ contains
 
 end subroutine
 #else
-subroutine solve_crs(sparse,x,y)
+subroutine solve_crs_vector(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
  real(kind=wp),intent(out)::x(:)
  real(kind=wp),intent(in)::y(:)
+
+ write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
+ x=y
+
+end subroutine
+
+subroutine solve_crs_array(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(in)::sparse
+ real(kind=wp),intent(out)::x(:,:)
+ real(kind=wp),intent(in)::y(:,:)
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
