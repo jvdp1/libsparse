@@ -22,6 +22,7 @@ ifeq ($(PARDISOENABLE),0)
 else
  PARDISO=1
  F90FLAGS+=
+ OBJ+=modvariablepardiso.o
 endif
 
 ifeq ($(METISENABLE),0)
