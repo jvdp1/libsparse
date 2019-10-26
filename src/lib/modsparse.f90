@@ -350,6 +350,10 @@ subroutine print_dim_gen(sparse)
  select type(sparse)
   type is(coosparse)
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
+  type is(crssparse)
+#if (_PARDISO==1)
+   write(sparse%unlog,'( "  PARDISO status              : ",i0)')sparse%lpardisofirst
+#endif
   class default
  end select
  write(sparse%unlog,'(a)')' '
@@ -873,7 +877,9 @@ function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
  sparse%ja=0
  sparse%a=0._wp
  
+#if (_PARDISO==1)
  sparse%lpardisofirst=.true.
+#endif
 
  sparse%lupperstorage=.false.
  if(present(lupper))sparse%lupperstorage=lupper
@@ -1531,6 +1537,7 @@ subroutine solve_crs_vector(sparse,x,y)
   !Ordering and factorization
   parvar%phase=12
   parvar%iparm(2)=3
+!  parvar%iparm(8)=1
   parvar%iparm(27)=1
 #if (_DP==0)
   parvar%iparm(28)=1
@@ -1563,7 +1570,12 @@ subroutine solve_crs_vector(sparse,x,y)
               parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
  call checkpardiso(parvar%phase,error) 
 
+#if (_VERBOSE>0)
  parvar%msglvl=1
+#else
+ parvar%msglvl=0
+#endif
+
  sparse%lpardisofirst=.false.
 
  end associate

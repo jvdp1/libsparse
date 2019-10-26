@@ -53,7 +53,6 @@ function constructor_pardiso_variable(maxfct,mnum,mtype,solver,msglvl) result(th
 
  integer(kind=int32)::i
 
-print*,'aaa constructor_pardiso_variable'
  this%phase=-9
 
  this%maxfct=1
@@ -85,7 +84,6 @@ end function
 subroutine reset_pardiso_variable(this)
  type(pardiso_variable),intent(inout)::this
 
-print*,'bbb reset_pardiso_variable'
  this%maxfct=1
  this%mnum=1
  this%mtype=-2
