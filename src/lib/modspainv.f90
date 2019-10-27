@@ -361,7 +361,11 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   end do
 
   !factorise
+#if(_DP==0)
+  call spotrf( 'L', mm, ttt, mm, ii )
+#else
   call dpotrf( 'L', mm, ttt, mm, ii )
+#endif
   if( ii /= 0 ) then
    write(*,*)'Dense fact: Routine DPOTRF returned error code', ii
    write(*,*)'... coefficient matrix must be positive definite'
@@ -373,7 +377,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          !... pick out rows
          allocate( s21(n, icol1:icol2), stat = ii )
          if( ii /= 0 ) call alloc_err
-         s21 = 0.d0
+         s21 = 0._wp
          do irow = icol1, icol2
             ksub = xnzsub(irow)
             do i = xlnz(irow), xlnz(irow+1)-1
@@ -386,12 +390,19 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          end do
 
          !calculate L21
-         call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1.d0, ttt, mm, s21, n )
-
+#if(_DP==0)
+         call strsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+#else
+         call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+#endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
          allocate( s22(n,n), stat = ii )
          if( ii /= 0 ) call alloc_err
-         call dsyrk( 'L', 'N', n, mm, 1.d0, s21, n, 0.d0, s22, n )
+#if(_DP==0)
+         call ssyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
+#else
+         call dsyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
+#endif
          kk = maxval(kvec(1:n))
          do i = 1, n
              jrow = kvec(i)
@@ -512,8 +523,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          if( ii /= 0 ) call alloc_err
          allocate( f21(n21, icol1:icol2), stat = ii )
          if( ii /= 0 ) call alloc_err
-         s21 = 0.d0
-         f21 = 0.d0
+         s21 = 0._wp
+         f21 = 0._wp
          do irow = icol1, icol2
             ksub = xnzsub(irow)
             do i = xlnz(irow), xlnz(irow+1)-1
@@ -525,9 +536,17 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
             end do
          end do
 !        ... post-multiply with inverse Chol factor -> solve
-         call dtrsm( 'R', 'L', 'N', 'N', n21, mm, 1.d0, ttt, mm, s21, n21 )
+#if(_DP==0)
+         call strsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
+#else
+         call dtrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
+#endif
 !        ... invert Cholesky factor
+#if(_DP==0)
+         call spotri( 'L',  mm, ttt, mm, ii )
+#else
          call dpotri( 'L',  mm, ttt, mm, ii )
+#endif
          if( ii /= 0 ) then
              write(*,*) 'Routine DPOTRI returned error code', ii
              stop
@@ -537,7 +556,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 44       if( iopt == 1 ) then
             allocate( rr(icol1:icol2), qx(icol1:icol2), stat = ii )
             if( ii /= 0 ) call alloc_err
-            f21 = 0.d0
+            f21 = 0._wp
             do k = 1, n21
                jrow = kvec(k)
                rr = s21(k,:)
@@ -561,7 +580,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
                 iopt = 1
                 go to 44
             end if
-            s22 = 0.d0
+            s22 = 0._wp
             do k = 1, n21
                jrow = kvec(k)
                s22(k,k) = diag(jrow)
@@ -579,15 +598,25 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
                   endif
                end do
             end do
-            call dsymm( 'L', 'L', n21, mm, 1.d0, s22, n21, s21, n21, 0.d0,     &
-&                                                                f21, n21  )
+#if(_DP==0)
+            call ssymm( 'L', 'L', n21, mm, 1._wp, s22, n21, s21, n21, 0._wp,f21, n21  )
+#else
+            call dsymm( 'L', 'L', n21, mm, 1._wp, s22, n21, s21, n21, 0._wp,f21, n21  )
+#endif
             deallocate( s22 )
          end if
 !        ... adjustments to current block
-         call dgemm( 'T', 'N', mm, mm, n21, 1.d0, f21, n21, s21, n21, 1.d0,    &
-&                                                                 ttt, mm )
+#if(_DP==0)
+         call sgemm( 'T', 'N', mm, mm, n21, 1._wp, f21, n21, s21, n21, 1._wp,ttt, mm )
+#else
+         call dgemm( 'T', 'N', mm, mm, n21, 1._wp, f21, n21, s21, n21, 1._wp,ttt, mm )
+#endif
      else
+#if(_DP==0)
+         call spotri( 'L',  mm, ttt, mm, ii )
+#else
          call dpotri( 'L',  mm, ttt, mm, ii )
+#endif
          if( ii /= 0 ) then
              write(*,*) 'Routine DPOTRI returned error code', ii
              stop

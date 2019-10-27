@@ -1118,7 +1118,11 @@ subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
   matdescra(3)='N'
  endif
  matdescra(4)='F'
+#if(_DP==0)
+ call mkl_scsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),x,val,y)
+#else
  call mkl_dcsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),x,val,y)
+#endif
  
 end subroutine
 
@@ -1735,14 +1739,22 @@ subroutine isolve_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
+#if(_DP==0)
+ call mkl_scsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#else
  call mkl_dcsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#endif
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
+#if(_DP==0)
+ call mkl_scsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+#else
  call mkl_dcsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+#endif
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS 2nd triangular solve',': Elapsed time = ',omp_get_wtime()-t2

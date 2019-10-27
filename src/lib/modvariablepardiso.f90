@@ -89,7 +89,7 @@ subroutine reset_pardiso_variable(this)
  this%mtype=-2
  this%solver=0
  this%idum=0
- this%ddum=0
+ this%ddum=0._wp
  this%msglvl=1
  this%phase=-9
  if(allocated(this%iparm))deallocate(this%iparm)
