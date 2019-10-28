@@ -408,21 +408,17 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
          end do
 
          !calculate L21
-#if(_DP==0)
    if(lpos)then
+#if(_DP==0)
     call strsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
    else
-    !call sgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
-    write(*,*)'ERROR',__LINE__,__FILE__
-    error stop
-   endif
+    call sgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
 #else
-   if(lpos)then
     call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
    else
     call dgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
-   endif
 #endif
+   endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
          allocate( s22(n,n), stat = ii )
          if( ii /= 0 ) call alloc_err
@@ -542,6 +538,10 @@ subroutine chol_cont_wp(x,ii,rank)
    x(i:n,i)=0._wp
   end if
  enddo
+
+ do i=1,n
+  x(i,i+1:n)=0._wp
+ enddo   
 
  if(present(rank))rank=orank
  
