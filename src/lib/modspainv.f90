@@ -170,6 +170,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  integer(kind=int32)::nnode
  integer(kind=int32)::maxnode
  integer(kind=int32)::maxsub,flag,maxlnz
+ integer(kind=int32)::rank
  integer(kind=int32),allocatable::inode(:)
 !$ real(kind=real64)::t1
 
@@ -190,7 +191,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 #endif
 
  !super following Karin Meyer
- allocate(inode(neqns))
+ allocate(inode(neqns+1))  !to allow diagonal matrices (for which the number of super-nodes is equal to the number of equations
  call super_nodes(mssn,neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
@@ -199,7 +200,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 #endif
 
  ! Cholesky factorization
- call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
+ call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode,rank)
  !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
@@ -221,7 +222,8 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !write(*,'(2x,a,i0)')'Number of non-zero in the facor: ',maxlnz
  write(*,'(2x,a,i0)')'Number of super-nodes          : ',nnode
  write(*,'(2x,a,i0)')'Min size of super-nodes        : ',mssn
- write(*,'(2x,a,i0/)')'Max size of super-nodes        : ',maxnode
+ write(*,'(2x,a,i0)')'Max size of super-nodes        : ',maxnode
+ write(*,'(2x,a,i0/)')'Rank of the matrix             : ',rank
 #endif
 #if (_VERBOSE >2)
  do i=1,nnode
@@ -279,7 +281,7 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(out)::nnode
  integer(kind=int32),intent(out)::maxnode
- integer(kind=int32),intent(out)::inode(:) !size=neqns
+ integer(kind=int32),intent(out)::inode(:) !size=neqns+1
 
  integer(kind=int32)::i,ii,j,n,ilast,kk
  real(kind=wp)::xx
@@ -311,17 +313,21 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
 
 end subroutine 
 
-subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
+subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32),intent(in)::neqns,nnode
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
+ integer(kind=int32),intent(out),optional::rank
  real(kind=wp),intent(inout)::xspars(:),diag(:)
 
  integer(kind=int32)::i,j,k,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
 #if (_VERBOSE>0)
  integer(kind=int32)::ninit
 #endif
+ integer(kind=int32)::orank
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
+! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
+ logical::lpos
 
  allocate(jvec(neqns),kvec(neqns),stat=ii)
  if( ii /= 0 ) call alloc_err
@@ -330,6 +336,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 #if (_VERBOSE>0)
  ninit=0
 #endif
+ orank=0
 
  do jnode = nnode, 1, -1
   icol1 = inode(jnode+1) + 1
@@ -361,19 +368,30 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   end do
 
   !factorise
+
+  lpos=.true.
+  irow=icol2-icol1+1
+!  ttt1=ttt  !1aaaaa
 #if(_DP==0)
   call spotrf( 'L', mm, ttt, mm, ii )
 #else
   call dpotrf( 'L', mm, ttt, mm, ii )
 #endif
-  if( ii /= 0 ) then
-   write(*,*)'Dense fact: Routine DPOTRF returned error code', ii
-   write(*,*)'... coefficient matrix must be positive definite'
+  if(ii.lt.0) then
+   write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
    error stop
+  elseif(ii.gt.0) then
+   write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)'
+   lpos=.false.
+!   ttt=ttt1
+!   call chol_cont_wp(ttt,1,irow)
+   call chol_cont_wp(ttt,ii,irow)
   end if
+!  deallocate(ttt1)
+  orank=orank+irow
 
   !adjust block below diagonal
-     if( n > 0 ) then
+  if(n.gt.0)then
          !... pick out rows
          allocate( s21(n, icol1:icol2), stat = ii )
          if( ii /= 0 ) call alloc_err
@@ -391,9 +409,19 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
          !calculate L21
 #if(_DP==0)
-         call strsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   if(lpos)then
+    call strsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   else
+    !call sgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+    write(*,*)'ERROR',__LINE__,__FILE__
+    error stop
+   endif
 #else
-         call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   if(lpos)then
+    call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   else
+    call dgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   endif
 #endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
          allocate( s22(n,n), stat = ii )
@@ -463,11 +491,59 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
  enddo ! jnode
 
+ !zeroing columns for semi-positive matrix
+ do irow=neqns,1,-1
+  if(diag(irow).lt.1.d-10)then
+   jvec(irow)=1
+  endif
+  ksub = xnzsub(irow)
+  do i = xlnz(irow), xlnz(irow+1)-1
+   jcol = ixsub(ksub)
+   ksub = ksub + 1
+   if(jvec(jcol).ne.0)xspars(i)=0._wp
+  end do
+ end do
+
  deallocate(jvec,kvec)
  
+ if(present(rank))rank=orank
+
 #if (_VERBOSE>0)
  write(*,'(a,i0)')' Number of zeroing a large vector (jvec): ',ninit
 #endif
+ 
+end subroutine
+
+subroutine chol_cont_wp(x,ii,rank)
+ !Cholesky decomposition
+ integer(kind=int32),intent(in)::ii
+ integer(kind=int32),intent(out),optional::rank
+ real(kind=wp),intent(inout)::x(:,:)
+
+ integer(kind=int32)::i,j,n,orank
+ real(kind=wp)::diagsq
+
+ orank=ii-1
+ n=size(x,1)
+
+ do i=ii,n
+  diagsq=x(i,i)-dot_product(x(i,1:i-1),x(i,1:i-1))
+  if(x(i,i).ge.1.d-10)then
+   if(diagsq.ge.(1.d-10*x(i,i)))then
+    orank=orank+1
+    x(i,i)=sqrt(diagsq)
+    do j=i+1,n     
+     x(j,i)=(x(j,i)-dot_product(x(j,1:i-1),x(i,1:i-1)))/x(i,i)
+    enddo
+   else
+    x(i:n,i)=0._wp
+   endif
+  else
+   x(i:n,i)=0._wp
+  end if
+ enddo
+
+ if(present(rank))rank=orank
  
 end subroutine
 
