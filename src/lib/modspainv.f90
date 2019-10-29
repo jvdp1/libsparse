@@ -16,7 +16,8 @@ module modspainv
  private
  public::get_chol,get_ichol,get_spainv
 
- integer(kind=int32),parameter::minsizesupernode=256
+! integer(kind=int32),parameter::minsizesupernode=256
+ integer(kind=int32),parameter::minsizesupernode=0  !values other than 0 (e.g., 256) may give troubles
 
  interface get_chol
   module procedure get_chol_crs
@@ -69,6 +70,8 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  unlog=output_unit
  if(present(un))unlog=un
 
+ time=0._real64
+
  neqns=size(ia)-1
 
  call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
@@ -104,6 +107,8 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  unlog=output_unit
  if(present(un))unlog=un
 
+ time=0._real64
+
  neqns=size(ia)-1
 
  call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
@@ -138,6 +143,8 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  unlog=output_unit
  if(present(un))unlog=un
+
+ time=0._real64
 
  neqns=size(ia)-1
 
@@ -381,7 +388,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
    write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
    error stop
   elseif(ii.gt.0) then
-   write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)'
+!   write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)'
    lpos=.false.
 !   ttt=ttt1
 !   call chol_cont_wp(ttt,1,irow)
@@ -856,6 +863,7 @@ subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  enddo
 
  !2. Replace a
+ a=0._wp
  do irow = 1, neqns
   pirow=irow
   a(ia(pirow))=diag(irow)

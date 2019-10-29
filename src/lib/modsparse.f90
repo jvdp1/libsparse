@@ -1845,7 +1845,7 @@ subroutine solveldlt_crs(sparse,x,y)
 
  integer(kind=int32)::i
  real(kind=wp),allocatable::x_(:)
- real(kind=wp),allocatable::z(:)
+! real(kind=wp),allocatable::z(:)
 #if (_VERBOSE>0)
  !$ real(kind=real64)::t1,t2
 
@@ -1874,11 +1874,17 @@ subroutine solveldlt_crs(sparse,x,y)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
-
- allocate(z(1:size(x)))
- z=0._wp
+! allocate(z(1:size(x)))
+! z=0._wp
+! do i=1,sparse%getdim(1)
+!  if(sparse%a(sparse%ia(i)).ne.0._wp)z(i)=x(i)/sparse%a(sparse%ia(i))
+! enddo
  do i=1,sparse%getdim(1)
-  if(sparse%a(sparse%ia(i)).ne.0._wp)z(i)=x(i)/sparse%a(sparse%ia(i))
+  if(sparse%a(sparse%ia(i)).ne.0._wp)then
+   x(i)=x(i)/sparse%a(sparse%ia(i))
+  else
+   x(i)=0._wp
+  endif
  enddo
 
 #if (_VERBOSE>0)
@@ -1887,9 +1893,9 @@ subroutine solveldlt_crs(sparse,x,y)
 #endif
 
 #if(_DP==0)
- call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,z,x_)
+ call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #else
- call mkl_dcsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,z,x_)
+ call mkl_dcsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #endif
 
 #if (_VERBOSE>0)
