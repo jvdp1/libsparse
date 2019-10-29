@@ -167,6 +167,8 @@ module modsparse
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
   procedure,public::chol=>getchol_crs
+  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
+  procedure,public::ldlt=>getldlt_crs
 #endif
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_scal_crs
@@ -181,8 +183,10 @@ module modsparse
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
-  !> @brief Solver with incomplete Cholesky factor
+  !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
   procedure,public::isolve=>isolve_crs
+  !> @brief Solver using LDLt decomposition
+  procedure,public::solveldlt=>solveldlt_crs
 #endif
   !> @brief Multiplication with a vector
   procedure,public::multbyv=>multgenv_csr
@@ -1190,6 +1194,66 @@ subroutine getchol_crs(sparse,minsizenode)
 #endif
 
 end subroutine
+
+!**GET LDLt DECOMPOSITION
+subroutine getldlt_crs(sparse,minsizenode)
+ class(crssparse),intent(inout)::sparse
+ integer(kind=int32),intent(in),optional::minsizenode
+ 
+ integer(kind=int32)::i,j
+ real(kind=wp)::s
+! real(kind=wp),allocatable::s(:)
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1,t2
+
+ !$ t1=omp_get_wtime()
+ !$ t2=t1
+#endif
+ 
+ if(present(minsizenode))then
+  call sparse%chol(minsizenode)
+ else
+  call sparse%chol()
+ endif
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt Cholesky fact.',': Elapsed time = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+! s=sparse%diag()
+!#if (_VERBOSE>0)
+! !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt Extraction of diag. el.',': Elapsed time = ',omp_get_wtime()-t1
+! !$ t1=omp_get_wtime()
+!#endif
+!
+! do i=1,sparse%getdim(1)
+!  if(s(i).ne.0._wp)s(i)=1._wp/s(i)
+! enddo
+!
+! do i=1,sparse%getdim(1)
+!  if(sparse%a(sparse%ia(i)).eq.0._wp)cycle
+!  sparse%a(sparse%ia(i))=sparse%a(sparse%ia(i))**2
+!  do j=sparse%ia(i),sparse%ia(i+1)-1
+!   if(i.ne.sparse%ja(j))sparse%a(j)=s(i)*sparse%a(j)
+!  enddo
+! enddo
+
+ do i=1,sparse%getdim(1)
+  s=0._wp
+  if(sparse%a(sparse%ia(i)).ne.0._wp)s=1._wp/sparse%a(sparse%ia(i))
+  sparse%a(sparse%ia(i))=sparse%a(sparse%ia(i))**2
+  do j=sparse%ia(i)+1,sparse%ia(i+1)-1
+   sparse%a(j)=s*sparse%a(j)
+  enddo
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt CRS Decomposition',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt CRS',': Total   time = ',omp_get_wtime()-t2
+#endif
+
+end subroutine
 #endif
 
 !**GET ORDER
@@ -1439,7 +1503,7 @@ subroutine printsquare_crs(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(10000(g0.6,1x))')tmp
+  write(un,'(10000(f10.6,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -1712,7 +1776,7 @@ end subroutine
 #endif
 
 #if (_SPAINV==1)
-!**SOLVE WITH INCOMPLETE CHOL
+!**SOLVE WITH A TRIANGULAR FACTOR
 subroutine isolve_crs(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
@@ -1768,6 +1832,78 @@ subroutine isolve_crs(sparse,x,y)
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS x permutation',': Elapsed time = ',omp_get_wtime()-t2
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS',': Total   time = ',omp_get_wtime()-t1
+#endif
+
+end subroutine
+
+!**SOLVE WITH LDLt DECOMPOSITION
+subroutine solveldlt_crs(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(in)::sparse
+ real(kind=wp),intent(out)::x(:)
+ real(kind=wp),intent(in)::y(:)
+
+ integer(kind=int32)::i
+ real(kind=wp),allocatable::x_(:)
+ real(kind=wp),allocatable::z(:)
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1,t2
+
+ !$ t1=omp_get_wtime()
+ !$ t2=omp_get_wtime()
+#endif
+
+ allocate(x_(1:size(x)))
+ 
+ do i=1,size(x)
+  x_(i)=y(sparse%perm(i))
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS y permutation',': Elapsed time = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+#if(_DP==0)
+ call mkl_scsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#else
+ call mkl_dcsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#endif
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+ allocate(z(1:size(x)))
+ z=0._wp
+ do i=1,sparse%getdim(1)
+  if(sparse%a(sparse%ia(i)).ne.0._wp)z(i)=x(i)/sparse%a(sparse%ia(i))
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS Diagonal solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+#if(_DP==0)
+ call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,z,x_)
+#else
+ call mkl_dcsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,z,x_)
+#endif
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 2nd triangular solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+ do i=1,size(x)
+  x(sparse%perm(i))=x_(i)
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS x permutation',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS',': Total   time = ',omp_get_wtime()-t1
 #endif
 
 end subroutine
