@@ -318,6 +318,10 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  inode(nnode) = ilast
  inode(nnode+1) = 0
 
+!print*,'inode aaa '
+!inode=(/(i,i=neqns,1,-1)/)
+!nnode=neqns
+
 end subroutine 
 
 subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
@@ -333,8 +337,13 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32)::orank
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
+ real(kind=wp)::alpha
 ! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
  logical::lpos
+
+
+ alpha=sqrt(epsilon(alpha))*maxval(abs(diag))
+print*,'alpha',alpha
 
  allocate(jvec(neqns),kvec(neqns),stat=ii)
  if( ii /= 0 ) call alloc_err
@@ -345,10 +354,12 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
  orank=0
 
- do jnode = nnode, 1, -1
+ dojnode: do jnode = nnode, 1, -1
   icol1 = inode(jnode+1) + 1
   icol2 = inode(jnode)
   mm = icol2 - icol1 +1
+print*,'jnode',jnode,icol1,icol2
+
 
   !pick out diagonal block
   allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
@@ -378,30 +389,332 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 
   lpos=.true.
   irow=icol2-icol1+1
+if(any(ttt.ne.ttt))print*,jnode,n,'ttt ',ttt
+  if(irow.eq.1)then
+   if(ttt(icol1,icol1).gt.0._wp)then
+    ttt=sqrt(ttt)
+   else
+    lpos=.false.
+    ttt=0._wp
+    irow=0
+   endif
+  else
 !  ttt1=ttt  !1aaaaa
 #if(_DP==0)
-  call spotrf( 'L', mm, ttt, mm, ii )
+   call spotrf( 'L', mm, ttt, mm, ii )
 #else
-  call dpotrf( 'L', mm, ttt, mm, ii )
-#endif
-  if(ii.lt.0) then
-   write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
-   error stop
-  elseif(ii.gt.0) then
-!   write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)'
-   lpos=.false.
-!   ttt=ttt1
+   call dpotrf( 'L', mm, ttt, mm, ii )
 !   call chol_cont_wp(ttt,1,irow)
-   call chol_cont_wp(ttt,ii,irow)
-  end if
-!  deallocate(ttt1)
+#endif
+   if(ii.ne.0)then
+    write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
+print*,'lpos ',ii,icol1,icol1+ii-1
+    deallocate(ttt)
+    call super_gsfct_per_column(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,irow,icol1,icol2)
+    orank=orank+irow
+    jvec=0
+    cycle dojnode
+print*,'cycle'
+   endif
+
+!   if(ii.lt.0) then
+!    write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
+!    error stop
+!   elseif(ii.gt.0) then
+!    !write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)'
+!    write(*,'(a,i0,a,i0)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)',irow
+!print*,'lpos ',ii,icol1,icol1+ii-1
+!    lpos=.false.
+!!    ttt=ttt1
+!!    call chol_cont_wp(ttt,1,irow)
+!    call chol_cont_wp(ttt,ii,irow)
+!!    call chol_pivot_wp(ttt,ii,alpha,irow)
+!   end if
+!!  deallocate(ttt1)
+  endif
   orank=orank+irow
+if(any(ttt.ne.ttt))print*,jnode,n,'tttf ',ttt
+!print*,'aaa',icol1,ttt,n
+if(.not.lpos)then
+ print*,'ttt ',n
+ do ii=icol1,icol2
+  write(*,'(*(g0.6,x))')ttt(ii,icol1:icol2)
+ enddo
+endif
+
 
   !adjust block below diagonal
   if(n.gt.0)then
          !... pick out rows
          allocate( s21(n, icol1:icol2), stat = ii )
          if( ii /= 0 ) call alloc_err
+         s21 = 0._wp
+         do irow = icol1, icol2
+            ksub = xnzsub(irow)
+            do i = xlnz(irow), xlnz(irow+1)-1
+               jcol = ixsub(ksub)
+               ksub = ksub + 1
+               if( jcol <= icol2 ) cycle
+               jj = jvec(jcol)
+               s21(jj,irow) = xspars(i)
+            end do
+         end do
+!print*,'s21i ',s21
+if(.not.lpos)then
+ print*,'s21'
+ do ii=1,n
+  write(*,'(*(g0.6,x))')s21(ii,icol1:icol2)
+ enddo
+endif
+
+         !calculate L21
+if(any(s21.ne.s21))print*,jnode,n,'s21i ',s21
+   if(lpos)then
+#if(_DP==0)
+    call strsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   else
+    call sgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+#else
+    call dtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+   else
+    call dgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
+#endif
+   endif
+!print*,'s21f ',s21
+if(any(s21.ne.s21))then
+ print*,jnode,n,'ttt ',ttt
+ print*,jnode,n,'s21f ',s21
+endif
+if(.not.lpos)then
+ print*,'s21f'
+ do ii=1,n
+  write(*,'(*(g0.6,x))')s21(ii,icol1:icol2)
+ enddo
+endif
+         !adjust remaining triangle to right: A22 := A22 - L21 L21'
+         allocate( s22(n,n), stat = ii )
+         if( ii /= 0 ) call alloc_err
+#if(_DP==0)
+         call ssyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
+#else
+!         call dsyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
+block
+real(kind=wp)::tmp
+         do j=1,n
+          s22(:,j)=0._wp
+          do ii=icol1,icol2
+           if(s21(j,ii).ne.0._wp)then
+            tmp=s21(j,ii)
+            do i=j,n
+             s22(i,j)=s22(i,j)+tmp*s21(i,ii)
+            enddo
+           endif
+          enddo 
+         enddo 
+end block
+#endif
+if(any(s22.ne.s22))then
+print*,jnode,n,'s21s '
+do ii=1,n
+ write(*,'(*(g0.6,x))')s21(ii,icol1:icol2)
+enddo
+print*,jnode,n,'s22f '
+do ii=1,n
+ write(*,'(*(g0.6,x))')s22(ii,:)
+enddo
+endif
+!print*,'s22f ',s22
+if(.not.lpos)then
+ print*,'s22'
+ do ii=1,n
+  write(*,'(*(g0.6,x))')s22(ii,:)
+ enddo
+endif
+         kk = maxval(kvec(1:n))
+         do i = 1, n
+             jrow = kvec(i)
+print*,'aaa',icol1,'b',jrow,diag(jrow),s22(i,i),diag(jrow) - s22(i,i)
+             diag(jrow) = diag(jrow) - s22(i,i)
+             ksub = xnzsub(jrow)
+             do j = xlnz(jrow), xlnz(jrow+1)-1
+                jcol = ixsub(ksub)
+                if( jcol > kk ) exit
+                ksub = ksub + 1
+                ii = jvec(jcol)
+                if( ii > 0 ) then
+                 if(ii>i)then
+                  xspars(j) = xspars(j) - s22(ii,i)
+                 else
+                  xspars(j) = xspars(j) - s22(i,ii)
+                 endif
+                endif
+             end do
+         end do
+         deallocate( s22 )
+     end if
+
+     !transfer block back to sparse storage
+     do irow = icol1, icol2 
+       diag(irow) = ttt(irow,irow)
+        ksub = xnzsub(irow)
+        do i = xlnz(irow), xlnz(irow+1)-1
+           jcol = ixsub(ksub)
+           ksub = ksub + 1
+           if( jcol <= icol2 ) then
+               xspars(i) = ttt(jcol,irow)
+           else
+               xspars(i) = s21( jvec(jcol), irow)
+           end if
+        end do
+     end do
+
+  deallocate( ttt )
+  if(n.gt.0)then
+   deallocate(s21)
+   !jvec=0
+   !this should be faster than jvec=0
+   do irow = icol1, icol2
+    ksub = xnzsub(irow)
+    do i = xlnz(irow), xlnz(irow+1)-1
+     jcol = ixsub(ksub)
+     ksub = ksub + 1
+     if( jcol <= icol2 ) then
+     else
+       jvec(jcol)=0
+     end if
+    end do
+   end do
+#if (_VERBOSE>0)
+   ninit=ninit+1
+#endif
+  endif
+
+ enddo dojnode ! jnode 
+
+ !zeroing columns for semi-positive matrix
+ do irow=neqns,1,-1
+  if(diag(irow).lt.1.d-10)then
+   jvec(irow)=1
+  endif
+  ksub = xnzsub(irow)
+  do i = xlnz(irow), xlnz(irow+1)-1
+   jcol = ixsub(ksub)
+   ksub = ksub + 1
+   if(jvec(jcol).ne.0)xspars(i)=0._wp
+  end do
+ end do
+
+ deallocate(jvec,kvec)
+ 
+ if(present(rank))rank=orank
+
+#if (_VERBOSE>0)
+ write(*,'(a,i0)')' Number of zeroing a large vector (jvec): ',ninit
+#endif
+ 
+end subroutine
+
+subroutine super_gsfct_per_column(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank,icol1i,icol2i)
+ integer(kind=int32),intent(in)::neqns,nnode
+ integer(kind=int32),intent(in)::icol1i,icol2i
+ integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
+ integer(kind=int32),intent(out),optional::rank
+ real(kind=wp),intent(inout)::xspars(:),diag(:)
+
+ integer(kind=int32)::i,j,k,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
+#if (_VERBOSE>0)
+ integer(kind=int32)::ninit
+#endif
+ integer(kind=int32)::orank
+ integer(kind=int32),allocatable::jvec(:),kvec(:)
+ real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
+! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
+ logical::lpos
+
+print*,'aaaa'
+
+ allocate(jvec(neqns),kvec(neqns),stat=ii)
+ if( ii /= 0 ) call alloc_err(__LINE__)
+
+ jvec=0 !it must be re-initialized to 0 only if it is modified, i.e, when n.gt.0
+#if (_VERBOSE>0)
+ ninit=0
+#endif
+ orank=0
+
+! do jnode = nnode, 1, -1
+ do jnode = icol1i,icol2i
+  icol1 = jnode
+  icol2 = jnode
+  mm = icol2 - icol1 +1
+print*,'jnode ',jnode,icol1,icol2
+
+  !pick out diagonal block
+  allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
+  if( ii /= 0 ) call alloc_err(__LINE__)
+  ttt=0._wp
+  !jvec=0
+  n=0
+  do irow = icol1, icol2
+   ttt(irow,irow) = diag(irow)
+   ksub = xnzsub(irow)
+   do i = xlnz(irow), xlnz(irow+1)-1
+    jcol = ixsub(ksub)
+    ksub = ksub + 1
+    if( jcol <= icol2 ) then
+     ttt(jcol,irow) = xspars(i) 
+    else
+     if(jvec(jcol).eq.0)then
+      n=n+1
+      jvec(jcol)=n
+      kvec(n)=jcol
+     endif
+    end if
+   end do
+  end do
+
+  !factorise
+
+  lpos=.true.
+  irow=icol2-icol1+1
+  if(irow.eq.1)then
+   if(ttt(icol1,icol1).gt.0._wp)then
+    ttt=sqrt(ttt)
+   else
+    lpos=.false.
+    ttt=0._wp
+    irow=0
+   endif
+  else
+!  ttt1=ttt  !1aaaaa
+#if(_DP==0)
+   call spotrf( 'L', mm, ttt, mm, ii )
+#else
+   call dpotrf( 'L', mm, ttt, mm, ii )
+!   call chol_cont_wp(ttt,1,irow)
+#endif
+   if(ii.lt.0) then
+    write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
+    error stop
+   elseif(ii.gt.0) then
+    !write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)'
+    write(*,'(a,i0,a,i0)')'Routine DPOTRF returned error code: ',ii,' (matrix must be positive definite)',irow
+print*,'lpos ',ii,icol1,icol1+ii-1
+    lpos=.false.
+!    ttt=ttt1
+!    call chol_cont_wp(ttt,1,irow)
+    call chol_cont_wp(ttt,ii,irow)
+!    call chol_pivot_wp(ttt,ii,alpha,irow)
+   end if
+!  deallocate(ttt1)
+  endif
+  orank=orank+irow
+
+  !adjust block below diagonal
+  if(n.gt.0)then
+         !... pick out rows
+         allocate( s21(n, icol1:icol2), stat = ii )
+         if( ii /= 0 ) call alloc_err(__LINE__)
          s21 = 0._wp
          do irow = icol1, icol2
             ksub = xnzsub(irow)
@@ -428,11 +741,25 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
    endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
          allocate( s22(n,n), stat = ii )
-         if( ii /= 0 ) call alloc_err
+         if( ii /= 0 ) call alloc_err(__LINE__)
 #if(_DP==0)
          call ssyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
 #else
-         call dsyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
+!         call dsyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
+block
+real(kind=wp)::tmp
+         do j=1,n
+          s22(:,j)=0._wp
+          do ii=icol1,icol2
+           if(s21(j,ii).ne.0._wp)then
+            tmp=s21(j,ii)
+            do i=j,n
+             s22(i,j)=s22(i,j)+tmp*s21(i,ii)
+            enddo
+           endif
+          enddo 
+         enddo 
+end block
 #endif
          kk = maxval(kvec(1:n))
          do i = 1, n
@@ -495,17 +822,19 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  enddo ! jnode
 
  !zeroing columns for semi-positive matrix
- do irow=neqns,1,-1
-  if(diag(irow).lt.1.d-10)then
-   jvec(irow)=1
-  endif
-  ksub = xnzsub(irow)
-  do i = xlnz(irow), xlnz(irow+1)-1
-   jcol = ixsub(ksub)
-   ksub = ksub + 1
-   if(jvec(jcol).ne.0)xspars(i)=0._wp
+ if(icol1i.eq.1.and.icol2i.eq.neqns)then
+  do irow=neqns,1,-1
+   if(diag(irow).lt.1.d-10)then
+    jvec(irow)=1
+   endif
+   ksub = xnzsub(irow)
+   do i = xlnz(irow), xlnz(irow+1)-1
+    jcol = ixsub(ksub)
+    ksub = ksub + 1
+    if(jvec(jcol).ne.0)xspars(i)=0._wp
+   end do
   end do
- end do
+ endif
 
  deallocate(jvec,kvec)
  
@@ -514,6 +843,55 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #if (_VERBOSE>0)
  write(*,'(a,i0)')' Number of zeroing a large vector (jvec): ',ninit
 #endif
+ 
+end subroutine
+
+subroutine chol_pivot_wp(x,ii,alpha,rank)
+ !Cholesky decomposition
+ integer(kind=int32),intent(in)::ii
+ integer(kind=int32),intent(out),optional::rank
+ real(kind=wp),intent(in)::alpha
+ real(kind=wp),intent(inout)::x(:,:)
+
+ integer(kind=int32)::i,j,n,orank
+ real(kind=wp)::dp
+ real(kind=wp)::diagsq
+
+ orank=ii-1
+ n=size(x,1)
+
+!print*,'aaa ',ii
+!do i=1,n
+! write(*,'("i ",*(g0.6,x))')x(i,:)
+!enddo
+
+
+ do i=ii,n
+  diagsq=x(i,i)-dot_product(x(i,1:i-1),x(i,1:i-1))
+!print*,'diag ',x(i,i),diagsq,alpha,(abs(x(i,i)).gt.epsilon(x)),(diagsq.lt.alpha)
+!  if(abs(x(i,i)).gt.epsilon(x).and.diagsq.lt.alpha)then  !i.e. not equal to 0
+  if(x(i,i).gt.epsilon(x).and.diagsq.lt.alpha)then  !i.e. not equal to 0
+   diagsq=abs(diagsq)*alpha
+   x(i,i)=sqrt(diagsq)
+   do j=i+1,n     
+    x(j,i)=(x(j,i)-dot_product(x(j,1:i-1),x(i,1:i-1)))/x(i,i)
+   enddo
+   orank=orank+1
+  else
+   x(i,:)=0._wp
+  end if
+!print*,'xii ',x(i,i)
+ enddo
+
+ do i=1,n
+  x(i,i+1:n)=0._wp
+ enddo   
+
+!do i=1,n
+! write(*,'("f ",*(g0.6,x))')x(i,:)
+!enddo
+
+ if(present(rank))rank=orank
  
 end subroutine
 
@@ -529,6 +907,11 @@ subroutine chol_cont_wp(x,ii,rank)
  orank=ii-1
  n=size(x,1)
 
+!do i=1,n
+! write(*,'(*(g0.6,x))')x(i,:)
+!enddo
+
+
  do i=ii,n
   diagsq=x(i,i)-dot_product(x(i,1:i-1),x(i,1:i-1))
   if(x(i,i).ge.1.d-10)then
@@ -539,10 +922,10 @@ subroutine chol_cont_wp(x,ii,rank)
      x(j,i)=(x(j,i)-dot_product(x(j,1:i-1),x(i,1:i-1)))/x(i,i)
     enddo
    else
-    x(i:n,i)=0._wp
+    x(i,:)=0._wp
    endif
   else
-   x(i:n,i)=0._wp
+   x(i,:)=0._wp
   end if
  enddo
 
@@ -922,8 +1305,15 @@ subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-subroutine alloc_err()
- write(*,'(a,i0,3a)')' ERROR (',__LINE__,',',__FILE__,'): failed allocation'
+subroutine alloc_err(line)
+ integer(int32),optional::line
+
+ integer(int32)::i
+
+ i=-1
+ if(present(line))i=line
+ 
+ write(*,'(a,i0,3a)')' ERROR (',i,',',__FILE__,'): failed allocation'
  error stop
 end subroutine 
 

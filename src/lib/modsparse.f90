@@ -1869,7 +1869,6 @@ subroutine solveldlt_crs(sparse,x,y)
 #else
  call mkl_dcsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #endif
-
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
@@ -1880,7 +1879,7 @@ subroutine solveldlt_crs(sparse,x,y)
 !  if(sparse%a(sparse%ia(i)).ne.0._wp)z(i)=x(i)/sparse%a(sparse%ia(i))
 ! enddo
  do i=1,sparse%getdim(1)
-  if(sparse%a(sparse%ia(i)).ne.0._wp)then
+  if(sparse%a(sparse%ia(i)).gt.1.d-10)then  !aaa must use a tol parameter
    x(i)=x(i)/sparse%a(sparse%ia(i))
   else
    x(i)=0._wp
