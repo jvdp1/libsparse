@@ -318,10 +318,6 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  inode(nnode) = ilast
  inode(nnode+1) = 0
 
-!print*,'inode aaa '
-!inode=(/(i,i=neqns,1,-1)/)
-!nnode=neqns
-
 end subroutine 
 
 subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
@@ -337,13 +333,12 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32)::orank
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
- real(kind=wp)::alpha
+! real(kind=wp)::alpha
 ! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
  logical::lpos
 
 
- alpha=sqrt(epsilon(alpha))*maxval(abs(diag))
-print*,'alpha',alpha
+! alpha=sqrt(epsilon(alpha))*maxval(abs(diag))
 
  allocate(jvec(neqns),kvec(neqns),stat=ii)
  if( ii /= 0 ) call alloc_err
@@ -358,8 +353,6 @@ print*,'alpha',alpha
   icol1 = inode(jnode+1) + 1
   icol2 = inode(jnode)
   mm = icol2 - icol1 +1
-print*,'jnode',jnode,icol1,icol2
-
 
   !pick out diagonal block
   allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
@@ -389,7 +382,6 @@ print*,'jnode',jnode,icol1,icol2
 
   lpos=.true.
   irow=icol2-icol1+1
-if(any(ttt.ne.ttt))print*,jnode,n,'ttt ',ttt
   if(irow.eq.1)then
    if(ttt(icol1,icol1).gt.0._wp)then
     ttt=sqrt(ttt)
@@ -414,7 +406,6 @@ print*,'lpos ',ii,icol1,icol1+ii-1
     orank=orank+irow
     jvec=0
     cycle dojnode
-print*,'cycle'
    endif
 
 !   if(ii.lt.0) then
@@ -433,15 +424,6 @@ print*,'cycle'
 !!  deallocate(ttt1)
   endif
   orank=orank+irow
-if(any(ttt.ne.ttt))print*,jnode,n,'tttf ',ttt
-!print*,'aaa',icol1,ttt,n
-if(.not.lpos)then
- print*,'ttt ',n
- do ii=icol1,icol2
-  write(*,'(*(g0.6,x))')ttt(ii,icol1:icol2)
- enddo
-endif
-
 
   !adjust block below diagonal
   if(n.gt.0)then
@@ -459,16 +441,8 @@ endif
                s21(jj,irow) = xspars(i)
             end do
          end do
-!print*,'s21i ',s21
-if(.not.lpos)then
- print*,'s21'
- do ii=1,n
-  write(*,'(*(g0.6,x))')s21(ii,icol1:icol2)
- enddo
-endif
 
          !calculate L21
-if(any(s21.ne.s21))print*,jnode,n,'s21i ',s21
    if(lpos)then
 #if(_DP==0)
     call strsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
@@ -480,17 +454,6 @@ if(any(s21.ne.s21))print*,jnode,n,'s21i ',s21
     call dgtrsm( 'R', 'L', 'T', 'N', n, mm, 1._wp, ttt, mm, s21, n )
 #endif
    endif
-!print*,'s21f ',s21
-if(any(s21.ne.s21))then
- print*,jnode,n,'ttt ',ttt
- print*,jnode,n,'s21f ',s21
-endif
-if(.not.lpos)then
- print*,'s21f'
- do ii=1,n
-  write(*,'(*(g0.6,x))')s21(ii,icol1:icol2)
- enddo
-endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
          allocate( s22(n,n), stat = ii )
          if( ii /= 0 ) call alloc_err
@@ -513,27 +476,9 @@ real(kind=wp)::tmp
          enddo 
 end block
 #endif
-if(any(s22.ne.s22))then
-print*,jnode,n,'s21s '
-do ii=1,n
- write(*,'(*(g0.6,x))')s21(ii,icol1:icol2)
-enddo
-print*,jnode,n,'s22f '
-do ii=1,n
- write(*,'(*(g0.6,x))')s22(ii,:)
-enddo
-endif
-!print*,'s22f ',s22
-if(.not.lpos)then
- print*,'s22'
- do ii=1,n
-  write(*,'(*(g0.6,x))')s22(ii,:)
- enddo
-endif
          kk = maxval(kvec(1:n))
          do i = 1, n
              jrow = kvec(i)
-print*,'aaa',icol1,'b',jrow,diag(jrow),s22(i,i),diag(jrow) - s22(i,i)
              diag(jrow) = diag(jrow) - s22(i,i)
              ksub = xnzsub(jrow)
              do j = xlnz(jrow), xlnz(jrow+1)-1
@@ -647,7 +592,6 @@ print*,'aaaa'
   icol1 = jnode
   icol2 = jnode
   mm = icol2 - icol1 +1
-print*,'jnode ',jnode,icol1,icol2
 
   !pick out diagonal block
   allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
