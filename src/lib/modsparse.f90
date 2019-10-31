@@ -183,11 +183,11 @@ module modsparse
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
+#endif
   !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
   procedure,public::isolve=>isolve_crs
   !> @brief Solver using LDLt decomposition
   procedure,public::solveldlt=>solveldlt_crs
-#endif
   !> @brief Multiplication with a vector
   procedure,public::multbyv=>multgenv_csr
   !> @brief Returns the number of non-zero elements
@@ -684,7 +684,7 @@ subroutine printsquare_coo(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(10000(f9.3,1x))')tmp
+  write(un,'(*(f9.3,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -775,11 +775,14 @@ function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  logical,intent(in),optional::lupper
  
  integer(kind=int32)::i,j,k,un
- integer(kind=int64)::i8,nel=10000
+ integer(kind=int64)::i8,nel
  logical::lincludediag,lupperstorage
+
 
  if(.not.validvalue_gen(sparse,startdim1,startdim2))return
  if(.not.validvalue_gen(sparse,enddim1,enddim2))return
+
+ nel=10000
  
  !check if the submatrix include diagonal elements of sparse
  ! if yes -> lupperstorage
@@ -1241,7 +1244,7 @@ subroutine getldlt_crs(sparse,minsizenode)
 
  do i=1,sparse%getdim(1)
   s=0._wp
-  if(sparse%a(sparse%ia(i)).ne.0._wp)s=1._wp/sparse%a(sparse%ia(i))
+  if(sparse%a(sparse%ia(i)).gt.0._wp)s=1._wp/sparse%a(sparse%ia(i))   !aaaa use a tolerance factor
   sparse%a(sparse%ia(i))=sparse%a(sparse%ia(i))**2
   do j=sparse%ia(i)+1,sparse%ia(i+1)-1
    sparse%a(j)=s*sparse%a(j)
@@ -1503,7 +1506,7 @@ subroutine printsquare_crs(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(10000(f10.6,1x))')tmp
+  write(un,'(*(g0.6,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -1775,7 +1778,6 @@ subroutine solve_crs_array(sparse,x,y)
 end subroutine
 #endif
 
-#if (_SPAINV==1)
 !**SOLVE WITH A TRIANGULAR FACTOR
 subroutine isolve_crs(sparse,x,y)
  !sparse*x=y
@@ -1845,7 +1847,6 @@ subroutine solveldlt_crs(sparse,x,y)
 
  integer(kind=int32)::i
  real(kind=wp),allocatable::x_(:)
-! real(kind=wp),allocatable::z(:)
 #if (_VERBOSE>0)
  !$ real(kind=real64)::t1,t2
 
@@ -1873,11 +1874,6 @@ subroutine solveldlt_crs(sparse,x,y)
  !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
-! allocate(z(1:size(x)))
-! z=0._wp
-! do i=1,sparse%getdim(1)
-!  if(sparse%a(sparse%ia(i)).ne.0._wp)z(i)=x(i)/sparse%a(sparse%ia(i))
-! enddo
  do i=1,sparse%getdim(1)
   if(sparse%a(sparse%ia(i)).gt.1.d-10)then  !aaa must use a tol parameter
    x(i)=x(i)/sparse%a(sparse%ia(i))
@@ -1912,7 +1908,6 @@ subroutine solveldlt_crs(sparse,x,y)
 #endif
 
 end subroutine
-#endif
 
 !**SORT ARRAY
 subroutine sort_crs(sparse)
