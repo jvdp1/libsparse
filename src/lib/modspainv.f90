@@ -17,6 +17,7 @@ module modspainv
  public::get_chol,get_ichol,get_spainv
 
  integer(kind=int32),parameter::minsizesupernode=0  !values other than 0 (e.g., 256) may give troubles
+ real(kind=wp),parameter::tol=1.e-10_wp
 
  interface get_chol
   module procedure get_chol_crs
@@ -511,7 +512,7 @@ end block
 
  !zeroing columns for positive semi-definite matrix
  do irow=neqns,1,-1
-  if(diag(irow).lt.1.d-10)then
+  if(diag(irow).lt.tol)then
    jvec(irow)=1
   endif
   ksub = xnzsub(irow)

@@ -40,6 +40,8 @@ module modsparse
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
 
+ real(kind=wp),parameter::tol=1.e-10_wp
+
  !> @brief Generic object containing dimensions, storage format, and output unit
  type,abstract::gen_sparse
   private
@@ -117,7 +119,7 @@ module modsparse
   !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
   procedure,public::add=>add_coo 
   !> @brief Deallocates the sparse matrix and sets to default values 
-  procedure,public::destroy=>destroy_scal_coo
+  procedure,public::destroy=>destroy_coo
   procedure::diag_vect_coo
   procedure::diag_mat_coo
   !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
@@ -136,7 +138,7 @@ module modsparse
   procedure,public::set=>set_coo
   !> @brief Gets a submatrix from a sparse matrix
   procedure,public::submatrix=>submatrix_coo
-  final::deallocate_scal_coo
+  final::deallocate_scal_coo,deallocate_rank1_coo
  end type
 
 ! !> @brief Load a COO matrix from file
@@ -171,7 +173,7 @@ module modsparse
   procedure,public::ldlt=>getldlt_crs
 #endif
   !> @brief Deallocates the sparse matrix and sets to default values 
-  procedure,public::destroy=>destroy_scal_crs
+  procedure,public::destroy=>destroy_crs
   procedure::diag_vect_crs
   procedure::diag_mat_crs
   !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
@@ -196,6 +198,10 @@ module modsparse
   !> @brief Returns the ordering array obtained from METIS
   procedure,public::getordering=>getordering_crs
 #endif
+  !> @brief Releases Pardiso memory if possible
+#if (_PARDISO==1)
+  procedure,public::resetpardiso=>reset_pardiso_memory_crs
+#endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
   procedure,public::print=>print_crs
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
@@ -216,7 +222,7 @@ module modsparse
 #endif
   !> @brief Gets a submatrix from a sparse matrix
   procedure,public::submatrix=>submatrix_crs
-  final::deallocate_scal_crs
+  final::deallocate_scal_crs,deallocate_rank1_crs
  end type
 
 ! !> @brief Load a CRS matrix from file
@@ -257,7 +263,7 @@ module modsparse
   procedure,public::printsquare=>printsquare_ll
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_ll
-  final::deallocate_scal_ll
+  final::deallocate_scal_ll,deallocate_rank1_ll
  end type
 
  type::node
@@ -287,7 +293,7 @@ module modsparse
   contains
   private
   procedure,public::destroy=>destroy_metisgraph
-  final::deallocate_scal_metisgraph
+  final::deallocate_scal_metisgraph,deallocate_rank1_metisgraph
  end type
 
  interface metisgraph
@@ -461,7 +467,7 @@ function constructor_coo(m,n,nel,lupper,unlog) result(sparse)
 end function
 
 !**DESTROY
-subroutine destroy_scal_coo(sparse)
+subroutine destroy_coo(sparse)
  class(coosparse),intent(inout)::sparse
 
  call sparse%destroy_gen_gen()
@@ -858,7 +864,18 @@ end function
 subroutine deallocate_scal_coo(sparse)
  type(coosparse),intent(inout)::sparse
 
- call destroy_scal_coo(sparse)
+ call sparse%destroy()
+
+end subroutine
+
+subroutine deallocate_rank1_coo(sparse)
+ type(coosparse),intent(inout)::sparse(:)
+
+ integer(kind=int32)::i
+
+ do i=1,size(sparse)
+  call sparse(i)%destroy()
+ enddo
 
 end subroutine
 
@@ -896,8 +913,12 @@ function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
 end function
 
 !**DESTROY
-subroutine destroy_scal_crs(sparse)
+subroutine destroy_crs(sparse)
  class(crssparse),intent(inout)::sparse
+
+#if(_PARDISO==1)
+ call sparse%resetpardiso()
+#endif
 
  call sparse%destroy_gen_gen()
 
@@ -1458,7 +1479,41 @@ subroutine getspainv_crs(sparse,minsizenode)
 
 end subroutine
 #endif
- 
+
+#if (_PARDISO==1)
+!**RESET PARDISO MEMORY
+subroutine reset_pardiso_memory_crs(sparse)
+ !sparse*x=y
+ class(crssparse),intent(inout)::sparse
+
+ !Pardiso variables
+ integer(kind=int32)::error,phase
+ integer(kind=int32)::nrhs
+
+ if(.not.sparse%lsquare())then
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+  return
+ endif
+
+ if(sparse%lpardisofirst)return
+
+ associate(parvar=>sparse%pardisovar)
+
+ nrhs=1 
+
+ !Reset Pardiso memory
+ parvar%phase=-1
+ call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+              sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
+              sparse%perm,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+ call checkpardiso(parvar%phase,error,sparse%unlog) 
+
+ end associate
+
+end subroutine
+
+#endif
+
 !**PRINT
 subroutine print_crs(sparse,lint,output)
  class(crssparse),intent(in)::sparse
@@ -1626,7 +1681,7 @@ subroutine solve_crs_vector(sparse,x,y)
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
                 parvar%idum,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
   endif
-  call checkpardiso(parvar%phase,error) 
+  call checkpardiso(parvar%phase,error,sparse%unlog) 
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
@@ -1639,7 +1694,7 @@ subroutine solve_crs_vector(sparse,x,y)
  call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
               parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
- call checkpardiso(parvar%phase,error) 
+ call checkpardiso(parvar%phase,error,sparse%unlog) 
 
 #if (_VERBOSE>0)
  parvar%msglvl=1
@@ -1650,16 +1705,6 @@ subroutine solve_crs_vector(sparse,x,y)
  sparse%lpardisofirst=.false.
 
  end associate
-
-contains
-
- subroutine checkpardiso(phase,error)
-  integer(kind=int32),intent(in)::phase,error
-  if(error.ne.0)then
-   write(sparse%unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
-   stop
-  endif
- end subroutine
 
 end subroutine
 
@@ -1723,7 +1768,7 @@ subroutine solve_crs_array(sparse,x,y)
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
                 parvar%idum,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
   endif
-  call checkpardiso(parvar%phase,error) 
+  call checkpardiso(parvar%phase,error,sparse%unlog) 
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
@@ -1736,22 +1781,12 @@ subroutine solve_crs_array(sparse,x,y)
  call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
               parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
- call checkpardiso(parvar%phase,error) 
+ call checkpardiso(parvar%phase,error,sparse%unlog) 
 
  parvar%msglvl=0
  sparse%lpardisofirst=.false.
 
  end associate
-
-contains
-
- subroutine checkpardiso(phase,error)
-  integer(kind=int32),intent(in)::phase,error
-  if(error.ne.0)then
-   write(sparse%unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
-   stop
-  endif
- end subroutine
 
 end subroutine
 #else
@@ -1875,7 +1910,7 @@ subroutine solveldlt_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
  do i=1,sparse%getdim(1)
-  if(sparse%a(sparse%ia(i)).gt.1.d-10)then  !aaa must use a tol parameter
+  if(sparse%a(sparse%ia(i)).gt.tol)then  !aaa must use a tol parameter
    x(i)=x(i)/sparse%a(sparse%ia(i))
   else
    x(i)=0._wp
@@ -2188,7 +2223,18 @@ end function
 subroutine deallocate_scal_crs(sparse)
  type(crssparse),intent(inout)::sparse
 
- call destroy_scal_crs(sparse)
+ call sparse%destroy()
+
+end subroutine
+
+subroutine deallocate_rank1_crs(sparse)
+ type(crssparse),intent(inout)::sparse(:)
+
+ integer(kind=int32)::i
+
+ do i=1,size(sparse)
+  call sparse(i)%destroy()
+ enddo
 
 end subroutine
 
@@ -2478,7 +2524,18 @@ end subroutine
 subroutine deallocate_scal_ll(sparse)
  type(llsparse),intent(inout)::sparse
 
- call destroy_ll(sparse)
+ call sparse%destroy()
+
+end subroutine
+
+subroutine deallocate_rank1_ll(sparse)
+ type(llsparse),intent(inout)::sparse(:)
+
+ integer(kind=int32)::i
+
+ do i=1,size(sparse)
+  call sparse(i)%destroy()
+ enddo
 
 end subroutine
 
@@ -2520,10 +2577,22 @@ end subroutine
 !FINAL
 subroutine deallocate_scal_metisgraph(metis)
  type(metisgraph),intent(inout)::metis
- 
- call destroy_metisgraph(metis)
+
+ call metis%destroy()
 
 end subroutine
+
+subroutine deallocate_rank1_metisgraph(metis)
+ type(metisgraph),intent(inout)::metis(:)
+
+ integer(kind=int32)::i
+
+ do i=1,size(metis)
+  call metis(i)%destroy()
+ enddo
+
+end subroutine
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!OTHER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !CHECKS
