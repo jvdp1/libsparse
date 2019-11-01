@@ -18,6 +18,7 @@ module modvariablepardiso
  !$ use omp_lib
  implicit none
  private
+ public::checkpardiso
  public::pardiso_variable
 
  type::pardiso_variable
@@ -79,6 +80,23 @@ function constructor_pardiso_variable(maxfct,mnum,mtype,solver,msglvl) result(th
  enddo
  
 end function
+
+!**OTHER
+subroutine checkpardiso(phase,error,un)
+ integer(kind=int32),intent(in)::phase,error
+ integer(kind=int32),intent(in),optional::un
+
+ integer(kind=int32)::unlog
+
+ unlog=output_unit
+ if(present(un))unlog=un
+
+ if(error.ne.0)then
+  write(unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
+  stop
+ endif
+
+end subroutine
 
 !FINAL
 subroutine reset_pardiso_variable(this)
