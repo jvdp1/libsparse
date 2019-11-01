@@ -169,8 +169,6 @@ module modsparse
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
   procedure,public::chol=>getchol_crs
-  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
-  procedure,public::ldlt=>getldlt_crs
 #endif
   !> @brief Deallocates the sparse matrix and sets to default values 
   procedure,public::destroy=>destroy_crs
@@ -180,7 +178,11 @@ module modsparse
   generic,public::diag=>diag_vect_crs,diag_mat_crs
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
+  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
+#if (_SPAINV==1)
+  procedure,public::getldlt=>getldlt_crs
   !> @brief Initiate the vectors ia,ja,and a from external vectors
+#endif
   procedure,public::external=>external_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
@@ -1495,9 +1497,11 @@ subroutine reset_pardiso_memory_crs(sparse)
   return
  endif
 
- if(sparse%lpardisofirst)return
-
  associate(parvar=>sparse%pardisovar)
+
+ if(.not.allocated(parvar%pt))return
+
+ sparse%lpardisofirst=.true.
 
  nrhs=1 
 
@@ -1511,7 +1515,6 @@ subroutine reset_pardiso_memory_crs(sparse)
  end associate
 
 end subroutine
-
 #endif
 
 !**PRINT
