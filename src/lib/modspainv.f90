@@ -11,6 +11,7 @@ module modspainv
 #else
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
+ use modcommon
  !$ use omp_lib
  implicit none
  private
@@ -161,7 +162,7 @@ end subroutine
 
 subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::mssn
+ integer(kind=int32),intent(inout)::mssn
  integer(kind=int32),intent(in)::ia(:)
  integer(kind=int32),intent(in)::ja(:)
  integer(kind=int32),intent(in)::xadj(:),adjncy(:)
@@ -283,7 +284,7 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
 end subroutine
 
 subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
- integer(kind=int32),intent(in)::mssn
+ integer(kind=int32),intent(inout)::mssn
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(out)::nnode
@@ -291,11 +292,13 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  integer(kind=int32),intent(out)::inode(:) !size=neqns+1
 
  integer(kind=int32)::i,ii,j,n,ilast,kk
+ integer(kind=int32)::minnode
  real(kind=wp)::xx
 
  ! establish boundaries between diaggonal blocks 100% full
  ilast = neqns
  nnode = 0
+ minnode=2**30
  maxnode=0
  do i = neqns-1, 1, -1
     ii = xnzsub(i)
@@ -309,6 +312,7 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
     xx = dble( n ) / dble( ilast - i )
     if( xx < 1._wp .and. (ilast-i).ge.mssn ) then
      nnode = nnode +1
+     minnode=min(minnode,ilast-i)
      maxnode=max(maxnode,ilast-i)
      inode(nnode) = ilast
      ilast = i
@@ -317,6 +321,8 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  nnode = nnode +1
  inode(nnode) = ilast
  inode(nnode+1) = 0
+
+ mssn=minnode
 
 end subroutine 
 
@@ -336,6 +342,8 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 ! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
  logical::lpos
 
+ write(output_unit,'(/" Cholesky factorization...")')
+
  allocate(jvec(neqns),kvec(neqns),stat=ii)
  if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
 
@@ -349,6 +357,8 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   icol1 = inode(jnode+1) + 1
   icol2 = inode(jnode)
   mm = icol2 - icol1 +1
+
+  call progress(icol2,neqns)
 
   !pick out diagonal block
   allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
@@ -544,6 +554,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   real(kind=wp),dimension(:,:),allocatable:: ttt, s21, s22, f21
   real(kind=wp),dimension(:),allocatable:: rr, qx
 
+  write(output_unit,'(/" Sparse inversion...")')
+
   allocate( jvec(neqns), kvec(neqns),stat = ii )
   if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
  
@@ -554,6 +566,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
      icol1 = inode(jnode+1) + 1
      icol2 = inode(jnode)
      mm = icol2 - icol1 +1
+
+   call progress(icol2,neqns)
      
      !pick out diagonal block
      allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
@@ -901,37 +915,19 @@ subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-subroutine alloc_err(line,namefile)
- integer(kind=int32),optional::line
- character(len=*),optional::namefile
-
- integer(kind=int32)::i
- character(len=30)::nfile
-
- i=-1
- if(present(line))i=line
-
- nfile='unknown'
- if(present(namefile))nfile=namefile
- 
- write(*,'(a,i0,3a)')' ERROR (',i,',',namefile,'): failed allocation'
- error stop
-
-end subroutine 
-
 subroutine writetime(unlog,time,a)
  integer(kind=int32)::unlog
  real(kind=real64),intent(in)::time(:)
  character(len=*),intent(in)::a
 
  write(unlog,'(/a)')' CRS MATRIX '//trim(a)
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Symbolic factorization',':',time(1),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Setup of tmp arrays',':',time(2),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Node determination',':',time(3),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Cholesky factorization',':',time(4),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Matrix inversion',':',time(5),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Conversion to CRS',':',time(6),' s'
- !$ write(unlog,'(2x,a,t31,a,t33,f10.3,a)')'Total time',':',sum(time),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Symbolic factorization',':',time(1),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Setup of tmp arrays',':',time(2),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Node determination',':',time(3),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Cholesky factorization',':',time(4),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Matrix inversion',':',time(5),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Conversion to CRS',':',time(6),' s'
+ !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Total time',':',sum(time),' s'
 
 end subroutine
 

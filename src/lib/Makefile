@@ -2,7 +2,7 @@
 
 include ../Makeinit
 
-OBJ=
+OBJ=modcommon.o
 
 ifeq ($(DEBUGENABLE),1)
  DEBUG=-check all -traceback -debug extended

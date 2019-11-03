@@ -1182,7 +1182,7 @@ subroutine getchol_crs(sparse,minsizenode)
  call sparse%sort()
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'CHOL CRS sorting',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1197,14 +1197,14 @@ subroutine getchol_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'CHOL CRS ordering',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
  metis=sparse
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'CHOL METIS=CRS',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1215,8 +1215,8 @@ subroutine getchol_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS Chol. fact.',': Elapsed time = ',omp_get_wtime()-t1
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'CHOL CRS',': Total   time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'CHOL CRS Chol. fact.',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'CHOL CRS',': Total   time (s) = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
@@ -1243,13 +1243,13 @@ subroutine getldlt_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt Cholesky fact.',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'LDLt Cholesky fact.',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
 ! s=sparse%diag()
 !#if (_VERBOSE>0)
-! !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt Extraction of diag. el.',': Elapsed time = ',omp_get_wtime()-t1
+! !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'LDLt Extraction of diag. el.',': Elapsed time (s) = ',omp_get_wtime()-t1
 ! !$ t1=omp_get_wtime()
 !#endif
 !
@@ -1275,8 +1275,8 @@ subroutine getldlt_crs(sparse,minsizenode)
  enddo
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt CRS Decomposition',': Elapsed time = ',omp_get_wtime()-t1
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'LDLt CRS',': Total   time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'LDLt CRS Decomposition',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'LDLt CRS',': Total   time (s) = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
@@ -1306,7 +1306,7 @@ function getordering_crs(sparse&
  metis=sparse
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS=CRS',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1349,14 +1349,14 @@ function getordering_crs(sparse&
  call metis_checkerror(err,sparse%unlog)
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS options setting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS options setting',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
  
  allocate(perm(metis%nvertices),iperm(metis%nvertices))
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS arrays allocation',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS arrays allocation',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1364,7 +1364,7 @@ function getordering_crs(sparse&
  call metis_checkerror(err,sparse%unlog)
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'METIS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS ordering',': Elapsed time (s) = ',omp_get_wtime()-t1
 #endif
 
 end function
@@ -1387,7 +1387,7 @@ subroutine getichol_crs(sparse,minsizenode)
  call sparse%sort()
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ICHOL CRS sorting',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1402,14 +1402,14 @@ subroutine getichol_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ICHOL CRS ordering',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
  metis=sparse
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ICHOL METIS=CRS',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1420,8 +1420,8 @@ subroutine getichol_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS Chol. fact.',': Elapsed time = ',omp_get_wtime()-t1
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ICHOL CRS',': Total   time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ICHOL CRS Chol. fact.',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ICHOL CRS',': Total   time (s) = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
@@ -1442,7 +1442,7 @@ subroutine getspainv_crs(sparse,minsizenode)
  call sparse%sort()
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS sorting',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SPAINV CRS sorting',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1457,14 +1457,14 @@ subroutine getspainv_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS ordering',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SPAINV CRS ordering',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
  metis=sparse
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV METIS=CRS',': Elapsed time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SPAINV METIS=CRS',': Elapsed time (s) = ',omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #endif
 
@@ -1475,8 +1475,8 @@ subroutine getspainv_crs(sparse,minsizenode)
  endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS inversion',': Elapsed time = ',omp_get_wtime()-t1
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SPAINV CRS',': Total   time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SPAINV CRS inversion',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SPAINV CRS',': Total   time (s) = ',omp_get_wtime()-t2
 #endif
 
 end subroutine
@@ -1688,7 +1688,7 @@ subroutine solve_crs_vector(sparse,x,y)
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
-  !$ write(sparse%unlog,'(a,g0)')' Elapsed time                   = ',omp_get_wtime()-t1
+  !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
  endif 
 
  !Solving
@@ -1775,7 +1775,7 @@ subroutine solve_crs_array(sparse,x,y)
  
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
-  !$ write(sparse%unlog,'(a,g0)')' Elapsed time                   = ',omp_get_wtime()-t1
+  !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
  endif 
 
  !Solving
@@ -1839,7 +1839,7 @@ subroutine isolve_crs(sparse,x,y)
  enddo
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS y permutation',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ISOLVE CRS y permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
@@ -1850,7 +1850,7 @@ subroutine isolve_crs(sparse,x,y)
 #endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ISOLVE CRS 1st triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
@@ -1861,7 +1861,7 @@ subroutine isolve_crs(sparse,x,y)
 #endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS 2nd triangular solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ISOLVE CRS 2nd triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
@@ -1870,8 +1870,8 @@ subroutine isolve_crs(sparse,x,y)
  enddo
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS x permutation',': Elapsed time = ',omp_get_wtime()-t2
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'ISOLVE CRS',': Total   time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ISOLVE CRS x permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'ISOLVE CRS',': Total   time (s) = ',omp_get_wtime()-t1
 #endif
 
 end subroutine
@@ -1899,7 +1899,7 @@ subroutine solveldlt_crs(sparse,x,y)
  enddo
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS y permutation',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS y permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
@@ -1909,7 +1909,7 @@ subroutine solveldlt_crs(sparse,x,y)
  call mkl_dcsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #endif
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
  do i=1,sparse%getdim(1)
@@ -1921,7 +1921,7 @@ subroutine solveldlt_crs(sparse,x,y)
  enddo
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS Diagonal solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS Diagonal solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
@@ -1932,7 +1932,7 @@ subroutine solveldlt_crs(sparse,x,y)
 #endif
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS 2nd triangular solve',': Elapsed time = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS 2nd triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
@@ -1941,8 +1941,8 @@ subroutine solveldlt_crs(sparse,x,y)
  enddo
 
 #if (_VERBOSE>0)
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS x permutation',': Elapsed time = ',omp_get_wtime()-t2
- !$ write(sparse%unlog,'(x,a,t30,a,g0)')'SOLVE LDLt CRS',': Total   time = ',omp_get_wtime()-t1
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS x permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS',': Total   time (s) = ',omp_get_wtime()-t1
 #endif
 
 end subroutine
