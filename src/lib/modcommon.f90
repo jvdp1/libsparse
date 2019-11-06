@@ -37,16 +37,19 @@ subroutine progress(i,n,un)
  
  integer(kind=int32)::unlog
  integer(kind=int32)::val
+ integer(kind=int32)::step
  integer(kind=int32)::lastval=0
 
  unlog=output_unit
  if(present(un))unlog=un
 
  val=int(real(i)/real(n)*100.)
+
+ step=10
  
- if(lastval+1.le.val/10)then
+ if(lastval+1.le.val/step)then
   write(unlog,'(2x,i0,"%")',advance='no')val
-  lastval=val/10
+  lastval=val/step
  endif
  if(val.eq.100)then
   write(unlog,'(a/)',advance='yes')
