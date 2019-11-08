@@ -77,12 +77,13 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
 
+ ! Cholesky factorization
  !Convert to ija
  !$ t1=omp_get_wtime()
  call converttoija_noperm(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
  !$ time(6)=omp_get_wtime()-t1
 
- call writetime(unlog,time,'CHOL FACT.')
+ call writetime(unlog,time,'SPARSE CHOL FACT.')
 
 end subroutine
 

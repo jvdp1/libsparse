@@ -31,6 +31,7 @@ module modsparse
  use mkl_pardiso
  use modvariablepardiso
 #endif
+ use modcommon
  !$ use omp_lib
  implicit none
  private
@@ -72,6 +73,7 @@ module modsparse
   !> @brief Sets the permutation vector; e.g., call mat%setpermutation(array)
   procedure,public::setpermutation
   procedure::destroy_gen_gen
+  procedure::getmem_gen
  end type
  
  abstract interface
@@ -126,6 +128,10 @@ module modsparse
   generic,public::diag=>diag_vect_coo,diag_mat_coo
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_coo
+  !> @brief Gets memory used
+  procedure,public::getmem=>getmem_coo
+  !> @brief Initiates coosparse
+  procedure,public::init=>constructor_sub_coo
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_coo
   !> @brief Prints the sparse matrix to the output mat\%unlog
@@ -178,16 +184,20 @@ module modsparse
   generic,public::diag=>diag_vect_crs,diag_mat_crs
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
-  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
 #if (_SPAINV==1)
+  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
   procedure,public::getldlt=>getldlt_crs
-  !> @brief Initiate the vectors ia,ja,and a from external vectors
 #endif
+  !> @brief Gets memory used
+  procedure,public::getmem=>getmem_crs
+  !> @brief Initiate the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
 #endif
+  !> @brief Iniates crssparse
+  procedure,public::init=>constructor_sub_crs
   !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
   procedure,public::isolve=>isolve_crs
   !> @brief Solver using LDLt decomposition
@@ -257,6 +267,8 @@ module modsparse
   procedure,public::addtotail =>addtotail_ll
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_ll
+  !> @brief Initiates llsparse
+  procedure,public::init=>constructor_sub_ll
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_ll
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -294,7 +306,9 @@ module modsparse
   type(c_ptr)::adjwgt
   contains
   private
+  procedure,public::init=>constructor_sub_metisgraph
   procedure,public::destroy=>destroy_metisgraph
+  procedure,public::getmem=>getmem_metisgraph
   final::deallocate_scal_metisgraph,deallocate_rank1_metisgraph
  end type
 
@@ -346,6 +360,16 @@ function getdim_gen(sparse,dim1) result(dimget)
 
 end function
 
+!GET MEMORY
+function getmem_gen(sparse) result(getmem)
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int64)::getmem
+
+ getmem=sizeof(sparse%unlog)+sizeof(sparse%dim1)+sizeof(sparse%dim2)+sizeof(sparse%namemat)+sizeof(sparse%lupperstorage)
+ if(allocated(sparse%perm))getmem=getmem+sizeof(sparse%perm)
+ 
+end function
+
 !**PRINT
 subroutine print_dim_gen(sparse)
  class(gen_sparse),intent(in)::sparse
@@ -361,8 +385,10 @@ subroutine print_dim_gen(sparse)
  
  select type(sparse)
   type is(coosparse)
+   write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
   type is(crssparse)
+   write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
 #if (_PARDISO==1)
    write(sparse%unlog,'( "  PARDISO status              : ",i0)')sparse%lpardisofirst
 #endif
@@ -468,6 +494,34 @@ function constructor_coo(m,n,nel,lupper,unlog) result(sparse)
 
 end function
 
+subroutine constructor_sub_coo(sparse,m,n,nel,lupper,unlog)
+ class(coosparse),intent(out)::sparse
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in),optional::n,unlog
+ integer(kind=int64),intent(in),optional::nel
+ logical,intent(in),optional::lupper
+
+ sparse%namemat='COO'
+ sparse%dim1=m
+ sparse%dim2=m
+ if(present(n))sparse%dim2=n
+
+ sparse%filled=0_int64
+
+ sparse%nel=roundinguppower2(100_int64)
+ if(present(nel))sparse%nel=roundinguppower2(int(nel,int64))
+ allocate(sparse%ij(2,sparse%nel))
+ sparse%ij=0
+ allocate(sparse%a(sparse%nel))
+ sparse%a=0._wp
+
+ sparse%lupperstorage=.false.
+ if(present(lupper))sparse%lupperstorage=lupper
+
+ if(present(unlog))sparse%unlog=unlog
+
+end subroutine
+
 !**DESTROY
 subroutine destroy_coo(sparse)
  class(coosparse),intent(inout)::sparse
@@ -528,7 +582,7 @@ recursive subroutine add_coo(sparse,row,col,val)
  integer(kind=int64)::hash,i8
  real(kind=real32),parameter::maxratiofilled=maxratiofilled_par
  real(kind=real32)::ratiofilled
- type(coosparse)::sptmp
+ type(coosparse),allocatable::sptmp
  
  if(.not.validvalue_gen(sparse,row,col))return
  if(.not.validnonzero_gen(sparse,val))return
@@ -540,7 +594,8 @@ recursive subroutine add_coo(sparse,row,col,val)
  if(hash.eq.-1.or.ratiofilled.gt.maxratiofilled)then
   !matrix probably full, or nothing available within the n requested searches
   !1. Copy matrix
-  sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)
+  !sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)   !to avoid the copy through a temporary array
+  allocate(sptmp);call sptmp%init(sparse%dim1,sparse%dim2,sparse%nel*2)
   do i8=1_int64,sparse%nel
    call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
@@ -590,6 +645,17 @@ function get_coo(sparse,row,col) result(val)
  hash=hashf(trow,tcol,sparse%ij,sparse%nel,sparse%filled,.true.)
  
  if(hash.gt.0_int64)val=sparse%a(hash)
+
+end function
+
+!** GET MEMORY
+function getmem_coo(sparse) result(getmem)
+ class(coosparse),intent(in)::sparse
+ integer(kind=int64)::getmem
+
+ getmem=sparse%getmem_gen()+sizeof(sparse%nel)+sizeof(sparse%filled)
+ if(allocated(sparse%ij))getmem=getmem+sizeof(sparse%ij)
+ if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
 
 end function
 
@@ -914,6 +980,35 @@ function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
 
 end function
 
+subroutine constructor_sub_crs(sparse,m,nel,n,lupper,unlog)
+ class(crssparse),intent(out)::sparse
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in)::nel
+ integer(kind=int32),intent(in),optional::n,unlog
+ logical,intent(in),optional::lupper
+
+ sparse%namemat='CRS'
+ sparse%dim1=m
+ sparse%dim2=m
+ if(present(n))sparse%dim2=n
+ 
+ allocate(sparse%ia(sparse%dim1+1),sparse%ja(nel),sparse%a(nel))
+ sparse%ia=0
+ sparse%ia(sparse%dim1+1)=-nel
+ sparse%ja=0
+ sparse%a=0._wp
+ 
+#if (_PARDISO==1)
+ sparse%lpardisofirst=.true.
+#endif
+
+ sparse%lupperstorage=.false.
+ if(present(lupper))sparse%lupperstorage=lupper
+
+ if(present(unlog))sparse%unlog=unlog
+
+end subroutine
+
 !**DESTROY
 subroutine destroy_crs(sparse)
  class(crssparse),intent(inout)::sparse
@@ -1067,6 +1162,22 @@ function get_crs(sparse,row,col) result(val)
  enddo
 
 end function
+
+!** GET MEMORY
+function getmem_crs(sparse) result(getmem)
+ class(crssparse),intent(in)::sparse
+ integer(kind=int64)::getmem
+
+ getmem=sparse%getmem_gen()
+ if(allocated(sparse%ia))getmem=getmem+sizeof(sparse%ia)
+ if(allocated(sparse%ja))getmem=getmem+sizeof(sparse%ja)
+ if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
+#if (_PARDISO==1)
+ getmem=getmem+sizeof(sparse%lpardisofirst)
+#endif
+ 
+end function
+
 
 !**EXTERNAL
 subroutine external_crs(sparse,ia,ja,a)
@@ -2265,6 +2376,26 @@ function constructor_ll(m,n,lupper,unlog) result(sparse)
 
 end function
 
+subroutine constructor_sub_ll(sparse,m,n,lupper,unlog)
+ class(llsparse),intent(out)::sparse
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in),optional::n,unlog
+ logical,intent(in),optional::lupper
+
+ sparse%namemat='LINKED LIST'
+ sparse%dim1=m
+ sparse%dim2=m
+ if(present(n))sparse%dim2=n
+
+ allocate(sparse%heads(sparse%dim1))
+
+ sparse%lupperstorage=.false.
+ if(present(lupper))sparse%lupperstorage=lupper
+
+ if(present(unlog))sparse%unlog=unlog
+
+end subroutine
+
 !**DESTROY
 subroutine destroy_scal_ptrnode(pnode)
  type(ptrnode)::pnode
@@ -2563,6 +2694,24 @@ function constructor_metisgraph(n,m,unlog) result(metis)
 
 end function
 
+subroutine constructor_sub_metisgraph(metis,n,m,unlog)
+ class(metisgraph),intent(out)::metis
+ integer(kind=int32),intent(in)::n,m
+ integer(kind=int32),intent(in),optional::unlog
+
+ metis%unlog=6
+ if(present(unlog))metis%unlog=unlog
+
+ metis%nvertices=n
+ metis%medges=m
+ allocate(metis%xadj(metis%nvertices+1),metis%adjncy(2*metis%medges))
+ metis%xadj=0
+ metis%adjncy=0
+ metis%vwgt=c_null_ptr
+ metis%adjwgt=c_null_ptr
+
+end subroutine
+
 !**DESTROY
 subroutine destroy_metisgraph(metis)
  class(metisgraph),intent(inout)::metis
@@ -2576,6 +2725,20 @@ subroutine destroy_metisgraph(metis)
  if(allocated(metis%adjncy))deallocate(metis%adjncy)
 
 end subroutine
+
+
+!** GET MEMORY
+function getmem_metisgraph(metis) result(getmem)
+ class(metisgraph),intent(in)::metis
+ integer(kind=int64)::getmem
+
+ getmem=sizeof(metis%unlog)+sizeof(metis%nvertices)+sizeof(metis%medges)
+ if(allocated(metis%xadj))getmem=getmem+sizeof(metis%xadj)
+ if(allocated(metis%adjncy))getmem=getmem+sizeof(metis%adjncy)
+ 
+ !what to do with the pointers???
+ 
+end function
 
 !FINAL
 subroutine deallocate_scal_metisgraph(metis)
@@ -2759,7 +2922,8 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
  nel=ndiag+sum(rowpos)
 
- othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+ !othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+ call othersparse%init(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
 
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
@@ -2883,7 +3047,8 @@ subroutine convertfromcrstometisgraph(metis,sparse)
 
  medges=sparse%nonzero()-n  !number of off-diagonal elements
  
- metis=metisgraph(nvertices,medges,unlog=sparse%unlog)
+ !metis=metisgraph(nvertices,medges,unlog=sparse%unlog)
+ call metis%init(nvertices,medges,unlog=sparse%unlog)
 
  allocate(rowpos(n))
  rowpos=0
