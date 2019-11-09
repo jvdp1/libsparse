@@ -172,7 +172,7 @@ To __set a permutation vector__,the method *setpermutation* can be used:
  call mat%setpermutation(array)  
 ````  
 
-It is possible to get and set a permutation vector in one go as follows:  
+It is possible to get and set a permutation vector in one call as follows:  
 
 ````  
  call mat%setpermutation(mat%getordering())  
@@ -193,13 +193,22 @@ To __sort__ a column (in an ascending order) within a row of a CRS sparse matrix
 call crsmat%sort()  
 ````  
 
-To check if the sparse matrix is a *square* matrix, the method __lsquare__ must be used:  
+To check if the sparse matrix is sorted (columns within rows), the method __issorted__ must be used:  
 
 ````  
-square=mat%lsquare()  
+sorted=mat%issorted()  
 ````  
 
-where the variable __square__ is a logial.  
+where the variable __sorted__ is a logical.  
+
+
+To check if the sparse matrix is a *square* matrix, the method __issquare__ must be used:  
+
+````  
+square=mat%issquare()  
+````  
+
+where the variable __square__ is a logical.  
 
 
 To extract a __submatrix__ from a sparse matrix, the method *submatrix* must be used, e.g.:  
