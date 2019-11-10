@@ -68,10 +68,11 @@ module modsparse
   procedure,public::issorted
   !> @brief Returns true if square matrix; else returns false
   procedure,public::issquare
-  !> @brief Returns the number of non-zero elements
+  !> @brief Prints the sparse matrix to a file 
   procedure,public::printtofile=>printtofile_gen
   !> @brief Prints the sparse matrix in a rectangular/square format to the output mat\%unlog
   procedure,public::printsquaretofile=>printsquaretofile_gen
+  !> @brief Prints the current status of a sparse matrix to the output mat\%unlog ; e.g., call mat%printstats()
   procedure,public::printstats=>print_dim_gen
   !> @brief Sets the output unit to value; e.g., call mat%setouputunit(unlog)
   procedure,public::setoutputunit
