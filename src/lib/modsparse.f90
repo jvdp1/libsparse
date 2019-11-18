@@ -633,7 +633,9 @@ recursive subroutine add_coo(sparse,row,col,val)
    call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
   !2. reallocate matrix using move_alloc
+#if(_VERBOSE>0)
   write(sparse%unlog,'(2(a,i0))')'  Current | New size COO: ',sparse%nel,' | ',sptmp%nel
+#endif
   sparse%nel=sptmp%nel
   sparse%filled=sptmp%filled
   if(allocated(sparse%ij))deallocate(sparse%ij)
