@@ -2,7 +2,7 @@
 
 include ../Makeinit
 
-OBJ=
+OBJ=modcommon.o
 
 ifeq ($(DEBUGENABLE),1)
  DEBUG=-check all -traceback -debug extended
@@ -22,6 +22,7 @@ ifeq ($(PARDISOENABLE),0)
 else
  PARDISO=1
  F90FLAGS+=
+ OBJ+=modvariablepardiso.o
 endif
 
 ifeq ($(METISENABLE),0)
@@ -35,6 +36,13 @@ else
  OBJ+=modmetis.o
 endif
 
+ifeq ($(SPAINVENABLE),0)
+ SPAINV=0
+else
+ SPAINV=1
+ OBJ+=sgtrsm.o dgtrsm.o smbfct.o modspainv.o
+endif
+
 
 all: libsparse.a
 
@@ -43,8 +51,11 @@ OBJ+=modhash.o modsparse.o
 libsparse.a: $(OBJ)
 	ar cr  libsparse.a $(OBJ)
 
-%.o:	%.f90 
-	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) $<
+%.o:	%.f90
+	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE) $<
+
+%.o:	%.f
+	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE) $<
 
 clean:
 	rm -fv *.o *.optrpt *.a *.mod

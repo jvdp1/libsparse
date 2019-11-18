@@ -55,5 +55,12 @@ This library was inspired by several sources:
 
  * and by many courses related to object-oriented programming and Fortran 2003/2008.  
 
+## To be implemented  
+
+ * Check for symmetric matrix  
+
+ * Set lsymmetric=true (needed for mkl_crsmv and spainv), lsort, linverted,...
+ 
+ * Check for validity of the matrix in pardiso  
 
 

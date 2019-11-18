@@ -27,7 +27,14 @@ else
  EXEC+=test5
 endif
 
-EXEC+=test1 test2 test3 test4 test1_ll
+ifeq ($(SPAINVENABLE),0)
+ SPAINV=0
+else
+ SPAINV=1
+ EXEC+=test6
+endif
+
+EXEC+=test1 test2 test3 test4 test1_ll test7
 
 all:	$(EXEC)
 
@@ -47,6 +54,12 @@ test4:	test4.f90
 	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
 
 test5:	test5.f90
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
+
+test6:	test6.f90
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
+
+test7:	test7.f90
 	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
 
 
