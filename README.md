@@ -21,15 +21,18 @@ The library is written following an object-oriented approach. It has been tested
 The library relies on different libraries, such as BLAS/LAPACK libraries, PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5] (http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
 
 
-See the [documentation] (documentation.md) for more details regarding the compilation.  
+See the brief [documentation] (documentation.md) for more details regarding the compilation.  
 
 
 ## Documentation  
-The documentation is available in the directory *doc* (see *mainpage.md*). An extended documentation can be generated with *Doxygen*.  
+The brief documentation is available in the directory *doc* (see *mainpage.md*). An extended documentation can be generated with *Doxygen*.  
 
 
 ## Acknowledgements  
 This library was inspired by several sources:  
+
+
+ * http://burtleburtle.net/bob/hash/index.html#lookup  
 
 
  * https://didgeridoo.une.edu.au/km/homepage.php  
