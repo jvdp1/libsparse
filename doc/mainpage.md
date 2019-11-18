@@ -21,11 +21,11 @@ The library is written following an object-oriented approach. It has been tested
 The library relies on different libraries, such as BLAS/LAPACK libraries, PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5] (http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
 
 
-See the [documentation] (documentation.md) for more details regarding the compilation.  
+See the brief [documentation] (documentation.md) for more details regarding the compilation.  
 
 
 ## Documentation  
-The [documentation] (documentation.md) is available in the directory *doc*. An extended documentation can be generated with *Doxygen*.  
+The brief [documentation] (documentation.md) is available in the directory *doc*. An extended documentation can be generated with *Doxygen*.  
 
 
 ## Acknowledgements  
