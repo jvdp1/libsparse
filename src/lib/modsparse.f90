@@ -505,7 +505,7 @@ subroutine setsymmetric(sparse,ll)
  logical::lll
 
  if(.not.sparse%issquare())then
-  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared and cannot be set to symmetric!'
+  write(sparse%unlog,'(a)')' ERROR: the sparse matrix is not square and cannot be set to symmetric!'
   error stop
  endif
 
@@ -1718,6 +1718,9 @@ subroutine reset_pardiso_memory_crs(sparse)
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+#if (_VERBOSE>0)
+  write(sparse%unlog,'(x,a,x,i0)')__FILE__,__LINE__
+#endif
   return
  endif
 
@@ -1866,6 +1869,9 @@ subroutine solve_crs_vector(sparse,x,y)
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+#if (_VERBOSE>0)
+  write(sparse%unlog,'(x,a,x,i0)')__FILE__,__LINE__
+#endif
   return
  endif
 
@@ -1950,6 +1956,9 @@ subroutine solve_crs_array(sparse,x,y)
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+#if (_VERBOSE>0)
+  write(sparse%unlog,'(x,a,x,i0)')__FILE__,__LINE__
+#endif
   return
  endif
 
