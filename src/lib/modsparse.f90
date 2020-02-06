@@ -2937,29 +2937,40 @@ subroutine convertfromlltocrs(othersparse,sparse)
  integer(kind=int32)::i,ndiag,nel,col
  integer(kind=int32),allocatable::rowpos(:)
  type(ptrnode),pointer::cursor
+ logical::lsquare
 
  if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due a too large number of non-zero elements'
   stop
  endif
 
- !Condition: all diagonal elements must be present
+ !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
 
- !Number of elements=number of diagonal elements+number off-diagonal elements
+ !Number of elements=number of rows+number off-diagonal elements
  !from sparse
- ndiag=min(sparse%dim1,sparse%dim2)
+ lsquare=sparse%issquare()
 
  allocate(rowpos(sparse%dim1))
  rowpos=0
- do i=1,sparse%dim1
-  cursor=>sparse%heads(i)
-  do while(associated(cursor%p))
-   if(i.ne.cursor%p%col)rowpos(i)=rowpos(i)+1
-   cursor=>cursor%p%next
+ if(lsquare)then
+  do i=1,sparse%dim1
+   cursor=>sparse%heads(i)
+   do while(associated(cursor%p))
+    if(i.ne.cursor%p%col)rowpos(i)=rowpos(i)+1
+    cursor=>cursor%p%next
+   enddo
   enddo
- enddo
+ else
+  do i=1,sparse%dim1
+   cursor=>sparse%heads(i)
+   do while(associated(cursor%p))
+    if(cursor%p%col.ne.sparse%dim2)rowpos(i)=rowpos(i)+1
+    cursor=>cursor%p%next
+   enddo
+  enddo
+ endif
 
- nel=ndiag+sum(rowpos)
+ nel=sparse%dim1+sum(rowpos)
 
  othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
 
@@ -2972,33 +2983,52 @@ subroutine convertfromlltocrs(othersparse,sparse)
 
  !accumulate the number of elements and add diagonal elements
  othersparse%ia(1)=1
- do i=1,ndiag
-  othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
-  othersparse%ja(othersparse%ia(i))=i
- enddo
-
- !accumulate the number of elements (no diag elements to be added)
- do i=ndiag+1,othersparse%dim1
-  othersparse%ia(i+1)=othersparse%ia(i+1)+othersparse%ia(i)
- enddo
+ if(lsquare)then
+  do i=1,ndiag
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=i
+  enddo
+ else
+  do i=1,ndiag
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=sparse%dim2
+  enddo
+ endif
 
  !add the non-zero elements to crs (othersparse)
  !allocate(rowpos(othersparse%dim1))
  rowpos=othersparse%ia(1:othersparse%dim1)
- do i=1,sparse%dim1
-  cursor=>sparse%heads(i)
-  do while(associated(cursor%p))
-   col=cursor%p%col
-   if(i.eq.col)then
-    othersparse%a(othersparse%ia(i))=cursor%p%val
-   else
-    rowpos(i)=rowpos(i)+1
-    othersparse%ja(rowpos(i))=col
-    othersparse%a(rowpos(i))=cursor%p%val
-   endif
-   cursor=>cursor%p%next
+ if(lsquare)then
+  do i=1,sparse%dim1
+   cursor=>sparse%heads(i)
+   do while(associated(cursor%p))
+    col=cursor%p%col
+    if(i.eq.col)then
+     othersparse%a(othersparse%ia(i))=cursor%p%val
+    else
+     rowpos(i)=rowpos(i)+1
+     othersparse%ja(rowpos(i))=col
+     othersparse%a(rowpos(i))=cursor%p%val
+    endif
+    cursor=>cursor%p%next
+   enddo
   enddo
- enddo
+ else
+  do i=1,sparse%dim1
+   cursor=>sparse%heads(i)
+   do while(associated(cursor%p))
+    col=cursor%p%col
+    if(col.eq.sparse%dim2)then
+     othersparse%a(othersparse%ia(i))=cursor%p%val
+    else
+     rowpos(i)=rowpos(i)+1
+     othersparse%ja(rowpos(i))=col
+     othersparse%a(rowpos(i))=cursor%p%val
+    endif
+    cursor=>cursor%p%next
+   enddo
+  enddo
+ endif
 
  deallocate(rowpos)
 
@@ -3010,32 +3040,42 @@ subroutine convertfromcootocrs(othersparse,sparse)
  type(crssparse),intent(out)::othersparse
  type(coosparse),intent(in)::sparse
 
- integer(kind=int32)::i,ndiag,nel,row,col
+ integer(kind=int32)::i,nel,row,col
  integer(kind=int32),allocatable::rowpos(:)
  integer(kind=int64)::i8
+ logical::lsquare
 
  if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
   stop
  endif
 
- !Condition: all diagonal elements must be present
+ !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
 
- !Number of elements=number of diagonal elements+number off-diagonal elements
+ !Number of elements=number of rows+number off-diagonal elements
  !from sparse
- ndiag=min(sparse%dim1,sparse%dim2)
+ lsquare=sparse%issquare()
 
  allocate(rowpos(sparse%dim1))
  rowpos=0
 
- do i8=1_int64,sparse%nel
-  row=sparse%ij(1,i8)
-  if(row.ne.0.and.row.ne.sparse%ij(2,i8))then
-   rowpos(row)=rowpos(row)+1
-  endif
- enddo
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.row.ne.sparse%ij(2,i8))then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.sparse%ij(2,i8).ne.sparse%dim2)then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ endif
 
- nel=ndiag+sum(rowpos)
+ nel=sparse%dim1+sum(rowpos)
 
  !othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
  call othersparse%init(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
@@ -3049,32 +3089,50 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
  !accumulate the number of elements and add diagonal elements
  othersparse%ia(1)=1
- do i=1,ndiag
-  othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
-  othersparse%ja(othersparse%ia(i))=i   !set diagonal element for the case it would not be present
- enddo
-
- !accumulate the number of elements (no diag elements to be added)
- do i=ndiag+1,othersparse%dim1
-  othersparse%ia(i+1)=othersparse%ia(i+1)+othersparse%ia(i)
- enddo
+ if(lsquare)then
+  do i=1,sparse%dim1
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=i   !set diagonal element for the case it would not be present
+  enddo
+ else
+  do i=1,sparse%dim1
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=sparse%dim2   !set last element for the case it would not be present
+  enddo
+ endif
 
  !add the non-zero elements to crs (othersparse)
  !allocate(rowpos(othersparse%dim1))
  rowpos=othersparse%ia(1:othersparse%dim1)
- do i8=1_int64,sparse%nel
-  row=sparse%ij(1,i8)
-  if(row.gt.0)then
-   col=sparse%ij(2,i8)
-   if(row.eq.col)then
-    othersparse%a(othersparse%ia(row))=sparse%a(i8)
-   else
-    rowpos(row)=rowpos(row)+1
-    othersparse%ja(rowpos(row))=col
-    othersparse%a(rowpos(row))=sparse%a(i8)
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.row)then
+     othersparse%a(othersparse%ia(row))=sparse%a(i8)
+    else
+     rowpos(row)=rowpos(row)+1
+     othersparse%ja(rowpos(row))=col
+     othersparse%a(rowpos(row))=sparse%a(i8)
+    endif
    endif
-  endif
- enddo
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.sparse%dim2)then
+     othersparse%a(othersparse%ia(row))=sparse%a(i8)
+    else
+     rowpos(row)=rowpos(row)+1
+     othersparse%ja(rowpos(row))=col
+     othersparse%a(rowpos(row))=sparse%a(i8)
+    endif
+   endif
+  enddo
+ endif
 
  deallocate(rowpos)
 
