@@ -1713,7 +1713,7 @@ subroutine reset_pardiso_memory_crs(sparse)
  class(crssparse),intent(inout)::sparse
 
  !Pardiso variables
- integer(kind=int32)::error,phase
+ integer(kind=int32)::error,idummy(1)
  integer(kind=int32)::nrhs
 
  if(.not.sparse%issquare())then
@@ -1733,7 +1733,7 @@ subroutine reset_pardiso_memory_crs(sparse)
  parvar%phase=-1
  call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-              sparse%perm,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+              idummy,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
  call checkpardiso(parvar%phase,error,sparse%unlog)
 
  end associate
