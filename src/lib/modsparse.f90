@@ -1717,8 +1717,8 @@ subroutine reset_pardiso_memory_crs(sparse)
  integer(kind=int32)::nrhs
 
  if(.not.sparse%issquare())then
-  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
 #if (_VERBOSE>0)
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
   write(sparse%unlog,'(x,a,x,i0)')__FILE__,__LINE__
 #endif
   return
@@ -1868,8 +1868,8 @@ subroutine solve_crs_vector(sparse,x,y)
  !$ real(kind=real64)::t1
 
  if(.not.sparse%issquare())then
-  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
 #if (_VERBOSE>0)
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
   write(sparse%unlog,'(x,a,x,i0)')__FILE__,__LINE__
 #endif
   return
