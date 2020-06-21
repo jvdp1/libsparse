@@ -57,6 +57,8 @@ module modsparse
   private
   procedure(destroy_gen),public,deferred::destroy
   procedure(get_gen),public,deferred::get
+  procedure(multbyv_gen),public,deferred::multbyv
+  procedure(multbym_gen),public,deferred::multbym
   procedure(nonzero_gen),public,deferred::nonzero
   procedure(print_gen),public,deferred::print
   procedure(printsquare_gen),public,deferred::printsquare
@@ -69,6 +71,8 @@ module modsparse
   procedure,public::issorted
   !> @brief Returns true if square matrix; else returns false
   procedure,public::issquare
+  !> @brief Multiplication with a vector or matrix
+  generic,public::mult=>multbyv,multbym
   !> @brief Prints the sparse matrix to a file
   procedure,public::printtofile=>printtofile_gen
   !> @brief Prints the sparse matrix in a rectangular/square format to the output mat\%unlog
@@ -97,6 +101,22 @@ module modsparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
+  subroutine multbyv_gen(sparse,alpha,trans,x,val,y)
+   import::wp,gen_sparse
+   class(gen_sparse),intent(in)::sparse
+   real(kind=wp),intent(in)::val,alpha
+   real(kind=wp),intent(in)::x(:)
+   real(kind=wp),intent(out)::y(:)
+   character(len=1),intent(in)::trans
+  end subroutine
+  subroutine multbym_gen(sparse,alpha,trans,x,val,y)
+   import::wp,gen_sparse
+   class(gen_sparse),intent(in)::sparse
+   real(kind=wp),intent(in)::val,alpha
+   real(kind=wp),intent(in)::x(:,:)
+   real(kind=wp),intent(out)::y(:,:)
+   character(len=1),intent(in)::trans
+  end subroutine
   function nonzero_gen(sparse) result(nel)
    import::int64,gen_sparse
    class(gen_sparse),intent(in)::sparse
@@ -146,8 +166,6 @@ module modsparse
   procedure,public::multbyv=>multgenv_coo
   !> @brief Multiplication with a matrix (not fully implemented)
   procedure,public::multbym=>multgenm_coo
-  !> @brief Multiplication with a vector or matrix
-  generic,public::mult=>multbyv,multbym
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_coo
   !> @brief Prints the sparse matrix to the output mat\%unlog
@@ -222,8 +240,6 @@ module modsparse
   procedure,public::multbyv=>multgenv_csr
   !> @brief Multiplication with a matrix
   procedure,public::multbym=>multgenm_csr
-  !> @brief Multiplication with a vector or matrix
-  generic,public::mult=>multbyv,multbym
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_crs
 #if (_METIS==1)
@@ -289,6 +305,10 @@ module modsparse
   procedure,public::get=>get_ll
   !> @brief Initializes llsparse
   procedure,public::init=>constructor_sub_ll
+  !> @brief Multiplication with a vector
+  procedure,public::multbyv=>multgenv_ll
+  !> @brief Multiplication with a matrix
+  procedure,public::multbym=>multgenm_ll
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_ll
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -2857,6 +2877,33 @@ end function
 !**LOAD
 
 !**MULTIPLICATIONS
+subroutine multgenv_ll(sparse,alpha,trans,x,val,y)
+ !Computes y=val*y+alpha*sparse(tranposition)*x
+ class(llsparse),intent(in)::sparse
+ real(kind=wp),intent(in)::val,alpha
+ real(kind=wp),intent(in)::x(:)
+ real(kind=wp),intent(out)::y(:)
+ character(len=1),intent(in)::trans
+
+ y=0._wp
+ write(sparse%unlog,'(a)')' ERROR: Multiplication mult not implemented for llsparse'
+ error stop
+
+end subroutine
+
+subroutine multgenm_ll(sparse,alpha,trans,x,val,y)
+ !Computes y=val*y+alpha*sparse(tranposition)*x
+ class(llsparse),intent(in)::sparse
+ real(kind=wp),intent(in)::val,alpha
+ real(kind=wp),intent(in)::x(:,:)
+ real(kind=wp),intent(out)::y(:,:)
+ character(len=1),intent(in)::trans
+
+ y=0._wp
+ write(sparse%unlog,'(a)')' ERROR: Multiplication mult not implemented for llsparse'
+ error stop
+
+end subroutine
 
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_ptrnode(pnode) result(nel)
@@ -3122,7 +3169,7 @@ subroutine convertfromlltocrs(othersparse,sparse)
 
  if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due a too large number of non-zero elements'
-  stop
+  error stop
  endif
 
  !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
