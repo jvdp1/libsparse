@@ -63,6 +63,9 @@ module modsparse
   procedure(print_gen),public,deferred::print
   procedure(printsquare_gen),public,deferred::printsquare
 
+ 
+  !> @brief Iterative solver with the conjugate gradient method
+  procedure,public::cg=>cg_gen
   !> @brief Returns the dimension of the matrix; e.g., ...=mat%getdim(1)
   procedure,public::getdim=>getdim_gen
   !> @brief Initializes the values
@@ -383,6 +386,58 @@ subroutine destroy_gen_gen(sparse)
 
 end subroutine
 
+!**CONJUGATE GRADIENT
+subroutine cg_gen(sparse,x,y,maxiter,tol)
+ !sparse*x=y
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int32),intent(inout),optional::maxiter
+ real(kind=wp),intent(inout)::x(:)
+ real(kind=wp),intent(in)::y(:)
+ real(kind=wp),intent(inout),optional::tol
+
+ integer(kind=int32)::i,maxiter_
+ real(kind=wp)::r(size(x))
+ real(kind=wp)::p(size(x))
+ real(kind=wp)::Ap(size(x))
+ real(kind=wp)::rsnew,rsold,tol_,alpha
+
+ if(.not.sparse%issquare().or..not.sparse%lsymmetric&
+    .or.size(x).ne.size(y)&
+    .or.size(x).ne.sparse%getdim(2)&
+    .or.size(y).ne.sparse%getdim(1)&
+     )then
+  write(sparse%unlog,'(a)')' ERROR: one of multiple arguments are not conform'
+  error stop
+ endif
+
+ maxiter_ = min(1000,size(x)-1)
+ if(present(maxiter)) maxiter_ = min(maxiter,size(x)-1)
+
+ tol_ = 1.e-6
+ if(present(tol))tol_=tol
+
+ Ap=0._wp
+ call sparse%mult(1._wp,'n',x,0._wp,Ap)
+ r = y - Ap
+ p = r
+ rsold = sum(r**2)
+ 
+ do i=1, maxiter_
+  call sparse%mult(1._wp,'n',p,0._wp,Ap)
+  alpha = rsold / dot_product(p,Ap)
+  x = x + alpha * p
+  r = r - alpha * Ap
+  rsnew = sum(r**2)
+  if(sqrt(rsnew) < tol_)exit
+  p = r +(rsnew / rsold) * p
+  rsold = rsnew
+ enddo
+ 
+ if(present(maxiter)) maxiter = i
+ if(present(tol)) tol = sqrt(rsnew)
+
+end subroutine
+
 !**GET ELEMENTS
 function getdim_gen(sparse,dim1) result(dimget)
  class(gen_sparse),intent(in)::sparse
@@ -505,7 +560,7 @@ subroutine setpermutation(sparse,array)
 
  if(size(array).ne.sparse%getdim(1))then
   write(sparse%unlog,'(a)')' ERROR: The permutation array has a wrong size.'
-  stop
+  error stop
  endif
 
  !Probably pointer would be better???
