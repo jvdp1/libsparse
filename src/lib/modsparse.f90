@@ -57,8 +57,8 @@ module modsparse
   private
   procedure(destroy_gen),public,deferred::destroy
   procedure(get_gen),public,deferred::get
-  procedure(multbyv_gen),public,deferred::multbyv
-  procedure(multbym_gen),public,deferred::multbym
+  procedure(multbyv_gen),deferred::multbyv
+  procedure(multbym_gen),deferred::multbym
   procedure(nonzero_gen),public,deferred::nonzero
   procedure(print_gen),public,deferred::print
   procedure(printsquare_gen),public,deferred::printsquare
@@ -163,9 +163,9 @@ module modsparse
   !> @brief Initializes coosparse
   procedure,public::init=>constructor_sub_coo
   !> @brief Multiplication with a vector (not fully implemented)
-  procedure,public::multbyv=>multgenv_coo
+  procedure::multbyv=>multgenv_coo
   !> @brief Multiplication with a matrix (not fully implemented)
-  procedure,public::multbym=>multgenm_coo
+  procedure::multbym=>multgenm_coo
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_coo
   !> @brief Prints the sparse matrix to the output mat\%unlog
@@ -237,9 +237,9 @@ module modsparse
   !> @brief Solver using LDLt decomposition
   procedure,public::solveldlt=>solveldlt_crs
   !> @brief Multiplication with a vector
-  procedure,public::multbyv=>multgenv_csr
+  procedure::multbyv=>multgenv_csr
   !> @brief Multiplication with a matrix
-  procedure,public::multbym=>multgenm_csr
+  procedure::multbym=>multgenm_csr
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_crs
 #if (_METIS==1)
@@ -306,9 +306,9 @@ module modsparse
   !> @brief Initializes llsparse
   procedure,public::init=>constructor_sub_ll
   !> @brief Multiplication with a vector
-  procedure,public::multbyv=>multgenv_ll
+  procedure::multbyv=>multgenv_ll
   !> @brief Multiplication with a matrix
-  procedure,public::multbym=>multgenm_ll
+  procedure::multbym=>multgenm_ll
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_ll
   !> @brief Prints the sparse matrix to the output sparse\%unlog
