@@ -712,7 +712,7 @@ function get_coo(sparse,row,col) result(val)
 
  trow=row
  tcol=col
- if(sparse%lupperstorage.and.row.gt.col)then
+ if(sparse%lupperstorage.and.sparse%lsymmetric.and.row.gt.col)then
   !swap row-col
   trow=col
   tcol=row
@@ -973,7 +973,7 @@ subroutine print_coo(sparse,lint,output)
   !if(.not.validvalue_gen(sparse,row,col))cycle  !it should never happen
   !if(.not.validnonzero_gen(sparse,val))cycle    !to print as internal
   write(un,frm)row,col,val
-  if(.not.linternal.and.sparse%lupperstorage.and.row.ne.col)then
+  if(.not.linternal.and.sparse%lupperstorage.and.sparse%lsymmetric.and.row.ne.col)then
    write(un,frm)col,row,val
   endif
  enddo
@@ -1384,7 +1384,7 @@ function get_crs(sparse,row,col) result(val)
 
  trow=row
  tcol=col
- if(sparse%lupperstorage.and.row.gt.col)then
+ if(sparse%lupperstorage.and.sparse%lsymmetric.and.row.gt.col)then
   !swap row-col
   trow=col
   tcol=row
@@ -1934,7 +1934,7 @@ subroutine print_crs(sparse,lint,output)
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
    write(un,frm)i,sparse%ja(j),sparse%a(j)
-   if(.not.linternal.and.sparse%lupperstorage.and.i.ne.sparse%ja(j))then
+   if(.not.linternal.and.sparse%lupperstorage.and.sparse%lsymmetric.and.i.ne.sparse%ja(j))then
     write(un,frm)sparse%ja(j),i,sparse%a(j)
    endif
   enddo
@@ -2922,7 +2922,7 @@ subroutine print_ll(sparse,lint,output)
   cursor=>replacecursor
   do while(associated(cursor%p))
    write(un,frm)i,cursor%p%col,cursor%p%val
-   if(.not.linternal.and.sparse%lupperstorage.and.cursor%p%col.ne.i)then
+   if(.not.linternal.and.sparse%lupperstorage.and.sparse%lsymmetric.and.cursor%p%col.ne.i)then
     write(un,frm)cursor%p%col,i,cursor%p%val
    endif
    cursor=>cursor%p%next
@@ -3095,6 +3095,8 @@ subroutine convertfromlltocoo(othersparse,sparse)
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
 
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  do i=1,sparse%dim1
@@ -3152,6 +3154,8 @@ subroutine convertfromlltocrs(othersparse,sparse)
  nel=sparse%dim1+sum(rowpos)
 
  othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
 
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
@@ -3259,6 +3263,8 @@ subroutine convertfromcootocrs(othersparse,sparse)
  !othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
  call othersparse%init(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
 
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
@@ -3328,6 +3334,8 @@ subroutine convertfromcootoll(othersparse,sparse)
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
 
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  do i8=1_int64,sparse%nel
@@ -3349,6 +3357,8 @@ subroutine convertfromcrstocoo(othersparse,sparse)
 
  othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
 
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
  do i=1,sparse%dim1
@@ -3368,6 +3378,8 @@ subroutine convertfromcrstoll(othersparse,sparse)
  integer(kind=int32)::i,j
 
  othersparse=llsparse(sparse%dim1,sparse%dim2,sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
 
  if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
 
