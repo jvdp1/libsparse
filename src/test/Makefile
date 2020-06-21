@@ -34,7 +34,7 @@ else
  EXEC+=test6
 endif
 
-EXEC+=test1 test2 test3 test4 test1_ll test7 test8
+EXEC+=test1 test2 test3 test4 test1_ll test7 test8 test9
 
 all:	$(EXEC)
 
@@ -63,6 +63,9 @@ test7:	test7.f90
 	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
 
 test8:	test8.f90
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
+
+test9:	test9.f90
 	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
 
 
