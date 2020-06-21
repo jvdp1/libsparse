@@ -142,6 +142,12 @@ module modsparse
   procedure,public::getmem=>getmem_coo
   !> @brief Initializes coosparse
   procedure,public::init=>constructor_sub_coo
+  !> @brief Multiplication with a vector (not fully implemented)
+  procedure,public::multbyv=>multgenv_coo
+  !> @brief Multiplication with a matrix (not fully implemented)
+  procedure,public::multbym=>multgenm_coo
+  !> @brief Multiplication with a vector or matrix
+  generic,public::mult=>multbyv,multbym
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_coo
   !> @brief Prints the sparse matrix to the output mat\%unlog
@@ -767,6 +773,170 @@ function load_coo(namefile,unlog) result(sparse)
 end function
 
 !**MULTIPLICATIONS
+subroutine multgenv_coo(sparse,alpha,trans,x,val,y)
+ !Computes y=val*y+alpha*sparse(tranposition)*x
+ class(coosparse),intent(in)::sparse
+ real(kind=wp),intent(in)::val,alpha
+ real(kind=wp),intent(in)::x(:)
+ real(kind=wp),intent(out)::y(:)
+ character(len=1),intent(in)::trans
+
+ integer(kind=int64)::i
+ integer(kind=int32)::j,k
+ character(len=1)::matdescra(6)
+
+ if(trans.eq.'N'.or.trans.eq.'n')then
+  if(size(y).ne.sparse%getdim(1).or.size(x).ne.sparse%getdim(2))then
+   write(sparse%unlog,'(a)')'  ERROR (mult): wrong dimensions'
+   error stop
+  endif
+ elseif(trans.eq.'T'.or.trans.eq.'t')then
+  if(size(y).ne.sparse%getdim(2).or.size(x).ne.sparse%getdim(1))then
+   write(sparse%unlog,'(a)')'  ERROR (mult): wrong dimensions'
+   error stop
+  endif
+ else
+  write(sparse%unlog,'(a)')'  ERROR (mult): wrong transposition'
+  error stop
+ endif
+
+ matdescra=''
+
+ if(sparse%lsymmetric.and.sparse%lupperstorage)then
+  matdescra(1)='S'
+ elseif(.not.sparse%lsymmetric.and.sparse%lupperstorage)then
+  matdescra(1)='T'
+ elseif(.not.sparse%lsymmetric.and..not.sparse%lupperstorage)then
+  matdescra(1)='G'
+ else
+  write(sparse%unlog,'(a)')'  ERROR (mult): unsupported format'
+  call sparse%printstats
+  error stop
+ endif
+!
+! if(sparse%lupperstorage)then
+!  matdescra(2)='U'
+!  matdescra(3)='N'
+! endif
+!
+! matdescra(4)='F'
+
+ !don't forget transposition
+
+ y = val * y
+ select case(matdescra(1))
+  case('S')
+   do i = 1, sparse%nel
+    if(sparse%ij(1,i).eq.0)cycle
+    j=sparse%ij(1,i)
+    k=sparse%ij(2,i)
+    y(j) = y(j) + alpha * sparse%a(i) * x(k)
+    if(j.ne.k) y(k) = y(k) + alpha * sparse%a(i) * x(j)
+   enddo
+  case('T','G')
+   if(trans.eq.'N'.or.trans.eq.'n')then
+    do i = 1, sparse%nel
+     if(sparse%ij(1,i).eq.0)cycle
+     j=sparse%ij(1,i)
+     k=sparse%ij(2,i)
+     y(j) = y(j) + alpha * sparse%a(i) * x(k)
+    enddo
+   elseif(trans.eq.'T'.or.trans.eq.'t')then
+    do i = 1, sparse%nel
+     if(sparse%ij(1,i).eq.0)cycle
+     j=sparse%ij(2,i)
+     k=sparse%ij(1,i)
+     y(j) = y(j) + alpha * sparse%a(i) * x(k)
+    enddo
+   endif
+  case default
+   write(sparse%unlog,'(a)')'  ERROR (multbyv): unsupported format'
+   error stop
+ end select
+
+end subroutine
+
+subroutine multgenm_coo(sparse,alpha,trans,x,val,y)
+ !Computes y=val*y+alpha*sparse(tranposition)*x
+ class(coosparse),intent(in)::sparse
+ real(kind=wp),intent(in)::val,alpha
+ real(kind=wp),intent(in)::x(:,:)
+ real(kind=wp),intent(out)::y(:,:)
+ character(len=1),intent(in)::trans
+
+ integer(kind=int64)::i
+ integer(kind=int32)::j,k
+ character(len=1)::matdescra(6)
+
+ if(trans.eq.'N'.or.trans.eq.'n')then
+  if(size(y,1).ne.sparse%getdim(1).or.size(x,1).ne.sparse%getdim(2))then
+   write(sparse%unlog,'(a)')'  ERROR (mult): wrong dimensions'
+   error stop
+  endif
+ elseif(trans.eq.'T'.or.trans.eq.'t')then
+  if(size(y,1).ne.sparse%getdim(2).or.size(x,1).ne.sparse%getdim(1))then
+   write(sparse%unlog,'(a)')'  ERROR (mult): wrong dimensions'
+   error stop
+  endif
+ else
+  write(sparse%unlog,'(a)')'  ERROR (mult): wrong transposition'
+  error stop
+ endif
+
+ matdescra=''
+
+ if(sparse%lsymmetric.and.sparse%lupperstorage)then
+  matdescra(1)='S'
+ elseif(.not.sparse%lsymmetric.and.sparse%lupperstorage)then
+  matdescra(1)='T'
+ elseif(.not.sparse%lsymmetric.and..not.sparse%lupperstorage)then
+  matdescra(1)='G'
+ else
+  write(sparse%unlog,'(a)')'  ERROR (mult): unsupported format'
+  call sparse%printstats
+  error stop
+ endif
+!
+! if(sparse%lupperstorage)then
+!  matdescra(2)='U'
+!  matdescra(3)='N'
+! endif
+!
+! matdescra(4)='F'
+
+ y = val * y
+ select case(matdescra(1))
+  case('S')
+   do i = 1, sparse%nel
+    if(sparse%ij(1,i).eq.0)cycle
+    j=sparse%ij(1,i)
+    k=sparse%ij(2,i)
+    y(j,:) = y(j,:) + alpha * sparse%a(i) * x(k,:)
+    if(j.ne.k) y(k,:) = y(k,:) + alpha * sparse%a(i) * x(j,:)
+   enddo
+  case('T','G')
+   if(trans.eq.'N'.or.trans.eq.'n')then
+    do i = 1, sparse%nel
+     if(sparse%ij(1,i).eq.0)cycle
+     j=sparse%ij(1,i)
+     k=sparse%ij(2,i)
+     y(j,:) = y(j,:) + alpha * sparse%a(i) * x(k,:)
+    enddo
+   elseif(trans.eq.'T'.or.trans.eq.'t')then
+    do i = 1, sparse%nel
+     if(sparse%ij(1,i).eq.0)cycle
+     j=sparse%ij(2,i)
+     k=sparse%ij(1,i)
+     y(j,:) = y(j,:) + alpha * sparse%a(i) * x(k,:)
+    enddo
+   endif
+  case default
+   write(sparse%unlog,'(a)')'  ERROR (multbyv): unsupported format'
+   error stop
+ end select
+
+end subroutine
+
 
 !**NUMBER OF ELEMENTS
 function totalnumberofelements_coo(sparse) result(nel)
