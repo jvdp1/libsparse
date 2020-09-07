@@ -58,7 +58,7 @@ libsparse.a: $(OBJ)
 	$(f90) -c  $(F90FLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE) $<
 
 clean:
-	rm -fv *.o *.optrpt *.a *.mod
+	rm -fv *.o *.optrpt *.a *.mod *.smod
 	
 cleanlib:
 	rm -fv *.a
