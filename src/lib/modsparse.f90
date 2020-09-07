@@ -19,7 +19,6 @@ module modsparse
 #else
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
- use modhash
  use iso_c_binding,only:c_int,c_ptr,c_null_ptr
 #if (_METIS==1)
  use modmetis
