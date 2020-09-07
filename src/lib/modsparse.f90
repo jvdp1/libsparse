@@ -731,6 +731,7 @@ end function
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!COO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+!**DIAGONAL ELEMENTS
 function diag_mat_coo(sparse,noff) result(diagsparse)
  class(coosparse),intent(inout)::sparse
  integer(kind=int32),intent(in)::noff
