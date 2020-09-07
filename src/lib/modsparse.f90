@@ -26,7 +26,6 @@ module modsparse
 #if (_PARDISO==1)
  use modvariablepardiso, only: pardiso_variable
 #endif
- use modcommon
  !$ use omp_lib
  implicit none
  private
