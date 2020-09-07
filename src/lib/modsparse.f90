@@ -3217,7 +3217,7 @@ subroutine convertfromlltocrs(othersparse,sparse)
  type(crssparse),intent(out)::othersparse
  type(llsparse),intent(in),target::sparse
 
- integer(kind=int32)::i,ndiag,nel,col
+ integer(kind=int32)::i,nel,col
  integer(kind=int32),allocatable::rowpos(:)
  type(ptrnode),pointer::cursor
  logical::lsquare
@@ -3269,12 +3269,12 @@ subroutine convertfromlltocrs(othersparse,sparse)
  !accumulate the number of elements and add diagonal elements
  othersparse%ia(1)=1
  if(lsquare)then
-  do i=1,ndiag
+  do i=1,sparse%dim1
    othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
    othersparse%ja(othersparse%ia(i))=i
   enddo
  else
-  do i=1,ndiag
+  do i=1,sparse%dim1
    othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
    othersparse%ja(othersparse%ia(i))=sparse%dim2
   enddo
