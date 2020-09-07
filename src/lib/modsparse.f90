@@ -140,7 +140,6 @@ module modsparse
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!COO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
- real(kind=real32),parameter::maxratiofilled_par=0.80
 
  !> @brief Object for COOrdinate storage
  type,extends(gen_sparse)::coosparse

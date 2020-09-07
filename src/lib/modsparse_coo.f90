@@ -8,6 +8,8 @@ submodule (modsparse) modsparse_coo
  !$ use omp_lib
  implicit none
 
+ real(kind=real32),parameter::maxratiofilled_par=0.80
+
 contains
 
 !**CONSTRUCTOR
