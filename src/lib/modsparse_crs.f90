@@ -11,6 +11,10 @@ submodule (modsparse) modsparse_crs
  use mkl_pardiso
  use modvariablepardiso, only: checkpardiso, pardiso_variable
 #endif
+#if (_METIS==1)
+ use modmetis, only: metis_nodend,metis_setoptions,metis_checkerror&
+    ,METIS_CTYPE_RM,  METIS_IPTYPE_EDGE,  METIS_RTYPE_SEP2SIDED,  METIS_DBG_INFO
+#endif
   !$ use omp_lib
  implicit none
 
