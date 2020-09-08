@@ -22,17 +22,20 @@ submodule (modsparse) modsparse_crs
 contains
 
 !**CONSTRUCTOR
-module function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
+module function constructor_crs(m,nel,n,lupper,lzerodiagel,unlog) result(sparse)
  type(crssparse)::sparse
  integer(kind=int32),intent(in)::m
  integer(kind=int32),intent(in)::nel
  integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
+ logical,intent(in),optional::lzerodiagel
 
  call sparse%initialize('CRS',m,m)
 
  if(present(n))sparse%dim2=n
  if(present(lupper))sparse%lupperstorage=lupper
+ sparse%lzerodiagel=.true.
+ if(present(lzerodiagel))sparse%lzerodiagel=lzerodiagel
  if(present(unlog))sparse%unlog=unlog
 
  sparse%lsymmetric=.false.
@@ -49,17 +52,20 @@ module function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
 
 end function
 
-module subroutine constructor_sub_crs(sparse,m,nel,n,lupper,unlog)
+module subroutine constructor_sub_crs(sparse,m,nel,n,lupper,lzerodiagel,unlog)
  class(crssparse),intent(out)::sparse
  integer(kind=int32),intent(in)::m
  integer(kind=int32),intent(in)::nel
  integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
+ logical,intent(in),optional::lzerodiagel
 
  call sparse%initialize('CRS',m,m)
 
  if(present(n))sparse%dim2=n
  if(present(lupper))sparse%lupperstorage=lupper
+ sparse%lzerodiagel=.true.
+ if(present(lzerodiagel))sparse%lzerodiagel=lzerodiagel
  if(present(unlog))sparse%unlog=unlog
 
  sparse%lsymmetric=.false.
@@ -85,6 +91,8 @@ module subroutine destroy_crs(sparse)
 #endif
 
  call sparse%destroy_gen_gen()
+
+ sparse%lzerodiagel=.true.
 
  if(allocated(sparse%ia))deallocate(sparse%ia)
  if(allocated(sparse%ja))deallocate(sparse%ja)
@@ -180,6 +188,7 @@ module function getmem_crs(sparse) result(getmem)
  if(allocated(sparse%ia))getmem=getmem+sizeof(sparse%ia)
  if(allocated(sparse%ja))getmem=getmem+sizeof(sparse%ja)
  if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
+ getmem=getmem+sizeof(sparse%lzerodiagel)
 #if (_PARDISO==1)
  getmem=getmem+sizeof(sparse%lpardisofirst)
 #endif
@@ -319,6 +328,11 @@ module subroutine getchol_crs(sparse,minsizenode)
  !$ t2=t1
 #endif
 
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: getchol_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
+
  call sparse%sort()
 
 #if (_VERBOSE>0)
@@ -384,6 +398,11 @@ module subroutine getldlt_crs(sparse,minsizenode)
  !$ t2=t1
 #endif
 
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: getldlt_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
+
  if(present(minsizenode))then
   call sparse%chol(minsizenode)
  else
@@ -432,6 +451,11 @@ module function getordering_crs(sparse&
 
  !$ t1=omp_get_wtime()
 #endif
+
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: getordering_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
 
  metis=sparse
 
@@ -514,6 +538,11 @@ module subroutine getichol_crs(sparse,minsizenode)
  !$ t2=t1
 #endif
 
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: getichol_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
+
  call sparse%sort()
 
 #if (_VERBOSE>0)
@@ -569,6 +598,11 @@ module subroutine getspainv_crs(sparse,minsizenode)
  !$ t2=t1
 #endif
 
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: getspainv_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
+
  call sparse%sort()
 
 #if (_VERBOSE>0)
@@ -621,6 +655,12 @@ module subroutine reset_pardiso_memory_crs(sparse)
  !Pardiso variables
  integer(kind=int32)::error,idummy(1)
  integer(kind=int32)::nrhs
+
+print*,'aaaaaaa ',sparse%lzerodiagel
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: reset_pardiso_memory_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
 
  if(.not.sparse%issquare())then
 #if (_VERBOSE>0)
@@ -717,6 +757,7 @@ module subroutine save_crs(sparse,namefile)
  write(un)sparse%dim2            !int32
  write(un)sparse%nonzero()       !int64
  write(un)sparse%lupperstorage   !logical
+ write(un)sparse%lzerodiagel     !logical
  write(un)sparse%ia              !int32
  write(un)sparse%ja              !int32
  write(un)sparse%a               !wp
@@ -772,6 +813,11 @@ module subroutine solve_crs_vector(sparse,x,y)
 
  integer(kind=int32)::i
  !$ real(kind=real64)::t1
+
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: solve_crs_vector does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
 
  if(.not.sparse%issquare())then
 #if (_VERBOSE>0)
@@ -859,6 +905,11 @@ module subroutine solve_crs_array(sparse,x,y)
 
  integer(kind=int32)::i
  !$ real(kind=real64)::t1
+
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: solve_crs_array does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
@@ -1031,6 +1082,11 @@ module subroutine solveldlt_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: solveldlt_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
+
  allocate(x_(1:size(x)))
 
  do i=1,size(x)
@@ -1098,6 +1154,11 @@ module subroutine sort_crs(sparse)
  integer(kind=int32),parameter::select=20
  real(kind=wp)::umnmx,tmpu
  real(kind=wp),allocatable::u(:)
+
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: sort_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
 
  if(sparse%issorted())then
   return

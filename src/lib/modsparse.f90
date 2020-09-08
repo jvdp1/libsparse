@@ -388,6 +388,7 @@ module modsparse
   integer(kind=int32),allocatable::ia(:)
   integer(kind=int32),allocatable::ja(:)
   real(kind=wp),allocatable::a(:)
+  logical::lzerodiagel
 #if (_PARDISO==1)
   logical::lpardisofirst
   type(pardiso_variable)::pardisovar
@@ -465,19 +466,21 @@ module modsparse
 
  interface
   !**CONSTRUCTOR
-  module function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
+  module function constructor_crs(m,nel,n,lupper,lzerodiagel,unlog) result(sparse)
    type(crssparse)::sparse
    integer(kind=int32),intent(in)::m
    integer(kind=int32),intent(in)::nel
    integer(kind=int32),intent(in),optional::n,unlog
    logical,intent(in),optional::lupper
+   logical,intent(in),optional::lzerodiagel
   end function
-  module subroutine constructor_sub_crs(sparse,m,nel,n,lupper,unlog)
+  module subroutine constructor_sub_crs(sparse,m,nel,n,lupper,lzerodiagel,unlog)
    class(crssparse),intent(out)::sparse
    integer(kind=int32),intent(in)::m
    integer(kind=int32),intent(in)::nel
    integer(kind=int32),intent(in),optional::n,unlog
    logical,intent(in),optional::lupper
+   logical,intent(in),optional::lzerodiagel
   end subroutine
   !**DESTROY
   module subroutine destroy_crs(sparse)
@@ -888,6 +891,11 @@ function diag_mat_crs(sparse,noff) result(diagsparse)
  integer(kind=int32)::ndiag,i,j,k,startoff,endoff,nel
  integer(kind=int32),allocatable::rowpos(:)
 
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: diag_mat_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
+
  ndiag=min(sparse%dim1,sparse%dim2)
 
  allocate(rowpos(ndiag))
@@ -947,7 +955,7 @@ function load_crs(namefile,unlog)  result(sparse)
 
  integer(kind=int32)::un,dim1,dim2
  integer(kind=int64)::nonzero
- logical::lupperstorage
+ logical::lupperstorage,lzerodiagel
 
  open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
  read(un)dim1
@@ -959,11 +967,12 @@ function load_crs(namefile,unlog)  result(sparse)
  read(un)dim2            !int32
  read(un)nonzero         !int64
  read(un)lupperstorage   !logical
+ read(un)lzerodiagel     !logical
 
  if(present(unlog))then
-  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage,unlog)
+  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage,lzerodiagel,unlog)
  else
-  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage)
+  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage,lzerodiagel)
  endif
 
  read(un)sparse%ia              !int32
@@ -989,6 +998,11 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
 
  if(.not.validvalue_gen(sparse,startdim1,startdim2))return
  if(.not.validvalue_gen(sparse,enddim1,enddim2))return
+
+ if(.not.sparse%lzerodiagel)then
+  write(sparse%unlog,'(a)')' ERROR: submatrix_crs does not support CRS matrices with missing diagonal elements'
+  error stop
+ endif
 
  !check if the submatrix include diagonal elements of sparse
  ! if yes -> lupperstorage
@@ -1061,9 +1075,9 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  if((sparse%lupperstorage.eq.lupperstorage).or.(sparse%lupperstorage.and..not.lincludediag))then
   ! upper -> upper  ||  full -> full
   if(present(unlog))then
-   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,unlog)
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,sparse%lzerodiagel,unlog)
   else
-   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage)
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,sparse%lzerodiagel)
   endif
   subsparse%ia=0
   nel=1
@@ -1109,9 +1123,9 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  elseif(.not.sparse%lupperstorage.and.lupperstorage)then
   ! full -> upper
   if(present(unlog))then
-   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,unlog)
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,sparse%lzerodiagel,unlog)
   else
-   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage)
+   subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,sparse%lzerodiagel)
   endif
   subsparse%ia=0
   nel=1

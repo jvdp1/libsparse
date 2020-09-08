@@ -143,6 +143,7 @@ module subroutine print_dim_gen(sparse)
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
   type is(crssparse)
    write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
+   write(sparse%unlog,'( "  Zero diag. elem. (possible) : ",i0)')sparse%lzerodiagel
 #if (_PARDISO==1)
    write(sparse%unlog,'( "  PARDISO status              : ",i0)')sparse%lpardisofirst
 #endif
