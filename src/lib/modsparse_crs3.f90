@@ -41,7 +41,7 @@ module subroutine constructor_sub_crs3(sparse,m,nel,n,lupper,unlog)
  integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
 
- call sparse%initialize('CRS3',m,m)
+ call sparse%initialize('CRS',m,m)
 
  if(present(n))sparse%dim2=n
  if(present(lupper))sparse%lupperstorage=lupper
@@ -55,7 +55,15 @@ module subroutine constructor_sub_crs3(sparse,m,nel,n,lupper,unlog)
  sparse%ja=0
  sparse%a=0._wp
 
+#if (_PARDISO==1)
+ select type(sparse)
+  type is(crssparse)
+   sparse%lpardisofirst=.true.
+ end select
+#endif
+
 end subroutine
+
 
 !**ADD ELEMENTS
 module subroutine add_crs3(sparse,row,col,val,error)
@@ -339,6 +347,41 @@ module subroutine save_crs3(sparse,namefile)
  close(un)
 
 end subroutine
+
+!**SET ELEMENTS
+module subroutine set_crs3(sparse,row,col,val,error)
+ !add a value only to an existing one
+ class(crs3sparse),intent(inout)::sparse
+ integer(kind=int32),intent(in)::row,col
+ integer(kind=int32),intent(out),optional::error
+ real(kind=wp),intent(in)::val
+
+ integer(kind=int32)::i
+ integer(kind=int32)::ierror    !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
+
+ if(present(error))error=0
+
+ if(.not.validvalue_gen(sparse,row,col))return
+ !if(.not.validnonzero_gen(sparse,val))return
+ if(sparse%lupperstorage.and..not.uppervalue_gen(row,col))return
+
+ if(sparse%ia(row).eq.0)then
+  if(present(error))error=-10
+  return
+ endif
+
+ do i=sparse%ia(row),sparse%ia(row+1)-1
+  if(sparse%ja(i).eq.col)then
+   sparse%a(i)=val
+   if(present(error))error=0
+   return
+  endif
+ enddo
+
+ if(present(error))error=-1
+
+end subroutine
+
 
 
 end submodule

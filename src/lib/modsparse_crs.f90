@@ -49,33 +49,6 @@ module function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
 
 end function
 
-module subroutine constructor_sub_crs(sparse,m,nel,n,lupper,unlog)
- class(crssparse),intent(out)::sparse
- integer(kind=int32),intent(in)::m
- integer(kind=int32),intent(in)::nel
- integer(kind=int32),intent(in),optional::n,unlog
- logical,intent(in),optional::lupper
-
- call sparse%initialize('CRS',m,m)
-
- if(present(n))sparse%dim2=n
- if(present(lupper))sparse%lupperstorage=lupper
- if(present(unlog))sparse%unlog=unlog
-
- sparse%lsymmetric=.false.
-
- allocate(sparse%ia(sparse%dim1+1),sparse%ja(nel),sparse%a(nel))
- sparse%ia=0
- sparse%ia(sparse%dim1+1)=-nel
- sparse%ja=0
- sparse%a=0._wp
-
-#if (_PARDISO==1)
- sparse%lpardisofirst=.true.
-#endif
-
-end subroutine
-
 !**DESTROY
 module subroutine destroy_crs(sparse)
  class(crssparse),intent(inout)::sparse
@@ -454,40 +427,6 @@ module subroutine reset_pardiso_memory_crs(sparse)
 
 end subroutine
 #endif
-
-!**SET ELEMENTS
-module subroutine set_crs(sparse,row,col,val,error)
- !add a value only to an existing one
- class(crssparse),intent(inout)::sparse
- integer(kind=int32),intent(in)::row,col
- integer(kind=int32),intent(out),optional::error
- real(kind=wp),intent(in)::val
-
- integer(kind=int32)::i
- integer(kind=int32)::ierror    !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
-
- if(present(error))error=0
-
- if(.not.validvalue_gen(sparse,row,col))return
- !if(.not.validnonzero_gen(sparse,val))return
- if(sparse%lupperstorage.and..not.uppervalue_gen(row,col))return
-
- if(sparse%ia(row).eq.0)then
-  if(present(error))error=-10
-  return
- endif
-
- do i=sparse%ia(row),sparse%ia(row+1)-1
-  if(sparse%ja(i).eq.col)then
-   sparse%a(i)=val
-   if(present(error))error=0
-   return
-  endif
- enddo
-
- if(present(error))error=-1
-
-end subroutine
 
 !**SOLVE
 #if (_PARDISO==1)

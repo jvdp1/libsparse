@@ -400,6 +400,8 @@ module modsparse
   procedure,public::getmem=>getmem_crs3
   !> @brief Initializes the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs3
+  !> @brief Iniates crs3sparse and crssparse
+  procedure,public::init=>constructor_sub_crs3
   !> @brief Multiplication with a vector
   procedure::multbyv=>multgenv_csr3
   !> @brief Multiplication with a matrix
@@ -412,6 +414,8 @@ module modsparse
   procedure,public::printsquare=>printsquare_crs3
   !> @brief Saves the matrix (internal format) to stream file
   procedure,public::save=>save_crs3
+  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
+  procedure,public::set=>set_crs3
   final::deallocate_scal_crs3,deallocate_rank1_crs3
  end type
 
@@ -493,6 +497,14 @@ module modsparse
    class(crs3sparse),intent(in)::sparse
    character(len=*),intent(in)::namefile
   end subroutine
+  !**SET ELEMENTS
+  module subroutine set_crs3(sparse,row,col,val,error)
+   !add a value only to an existing one
+   class(crs3sparse),intent(inout)::sparse
+   integer(kind=int32),intent(in)::row,col
+   integer(kind=int32),intent(out),optional::error
+   real(kind=wp),intent(in)::val
+  end subroutine
 
  end interface
 
@@ -529,8 +541,6 @@ module modsparse
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
 #endif
-  !> @brief Iniates crssparse
-  procedure,public::init=>constructor_sub_crs
   !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
   procedure,public::isolve=>isolve_crs
   !> @brief Solver using LDLt decomposition
@@ -543,8 +553,6 @@ module modsparse
   !> @brief Releases Pardiso memory if possible
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
-  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
-  procedure,public::set=>set_crs
   !> @brief MKL PARDISO solver
   procedure,private::solve_crs_vector
   procedure,private::solve_crs_array
@@ -627,14 +635,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
   end subroutine
 #endif
-  !**SET ELEMENTS
-  module subroutine set_crs(sparse,row,col,val,error)
-   !add a value only to an existing one
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in)::row,col
-   integer(kind=int32),intent(out),optional::error
-   real(kind=wp),intent(in)::val
-  end subroutine
   !**SOLVE
   module subroutine solve_crs_vector(sparse,x,y)
    !sparse*x=y
