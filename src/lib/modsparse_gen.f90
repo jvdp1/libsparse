@@ -141,6 +141,8 @@ module subroutine print_dim_gen(sparse)
   type is(coosparse)
    write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
+  type is(crs3sparse)
+   write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
   type is(crssparse)
    write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
 #if (_PARDISO==1)

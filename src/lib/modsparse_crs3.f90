@@ -120,6 +120,51 @@ module function get_crs3(sparse,row,col) result(val)
 
 end function
 
+!** GET MEMORY
+module function getmem_crs3(sparse) result(getmem)
+ class(crs3sparse),intent(in)::sparse
+ integer(kind=int64)::getmem
+
+ getmem=sparse%getmem_gen()
+ if(allocated(sparse%ia))getmem=getmem+sizeof(sparse%ia)
+ if(allocated(sparse%ja))getmem=getmem+sizeof(sparse%ja)
+ if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
+#if (_PARDISO==1)
+ select type(sparse)
+  type is(crssparse)
+   getmem=getmem+sizeof(sparse%lpardisofirst)
+ end select
+#endif
+
+end function
+
+
+!**EXTERNAL
+module subroutine external_crs3(sparse,ia,ja,a)
+ class(crs3sparse),intent(inout)::sparse
+ integer(kind=int32),intent(in)::ia(:),ja(:)
+ real(kind=wp),intent(in)::a(:)
+
+ if(size(ia).ne.size(sparse%ia))then
+  write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
+  stop
+ endif
+ if(size(ja).ne.size(sparse%ja))then
+  write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different size!'
+  stop
+ endif
+ if(size(a).ne.size(sparse%a))then
+  write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different size!'
+  stop
+ endif
+
+ sparse%ia=ia
+ sparse%ja=ja
+ sparse%a=a
+
+end subroutine
+
+
 !**MULTIPLICATIONS
 module subroutine multgenv_csr3(sparse,alpha,trans,x,val,y)
  !Computes y=val*y+alpha*sparse(tranposition)*x
@@ -267,5 +312,33 @@ module subroutine printsquare_crs3(sparse,output)
  deallocate(tmp)
 
 end subroutine
+
+!**SAVE
+module subroutine save_crs3(sparse,namefile)
+ class(crs3sparse),intent(in)::sparse
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int32)::un
+
+ open(newunit=un,file=namefile,action='write',status='replace',access='stream')!,buffered='yes')
+
+ select type(sparse)
+  type is(crs3sparse)
+   write(un)typecrs3             !int32
+  type is(crssparse)
+   write(un)typecrs              !int32
+ end select
+
+ write(un)sparse%dim1            !int32
+ write(un)sparse%dim2            !int32
+ write(un)sparse%nonzero()       !int64
+ write(un)sparse%lupperstorage   !logical
+ write(un)sparse%ia              !int32
+ write(un)sparse%ja              !int32
+ write(un)sparse%a               !wp
+ close(un)
+
+end subroutine
+
 
 end submodule

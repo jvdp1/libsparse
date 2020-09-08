@@ -110,46 +110,6 @@ module function diag_vect_crs(sparse) result(array)
 
 end function
 
-!** GET MEMORY
-module function getmem_crs(sparse) result(getmem)
- class(crssparse),intent(in)::sparse
- integer(kind=int64)::getmem
-
- getmem=sparse%getmem_gen()
- if(allocated(sparse%ia))getmem=getmem+sizeof(sparse%ia)
- if(allocated(sparse%ja))getmem=getmem+sizeof(sparse%ja)
- if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
-#if (_PARDISO==1)
- getmem=getmem+sizeof(sparse%lpardisofirst)
-#endif
-
-end function
-
-!**EXTERNAL
-module subroutine external_crs(sparse,ia,ja,a)
- class(crssparse),intent(inout)::sparse
- integer(kind=int32),intent(in)::ia(:),ja(:)
- real(kind=wp),intent(in)::a(:)
-
- if(size(ia).ne.size(sparse%ia))then
-  write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
-  stop
- endif
- if(size(ja).ne.size(sparse%ja))then
-  write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different size!'
-  stop
- endif
- if(size(a).ne.size(sparse%a))then
-  write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different size!'
-  stop
- endif
-
- sparse%ia=ia
- sparse%ja=ja
- sparse%a=a
-
-end subroutine
-
 #if (_SPAINV==1)
 !**GET (COMPLETE) CHOLESKY FACTOR
 module subroutine getchol_crs(sparse,minsizenode)
@@ -494,26 +454,6 @@ module subroutine reset_pardiso_memory_crs(sparse)
 
 end subroutine
 #endif
-
-!**SAVE
-module subroutine save_crs(sparse,namefile)
- class(crssparse),intent(in)::sparse
- character(len=*),intent(in)::namefile
-
- integer(kind=int32)::un
-
- open(newunit=un,file=namefile,action='write',status='replace',access='stream')!,buffered='yes')
- write(un)typecrs                !int32
- write(un)sparse%dim1            !int32
- write(un)sparse%dim2            !int32
- write(un)sparse%nonzero()       !int64
- write(un)sparse%lupperstorage   !logical
- write(un)sparse%ia              !int32
- write(un)sparse%ja              !int32
- write(un)sparse%a               !wp
- close(un)
-
-end subroutine
 
 !**SET ELEMENTS
 module subroutine set_crs(sparse,row,col,val,error)

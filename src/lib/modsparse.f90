@@ -396,6 +396,10 @@ module modsparse
   procedure,public::destroy=>destroy_crs3
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs3
+  !> @brief Gets memory used
+  procedure,public::getmem=>getmem_crs3
+  !> @brief Initializes the vectors ia,ja,and a from external vectors
+  procedure,public::external=>external_crs3
   !> @brief Multiplication with a vector
   procedure::multbyv=>multgenv_csr3
   !> @brief Multiplication with a matrix
@@ -406,7 +410,9 @@ module modsparse
   procedure,public::print=>print_crs3
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs3
- final::deallocate_scal_crs3,deallocate_rank1_crs3
+  !> @brief Saves the matrix (internal format) to stream file
+  procedure,public::save=>save_crs3
+  final::deallocate_scal_crs3,deallocate_rank1_crs3
  end type
 
  interface
@@ -439,6 +445,17 @@ module modsparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
+  !** GET MEMORY
+  module function getmem_crs3(sparse) result(getmem)
+   class(crs3sparse),intent(in)::sparse
+   integer(kind=int64)::getmem
+  end function
+  !**EXTERNAL
+  module subroutine external_crs3(sparse,ia,ja,a)
+   class(crs3sparse),intent(inout)::sparse
+   integer(kind=int32),intent(in)::ia(:),ja(:)
+   real(kind=wp),intent(in)::a(:)
+  end subroutine
   !**MULTIPLICATIONS
   module subroutine multgenv_csr3(sparse,alpha,trans,x,val,y)
    !Computes y=val*y+alpha*sparse(tranposition)*x
@@ -470,6 +487,11 @@ module modsparse
   module subroutine printsquare_crs3(sparse,output)
    class(crs3sparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::output
+  end subroutine
+  !**SAVE
+  module subroutine save_crs3(sparse,namefile)
+   class(crs3sparse),intent(in)::sparse
+   character(len=*),intent(in)::namefile
   end subroutine
 
  end interface
@@ -503,10 +525,6 @@ module modsparse
   !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
   procedure,public::getldlt=>getldlt_crs
 #endif
-  !> @brief Gets memory used
-  procedure,public::getmem=>getmem_crs
-  !> @brief Initializes the vectors ia,ja,and a from external vectors
-  procedure,public::external=>external_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
@@ -521,12 +539,10 @@ module modsparse
   !> @brief Returns the ordering array obtained from METIS
   procedure,public::getordering=>getordering_crs
 #endif
-  !> @brief Releases Pardiso memory if possible
 #if (_PARDISO==1)
+  !> @brief Releases Pardiso memory if possible
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
-  !> @brief Saves the matrix (internal format) to stream file
-  procedure,public::save=>save_crs
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs
   !> @brief MKL PARDISO solver
@@ -569,17 +585,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    real(kind=wp),allocatable::array(:)
   end function
-  !** GET MEMORY
-  module function getmem_crs(sparse) result(getmem)
-   class(crssparse),intent(in)::sparse
-   integer(kind=int64)::getmem
-  end function
-  !**EXTERNAL
-  module subroutine external_crs(sparse,ia,ja,a)
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in)::ia(:),ja(:)
-   real(kind=wp),intent(in)::a(:)
-  end subroutine
 #if (_SPAINV==1)
   !**GET (COMPLETE) CHOLESKY FACTOR
   module subroutine getchol_crs(sparse,minsizenode)
@@ -622,11 +627,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
   end subroutine
 #endif
-  !**SAVE
-  module subroutine save_crs(sparse,namefile)
-   class(crssparse),intent(in)::sparse
-   character(len=*),intent(in)::namefile
-  end subroutine
   !**SET ELEMENTS
   module subroutine set_crs(sparse,row,col,val,error)
    !add a value only to an existing one
