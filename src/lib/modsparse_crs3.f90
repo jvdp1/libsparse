@@ -10,6 +10,54 @@ submodule (modsparse) modsparse_crs3
 
 contains
 
+!**CONSTRUCTOR
+module function constructor_crs3(m,nel,n,lupper,unlog) result(sparse)
+ type(crs3sparse)::sparse
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in)::nel
+ integer(kind=int32),intent(in),optional::n,unlog
+ logical,intent(in),optional::lupper
+
+ call sparse%initialize('CRS3',m,m)
+
+ if(present(n))sparse%dim2=n
+ if(present(lupper))sparse%lupperstorage=lupper
+ if(present(unlog))sparse%unlog=unlog
+
+ sparse%lsymmetric=.false.
+
+ allocate(sparse%ia(sparse%dim1+1),sparse%ja(nel),sparse%a(nel))
+ sparse%ia=0
+ sparse%ia(sparse%dim1+1)=-nel
+ sparse%ja=0
+ sparse%a=0._wp
+
+end function
+
+module subroutine constructor_sub_crs3(sparse,m,nel,n,lupper,unlog)
+ class(crs3sparse),intent(out)::sparse
+ integer(kind=int32),intent(in)::m
+ integer(kind=int32),intent(in)::nel
+ integer(kind=int32),intent(in),optional::n,unlog
+ logical,intent(in),optional::lupper
+
+ call sparse%initialize('CRS3',m,m)
+
+ if(present(n))sparse%dim2=n
+ if(present(lupper))sparse%lupperstorage=lupper
+ if(present(unlog))sparse%unlog=unlog
+
+ sparse%lsymmetric=.false.
+
+ allocate(sparse%ia(sparse%dim1+1),sparse%ja(nel),sparse%a(nel))
+ sparse%ia=0
+ sparse%ia(sparse%dim1+1)=-nel
+ sparse%ja=0
+ sparse%a=0._wp
+
+end subroutine
+
+
 !**GET ELEMENTS
 module function get_crs3(sparse,row,col) result(val)
  class(crs3sparse),intent(inout)::sparse

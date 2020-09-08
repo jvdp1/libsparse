@@ -28,7 +28,7 @@ module modsparse
  public::assignment(=)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
- integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
+ integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs3=15,typecrs=20,typell=30
 
  real(kind=wp),parameter::tol=1.e-10_wp
 
@@ -408,10 +408,21 @@ module modsparse
  end type
 
  interface
-!  !**DESTROY
-!  module subroutine destroy_crs3(sparse)
-!   class(crs3sparse),intent(inout)::sparse
-!  end subroutine
+  !**CONSTRUCTOR
+  module function constructor_crs3(m,nel,n,lupper,unlog) result(sparse)
+   type(crs3sparse)::sparse
+   integer(kind=int32),intent(in)::m
+   integer(kind=int32),intent(in)::nel
+   integer(kind=int32),intent(in),optional::n,unlog
+   logical,intent(in),optional::lupper
+  end function
+  module subroutine constructor_sub_crs3(sparse,m,nel,n,lupper,unlog)
+   class(crs3sparse),intent(out)::sparse
+   integer(kind=int32),intent(in)::m
+   integer(kind=int32),intent(in)::nel
+   integer(kind=int32),intent(in),optional::n,unlog
+   logical,intent(in),optional::lupper
+  end subroutine
   !**GET ELEMENTS
   module function get_crs3(sparse,row,col) result(val)
    class(crs3sparse),intent(inout)::sparse
@@ -452,7 +463,11 @@ module modsparse
   end subroutine
 
  end interface
- 
+
+  !> @brief Constructor; e.g., mat=crs3sparse(dim1,#elements,[dim2],[upper_storage],[output_unit]) OR mat=crs3sparse('file',[output_unit])
+ interface crs3sparse
+  module procedure constructor_crs3,load_crs3
+ end interface
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  !> @brief Object for Compressed Row Storage
@@ -910,6 +925,42 @@ subroutine destroy_crs3(sparse)
 
 end subroutine
 
+!**LOAD
+function load_crs3(namefile,unlog)  result(sparse)
+ type(crs3sparse)::sparse
+ integer(kind=int32),intent(in),optional::unlog
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int32)::un,dim1,dim2
+ integer(kind=int64)::nonzero
+ logical::lupperstorage
+
+ open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
+ read(un)dim1
+ if(dim1.ne.typecrs3)then
+  write(*,'(a)')' ERROR: the proposed file is not a CRS3 file'
+  error stop
+ endif
+ read(un)dim1            !int32
+ read(un)dim2            !int32
+ read(un)nonzero         !int64
+ read(un)lupperstorage   !logical
+
+ if(present(unlog))then
+  sparse=crs3sparse(dim1,int(nonzero,int32),dim2,lupperstorage,unlog)
+ else
+  sparse=crs3sparse(dim1,int(nonzero,int32),dim2,lupperstorage)
+ endif
+
+ read(un)sparse%ia              !int32
+ read(un)sparse%ja              !int32
+ read(un)sparse%a               !wp
+
+ close(un)
+
+end function
+
+
 !FINAL
 subroutine deallocate_scal_crs3(sparse)
  type(crs3sparse),intent(inout)::sparse
@@ -1005,7 +1056,7 @@ function load_crs(namefile,unlog)  result(sparse)
  read(un)dim1
  if(dim1.ne.typecrs)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS file'
-  stop
+  error stop
  endif
  read(un)dim1            !int32
  read(un)dim2            !int32
