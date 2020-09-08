@@ -858,9 +858,10 @@ module modsparse
  !> @brief Converts sparse matrices from one format to another one; e.g., crsmat=coomat
  interface assignment(=)
   module procedure convertfromlltocoo,convertfromlltocrs&
+                  ,convertfromcootocrs3&
                   ,convertfromcootocrs,convertfromcootoll&
                   ,convertfromcrstometisgraph&
-                  ,convertfromcrstocoo,convertfromcrstoll
+                  ,convertfromcrs3tocoo,convertfromcrs3toll
  end interface
 
 contains
@@ -1482,6 +1483,68 @@ subroutine convertfromlltocrs(othersparse,sparse)
    enddo
   enddo
  endif
+
+ deallocate(rowpos)
+
+! call othersparse%print()
+
+end subroutine
+
+subroutine convertfromcootocrs3(othersparse,sparse)
+ type(crs3sparse),intent(out)::othersparse
+ type(coosparse),intent(in)::sparse
+
+ integer(kind=int32)::i,nel,row,col
+ integer(kind=int32),allocatable::rowpos(:)
+ integer(kind=int64)::i8
+ logical::lsquare
+
+ if(sparse%nonzero().ge.2_int64**31)then
+  write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
+  error stop
+ endif
+
+ lsquare=sparse%issquare()
+
+ allocate(rowpos(sparse%dim1))
+ rowpos=0
+
+ do i8=1_int64,sparse%nel
+  row=sparse%ij(1,i8)
+  if(row.ne.0.and.sparse%ij(2,i8).ne.0)then
+   rowpos(row)=rowpos(row)+1
+  endif
+ enddo
+
+ nel=sum(rowpos)
+
+ !othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+ call othersparse%init(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+
+ !determine the number of non-zero off-diagonal elements per row
+ othersparse%ia(1)=1
+ othersparse%ia(2:othersparse%dim1+1)=rowpos
+
+ do i=1,sparse%dim1
+  othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+ enddo
+
+ !add the non-zero elements to crs (othersparse)
+ rowpos=othersparse%ia(1:othersparse%dim1)-1
+
+ do i8=1_int64,sparse%nel
+  row=sparse%ij(1,i8)
+  col=sparse%ij(2,i8)
+  if(row.gt.0.and.col.gt.0)then
+   rowpos(row)=rowpos(row)+1
+   othersparse%ja(rowpos(row))=col
+   othersparse%a(rowpos(row))=sparse%a(i8)
+  endif
+ enddo
 
  deallocate(rowpos)
 
