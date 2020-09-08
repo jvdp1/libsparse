@@ -1,4 +1,5 @@
 *.mod
+*.smod
 *.o
 *.a
 *.optrpt
