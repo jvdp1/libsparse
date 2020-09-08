@@ -3,10 +3,8 @@
 !> * COOrdinate storage (coosparse)
 !> * Compressed Row Storage (crssparse)
 
-!> @todo Use of submodules (one submodule for each type of matrix)
 !> @todo Implementation of parameterized derived-type declarations to allow single- and double-precision sparse matrices
 !> @todo Implementation of ordering for ll and coo
-!> @todo Move metisgraph to modmetisgraph. So modspainv does not depend on modmetis anymore
 !> @todo Generalization of the solve_crs method (for different solvers)
 
 !#if (_PARDISO==1)
@@ -792,21 +790,17 @@ module modsparse
  end type
 
  interface
-!**CONSTRUCTOR
-module subroutine constructor_sub_metisgraph(metis,n,m,unlog)
- class(metisgraph),intent(out)::metis
- integer(kind=int32),intent(in)::n,m
- integer(kind=int32),intent(in),optional::unlog
-end subroutine
-
-
+  !**CONSTRUCTOR
+  module subroutine constructor_sub_metisgraph(metis,n,m,unlog)
+   class(metisgraph),intent(out)::metis
+   integer(kind=int32),intent(in)::n,m
+   integer(kind=int32),intent(in),optional::unlog
+  end subroutine
   !** GET MEMORY
   module function getmem_metisgraph(metis) result(getmem)
    class(metisgraph),intent(in)::metis
    integer(kind=int64)::getmem
   end function
-
-
  end interface
 
  interface metisgraph
