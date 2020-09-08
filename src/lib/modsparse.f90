@@ -203,6 +203,24 @@ module modsparse
   end function
  end interface
 
+ interface
+  !CHECKS
+  module function validvalue_gen(sparse,row,col) result(lvalid)
+   class(gen_sparse),intent(in)::sparse
+   integer(kind=int32),intent(in)::row,col
+   logical::lvalid
+  end function
+  module function validnonzero_gen(sparse,val) result(lvalid)
+   class(gen_sparse),intent(in)::sparse
+   real(kind=wp),intent(in)::val
+   logical::lvalid
+  end function
+  module function uppervalue_gen(row,col) result(lvalid)
+   integer(kind=int32),intent(in)::row,col
+   logical::lvalid
+  end function
+ end interface
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!COO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 
  !> @brief Object for COOrdinate storage
@@ -1234,36 +1252,6 @@ end subroutine
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!OTHER!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
-!CHECKS
-function validvalue_gen(sparse,row,col) result(lvalid)
- class(gen_sparse),intent(in)::sparse
- integer(kind=int32),intent(in)::row,col
- logical::lvalid
-
- lvalid=.true.
- if((row.lt.1.or.row.gt.sparse%dim1).or.(col.lt.1.or.col.gt.sparse%dim2))lvalid=.false.
-
-end function
-
-function validnonzero_gen(sparse,val) result(lvalid)
- class(gen_sparse),intent(in)::sparse
- real(kind=wp),intent(in)::val
- logical::lvalid
-
- lvalid=.true.
- if((abs(val)<epsilon(val)))lvalid=.false.
-
-end function
-
-function uppervalue_gen(row,col) result(lvalid)
- integer(kind=int32),intent(in)::row,col
- logical::lvalid
-
- lvalid=.true.
- if(row.gt.col)lvalid=.false.
-
-end function
-
 !CONVERSIONS
 subroutine convertfromlltocoo(othersparse,sparse)
  type(coosparse),intent(out)::othersparse
