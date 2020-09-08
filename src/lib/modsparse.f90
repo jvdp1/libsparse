@@ -390,6 +390,8 @@ module modsparse
   real(kind=wp),allocatable::a(:)
   contains
   private
+  !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
+  procedure,public::add=>add_crs3
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_crs3
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
@@ -422,6 +424,14 @@ module modsparse
    integer(kind=int32),intent(in)::nel
    integer(kind=int32),intent(in),optional::n,unlog
    logical,intent(in),optional::lupper
+  end subroutine
+  !**ADD ELEMENTS
+  module subroutine add_crs3(sparse,row,col,val,error)
+   !add a value only to an existing one
+   class(crs3sparse),intent(inout)::sparse
+   integer(kind=int32),intent(in)::row,col
+   integer(kind=int32),intent(out),optional::error
+   real(kind=wp),intent(in)::val
   end subroutine
   !**GET ELEMENTS
   module function get_crs3(sparse,row,col) result(val)
@@ -479,8 +489,6 @@ module modsparse
 #endif
   contains
   private
-  !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
-  procedure,public::add=>add_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
   procedure,public::chol=>getchol_crs
@@ -561,14 +569,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    real(kind=wp),allocatable::array(:)
   end function
-  !**ADD ELEMENTS
-  module subroutine add_crs(sparse,row,col,val,error)
-   !add a value only to an existing one
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in)::row,col
-   integer(kind=int32),intent(out),optional::error
-   real(kind=wp),intent(in)::val
-  end subroutine
   !** GET MEMORY
   module function getmem_crs(sparse) result(getmem)
    class(crssparse),intent(in)::sparse
@@ -959,7 +959,6 @@ function load_crs3(namefile,unlog)  result(sparse)
  close(un)
 
 end function
-
 
 !FINAL
 subroutine deallocate_scal_crs3(sparse)
