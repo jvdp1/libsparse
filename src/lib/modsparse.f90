@@ -476,8 +476,6 @@ module modsparse
   procedure::diag_mat_crs
   !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
   generic,public::diag=>diag_vect_crs,diag_mat_crs
-  !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
-  procedure,public::get=>get_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
   procedure,public::getldlt=>getldlt_crs
@@ -496,12 +494,6 @@ module modsparse
   procedure,public::isolve=>isolve_crs
   !> @brief Solver using LDLt decomposition
   procedure,public::solveldlt=>solveldlt_crs
-  !> @brief Multiplication with a vector
-  procedure::multbyv=>multgenv_csr
-  !> @brief Multiplication with a matrix
-  procedure::multbym=>multgenm_csr
-  !> @brief Returns the number of non-zero elements
-  procedure,public::nonzero=>totalnumberofelements_crs
 #if (_METIS==1)
   !> @brief Returns the ordering array obtained from METIS
   procedure,public::getordering=>getordering_crs
@@ -510,10 +502,6 @@ module modsparse
 #if (_PARDISO==1)
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
-  !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_crs
-  !> @brief Prints the sparse matrix in a rectangular/square format to the default output
-  procedure,public::printsquare=>printsquare_crs
   !> @brief Saves the matrix (internal format) to stream file
   procedure,public::save=>save_crs
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
@@ -566,12 +554,6 @@ module modsparse
    integer(kind=int32),intent(out),optional::error
    real(kind=wp),intent(in)::val
   end subroutine
-  !**GET ELEMENTS
-  module function get_crs(sparse,row,col) result(val)
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in)::row,col
-   real(kind=wp)::val
-  end function
   !** GET MEMORY
   module function getmem_crs(sparse) result(getmem)
    class(crssparse),intent(in)::sparse
@@ -583,28 +565,6 @@ module modsparse
    integer(kind=int32),intent(in)::ia(:),ja(:)
    real(kind=wp),intent(in)::a(:)
   end subroutine
-  !**MULTIPLICATIONS
-  module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
-   !Computes y=val*y+alpha*sparse(tranposition)*x
-   class(crssparse),intent(in)::sparse
-   real(kind=wp),intent(in)::val,alpha
-   real(kind=wp),intent(in)::x(:)
-   real(kind=wp),intent(out)::y(:)
-   character(len=1),intent(in)::trans
-  end subroutine
-  module subroutine multgenm_csr(sparse,alpha,trans,x,val,y)
-   !Computes y=val*y+alpha*sparse(tranposition)*x
-   class(crssparse),intent(in)::sparse
-   real(kind=wp),intent(in)::val,alpha
-   real(kind=wp),intent(in)::x(:,:)
-   real(kind=wp),intent(out)::y(:,:)
-   character(len=1),intent(in)::trans
-  end subroutine
-  !**NUMBER OF ELEMENTS
-  module function totalnumberofelements_crs(sparse) result(nel)
-   class(crssparse),intent(in)::sparse
-   integer(kind=int64)::nel
-  end function
 #if (_SPAINV==1)
   !**GET (COMPLETE) CHOLESKY FACTOR
   module subroutine getchol_crs(sparse,minsizenode)
@@ -647,16 +607,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
   end subroutine
 #endif
-  !**PRINT
-  module subroutine print_crs(sparse,lint,output)
-   class(crssparse),intent(in)::sparse
-   integer(kind=int32),intent(in),optional::output
-   logical,intent(in),optional::lint
-  end subroutine
-  module subroutine printsquare_crs(sparse,output)
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in),optional::output
-  end subroutine
   !**SAVE
   module subroutine save_crs(sparse,namefile)
    class(crssparse),intent(in)::sparse
