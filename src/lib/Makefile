@@ -46,7 +46,7 @@ endif
 
 all: libsparse.a
 
-OBJ+=modhash.o modsparse.o modsparse_gen.o modsparse_coo.o modsparse_crs.o modsparse_ll.o
+OBJ+=modhash.o modsparse.o modsparse_gen.o modsparse_coo.o modsparse_crs.o modsparse_ll.o modsparse_metisgraph.o
 
 libsparse.a: $(OBJ)
 	ar cr  libsparse.a $(OBJ)
