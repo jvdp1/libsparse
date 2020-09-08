@@ -117,7 +117,7 @@ module recursive subroutine add_coo(sparse,row,col,val)
   !matrix probably full, or nothing available within the n requested searches
   !1. Copy matrix
   !sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)   !to avoid the copy through a temporary array
-  allocate(sptmp);call sptmp%init(sparse%dim1,sparse%dim2,sparse%nel*2)
+  allocate(sptmp);call sptmp%init(sparse%dim1,sparse%dim2,int(sparse%nel*1.5_real64, int64))
   do i8=1_int64,sparse%nel
    call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
@@ -494,7 +494,7 @@ module recursive subroutine set_coo(sparse,row,col,val)
  if(hash.eq.-1.or.ratiofilled.gt.maxratiofilled)then
   !matrix probably full, or nothing available within the n requested searches
   !1. Copy matrix
-  sptmp=coosparse(sparse%dim1,sparse%dim2,sparse%nel*2)
+  sptmp=coosparse(sparse%dim1,sparse%dim2,int(sparse%nel*1.5_real64, int64))
   do i8=1_int64,sparse%nel
    call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
