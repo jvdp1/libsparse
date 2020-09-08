@@ -10,19 +10,6 @@ submodule (modsparse) modsparse_crs3
 
 contains
 
-!!**DESTROY
-!module subroutine destroy_crs3(sparse)
-! class(crs3sparse),intent(inout)::sparse
-!
-! call sparse%destroy_gen_gen()
-!
-! if(allocated(sparse%ia))deallocate(sparse%ia)
-! if(allocated(sparse%ja))deallocate(sparse%ja)
-! if(allocated(sparse%a))deallocate(sparse%a)
-!
-!end subroutine
-!
-!**GET ELEMENTS
 module function get_crs3(sparse,row,col) result(val)
  class(crs3sparse),intent(inout)::sparse
  integer(kind=int32),intent(in)::row,col
@@ -196,7 +183,5 @@ module subroutine printsquare_crs3(sparse,output)
  deallocate(tmp)
 
 end subroutine
-
-
 
 end submodule
