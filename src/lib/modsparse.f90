@@ -1619,9 +1619,9 @@ subroutine convertfromcootoll(othersparse,sparse)
 
 end subroutine
 
-subroutine convertfromcrstocoo(othersparse,sparse)
+subroutine convertfromcrs3tocoo(othersparse,sparse)
  type(coosparse),intent(out)::othersparse
- type(crssparse),intent(in)::sparse
+ class(crs3sparse),intent(in)::sparse
 
  integer(kind=int32)::i,j
 
@@ -1641,9 +1641,9 @@ subroutine convertfromcrstocoo(othersparse,sparse)
 
 end subroutine
 
-subroutine convertfromcrstoll(othersparse,sparse)
+subroutine convertfromcrs3toll(othersparse,sparse)
  type(llsparse),intent(out)::othersparse
- type(crssparse),intent(in)::sparse
+ type(crs3sparse),intent(in)::sparse
 
  integer(kind=int32)::i,j
 
