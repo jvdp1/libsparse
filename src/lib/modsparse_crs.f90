@@ -49,22 +49,6 @@ module function constructor_crs(m,nel,n,lupper,unlog) result(sparse)
 
 end function
 
-!**DESTROY
-module subroutine destroy_crs(sparse)
- class(crssparse),intent(inout)::sparse
-
-#if(_PARDISO==1)
- call sparse%resetpardiso()
-#endif
-
- call sparse%destroy_gen_gen()
-
- if(allocated(sparse%ia))deallocate(sparse%ia)
- if(allocated(sparse%ja))deallocate(sparse%ja)
- if(allocated(sparse%a))deallocate(sparse%a)
-
-end subroutine
-
 !**DIAGONAL ELEMENTS
 module function diag_vect_crs(sparse) result(array)
  class(crssparse),intent(inout)::sparse

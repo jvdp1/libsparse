@@ -24,7 +24,7 @@ module modsparse
  !$ use omp_lib
  implicit none
  private
- public::llsparse,coosparse,crssparse
+ public::llsparse,coosparse,crs3sparse,crssparse
  public::assignment(=)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
@@ -527,8 +527,6 @@ module modsparse
   !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
   procedure,public::chol=>getchol_crs
 #endif
-  !> @brief Deallocates the sparse matrix and sets to default values
-  procedure,public::destroy=>destroy_crs
   procedure::diag_vect_crs
   procedure::diag_mat_crs
   !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
@@ -583,10 +581,6 @@ module modsparse
    integer(kind=int32),intent(in)::nel
    integer(kind=int32),intent(in),optional::n,unlog
    logical,intent(in),optional::lupper
-  end subroutine
-  !**DESTROY
-  module subroutine destroy_crs(sparse)
-   class(crssparse),intent(inout)::sparse
   end subroutine
   !**DIAGONAL ELEMENTS
   module function diag_vect_crs(sparse) result(array)
@@ -917,6 +911,13 @@ end subroutine
 subroutine destroy_crs3(sparse)
  class(crs3sparse),intent(inout)::sparse
 
+#if(_PARDISO==1)
+ select type(sparse)
+  type is(crssparse)
+   call sparse%resetpardiso()
+ end select
+#endif
+   
  call sparse%destroy_gen_gen()
 
  if(allocated(sparse%ia))deallocate(sparse%ia)
