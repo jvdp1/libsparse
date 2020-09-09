@@ -87,7 +87,7 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
 end subroutine
 
-subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
+subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,lzerodiag,un)
  integer(kind=int32),intent(inout),allocatable::ia(:)
  integer(kind=int32),intent(inout),allocatable::ja(:)
  integer(kind=int32),intent(in)::xadj(:),adjncy(:)
@@ -95,6 +95,7 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  integer(kind=int32),intent(in),optional::minsizenode
  integer(kind=int32),intent(in),optional::un
  real(kind=wp),intent(inout),allocatable::a(:)
+ logical,intent(in),optional::lzerodiag
  
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
@@ -102,6 +103,7 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  real(kind=wp),allocatable::xspars(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
+ logical::lzero
 
  mssn=minsizesupernode
  if(present(minsizenode))mssn=minsizenode
@@ -117,7 +119,9 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  !Convert to ija
  !$ t1=omp_get_wtime()
- call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ lzero=.true.
+ if(present(lzerodiag))lzero=lzerodiag
+ call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm,lzero)
  !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'CHOL FACT.')
@@ -888,7 +892,7 @@ subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm,lzerodiag)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(inout)::ia(:)
@@ -896,21 +900,53 @@ subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::perm(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
  real(kind=wp),intent(inout),allocatable::a(:)
+ logical,optional::lzerodiag
 
+ integer(kind=int32)::ndiag
  integer(kind=int32)::j,irow,ksub,icol
+ logical::lzero
 
  deallocate(ja)
  deallocate(a)
 
- allocate(ja(size(xspars)+neqns))
- allocate(a(size(xspars)+neqns))
+ lzero=.true.
+ if(present(lzerodiag))lzero=lzerodiag
+
+ ndiag=neqns
+ if(.not.lzero)then
+  lzero=.false.
+  ndiag=count(diag.ne.0._wp)
+ endif
+
+ allocate(ja(size(xspars)+ndiag))
+ allocate(a(size(xspars)+ndiag))
  ja=0
  a=0._wp
 
+
+ ia(1:neqns+1)=xlnz(1:neqns+1)
+
+ ndiag=0
+ if(lzero)then
+  do irow=1,neqns
+   ia(irow)=ia(irow)+ndiag
+   ndiag=ndiag+1
+   ja(ia(irow))=irow
+   a(ia(irow))=diag(irow)
+  enddo
+ else
+  do irow=1,neqns
+   ia(irow)=ia(irow)+ndiag
+   if(diag(irow).ne.0._wp)then
+    ndiag=ndiag+1
+    ja(ia(irow))=irow
+    a(ia(irow))=diag(irow)
+   endif
+  enddo
+ endif
+ ia(neqns+1)=xlnz(neqns+1)+ndiag
+
  do irow=1,neqns
-  ia(irow)=xlnz(irow)+irow-1
-  ja(ia(irow))=irow
-  a(ia(irow))=diag(irow)
   ksub=xnzsub(irow)
   do j=xlnz(irow),xlnz(irow+1)-1
    icol=ixsub(ksub)
@@ -919,7 +955,6 @@ subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
    a(j+irow)=xspars(j)
   enddo
  enddo
- ia(neqns+1)=xlnz(neqns+1)+neqns
 
 end subroutine 
 

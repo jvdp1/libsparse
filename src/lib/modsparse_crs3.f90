@@ -292,11 +292,21 @@ module subroutine getchol_crs3(sparse,minsizenode)
  !$ t1=omp_get_wtime()
 #endif
 
- if(present(minsizenode))then
-  call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,minsizenode=minsizenode,un=sparse%unlog)
- else
-  call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,un=sparse%unlog)
- endif
+
+ select type(sparse)
+  type is(crs3sparse)
+   if(present(minsizenode))then
+    call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,minsizenode=minsizenode,lzerodiag=.false.,un=sparse%unlog)
+   else
+    call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,lzerodiag=.false.,un=sparse%unlog)
+   endif
+  type is(crssparse)
+   if(present(minsizenode))then
+    call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,minsizenode=minsizenode,un=sparse%unlog)
+   else
+    call get_chol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,un=sparse%unlog)
+   endif
+ end select
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'CHOL CRS Chol. fact.',': Elapsed time (s) = ',omp_get_wtime()-t1
@@ -340,7 +350,9 @@ module subroutine getldlt_crs3(sparse,minsizenode)
  !$ t1=omp_get_wtime()
 #endif
 
+ !this assumes that sparse is sorted
  do i=1,sparse%getdim(1)
+  if(sparse%ia(i).gt.sparse%ia(i+1)-1)cycle
   s=0._wp
   if(sparse%a(sparse%ia(i)).gt.0._wp)s=1._wp/sparse%a(sparse%ia(i))   !aaaa use a tolerance factor
   sparse%a(sparse%ia(i))=sparse%a(sparse%ia(i))**2
