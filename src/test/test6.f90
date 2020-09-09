@@ -97,16 +97,22 @@ program test6
  call crs%sort()
  
 #if (_METIS==1)
- call crs%setpermutation(crs%getordering(bglvl=0))
+ perm=crs%getordering(bglvl=0)
 #else
- call crs%setpermutation((/(i,i=1,crs%getdim(1))/))
+ perm=(/(i,i=1,crs%getdim(1))/)
 #endif
+ call crs%setpermutation(perm)
  call crs%printstats()
+
+ print*,'ord ',perm
 
  allocate(x(crs%getdim(1)),y(crs%getdim(1)))
  x=1.;y=1.
 
  call crs%solve(x,y)
+
+print*,'x ',x
+print*,'y ',y
 
 
 end program

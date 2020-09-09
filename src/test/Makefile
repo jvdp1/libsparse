@@ -39,7 +39,8 @@ EXEC+=test1 test2 test3 test4 test1_ll test7 test8 test9 test10 test11
 all:	$(EXEC)
 
 %: %.f90
-	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
+	$(f90)  $(F90FLAGS) $(DEBUG) -fpp -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV)\
+	 $^ $(LIBSPARSEROOT)$(LIBSPARSE)$(LSPARSE) $(LIBMETISROOT)$(LIBMETIS)$(LMETIS) -o $@
 
 clean:
 	rm -fv *.dat *.o *.optrpt $(EXEC)
