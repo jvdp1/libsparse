@@ -392,10 +392,18 @@ module modsparse
   private
   !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
   procedure,public::add=>add_crs3
+#if (_SPAINV==1)
+  !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
+  procedure,public::chol=>getchol_crs3
+#endif
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_crs3
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs3
+#if (_SPAINV==1)
+  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
+  procedure,public::getldlt=>getldlt_crs3
+#endif
   !> @brief Gets memory used
   procedure,public::getmem=>getmem_crs3
 #if (_METIS==1)
@@ -455,6 +463,18 @@ module modsparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
+#if (_SPAINV==1)
+  !**GET (COMPLETE) CHOLESKY FACTOR
+  module subroutine getchol_crs3(sparse,minsizenode)
+   class(crs3sparse),intent(inout)::sparse
+   integer(kind=int32),intent(in),optional::minsizenode
+  end subroutine
+  !**GET LDLt DECOMPOSITION
+  module subroutine getldlt_crs3(sparse,minsizenode)
+   class(crs3sparse),intent(inout)::sparse
+   integer(kind=int32),intent(in),optional::minsizenode
+  end subroutine
+#endif
 #if (_METIS==1)
   !**GET ORDER
   module function getordering_crs3(sparse&
@@ -545,18 +565,10 @@ module modsparse
 #endif
   contains
   private
-#if (_SPAINV==1)
-  !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
-  procedure,public::chol=>getchol_crs
-#endif
   procedure::diag_vect_crs
   procedure::diag_mat_crs
   !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
   generic,public::diag=>diag_vect_crs,diag_mat_crs
-#if (_SPAINV==1)
-  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
-  procedure,public::getldlt=>getldlt_crs
-#endif
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
@@ -596,18 +608,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    real(kind=wp),allocatable::array(:)
   end function
-#if (_SPAINV==1)
-  !**GET (COMPLETE) CHOLESKY FACTOR
-  module subroutine getchol_crs(sparse,minsizenode)
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in),optional::minsizenode
-  end subroutine
-  !**GET LDLt DECOMPOSITION
-  module subroutine getldlt_crs(sparse,minsizenode)
-   class(crssparse),intent(inout)::sparse
-   integer(kind=int32),intent(in),optional::minsizenode
-  end subroutine
-#endif
 #if (_SPAINV==1)
   !**GET INCOMPLETE CHOLESKY FACTOR
   module subroutine getichol_crs(sparse,minsizenode)
