@@ -745,7 +745,13 @@ subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,
 
  do i=1,neqns
   irow=perm(i)
-  diag(i)=a(ia(irow))
+  do j=ia(irow),ia(irow+1)-1
+   if(ja(j).eq.irow)then
+    diag(i)=a(j)
+    exit
+   endif
+  enddo
+  !diag(i)=a(ia(irow))
   do k=xlnz(i),xlnz(i+1)-1
    iirow=irow
    icol=perm(nzsub(xnzsub(i)+k-xlnz(i)))
