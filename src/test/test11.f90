@@ -141,7 +141,9 @@ print*,'perm ',perm
  do i=1,crs%getdim(1)
   y(i)=i
  enddo
- y(4)=0
+ y(1)=0
+ y(5)=0
+ y(7)=0
  print*,'y=[',y,' ]'
 
  x=0._wp
@@ -150,6 +152,22 @@ print*,'perm ',perm
  call crs%solveldlt(xx,y)
 
  call crs3%solveldlt(x,y)
+
+ print*,'xx ',xx
+ print*,' x ',x
+
+
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ crs=coo
+ crs3=coo
+
+ x=0._wp
+ xx=x
+
+ call crs%cg(xx,y)
+
+ call crs3%cg(x,y)
 
  print*,'xx ',xx
  print*,' x ',x
