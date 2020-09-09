@@ -136,22 +136,22 @@ print*,'perm ',perm
  call crs3%print(lint=.true.,output=551)
 
 
-!
-! allocate(x(crs%getdim(1)),y(crs%getdim(1)))
-! do i=1,crs%getdim(1)
-!  y(i)=i
-! enddo
-! y(4)=0
-! print*,'y=[',y,' ]'
-!
-! 
-! x=0._wp
-! xx=x
-! call coo%cg(xx,y)
-!
-! call crs%solve(x,y)
-! print*,'xx ',xx
-! print*,' x ',x
-!
-!
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ allocate(x(crs%getdim(1)),y(crs%getdim(1)))
+ do i=1,crs%getdim(1)
+  y(i)=i
+ enddo
+ y(4)=0
+ print*,'y=[',y,' ]'
+
+ x=0._wp
+ xx=x
+
+ call crs%solveldlt(xx,y)
+
+ call crs3%solveldlt(x,y)
+
+ print*,'xx ',xx
+ print*,' x ',x
+
 end program

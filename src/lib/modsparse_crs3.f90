@@ -14,6 +14,7 @@ submodule (modsparse) modsparse_crs3
   !$ use omp_lib
  implicit none
 
+ real(kind=wp),parameter::tol=1.e-10_wp
 
 contains
 
@@ -722,6 +723,79 @@ module subroutine sort_crs3(sparse)
  call sparse%setsorted(.true.)
 
 end subroutine
+
+!**SOLVE WITH LDLt DECOMPOSITION
+module subroutine solveldlt_crs3(sparse,x,y)
+ !sparse*x=y
+ class(crs3sparse),intent(in)::sparse
+ real(kind=wp),intent(out)::x(:)
+ real(kind=wp),intent(in)::y(:)
+
+ integer(kind=int32)::i
+ real(kind=wp),allocatable::x_(:)
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1,t2
+
+ !$ t1=omp_get_wtime()
+ !$ t2=omp_get_wtime()
+#endif
+
+ allocate(x_(1:size(x)))
+
+ do i=1,size(x)
+  x_(i)=y(sparse%perm(i))
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS y permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+#if(_DP==0)
+ call mkl_scsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#else
+ call mkl_dcsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#endif
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+ do i=1,sparse%getdim(1)
+  if(sparse%ia(i).gt.sparse%ia(i+1)-1)cycle
+  if(sparse%a(sparse%ia(i)).gt.tol)then
+   x(i)=x(i)/sparse%a(sparse%ia(i))
+  else
+   x(i)=0._wp
+  endif
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS Diagonal solve',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+#if(_DP==0)
+ call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+#else
+ call mkl_dcsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+#endif
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS 2nd triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ t2=omp_get_wtime()
+#endif
+
+ do i=1,size(x)
+  x(sparse%perm(i))=x_(i)
+ enddo
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS x permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'SOLVE LDLt CRS',': Total   time (s) = ',omp_get_wtime()-t1
+#endif
+
+end subroutine
+
 
 
 

@@ -30,8 +30,6 @@ module modsparse
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs3=15,typecrs=20,typell=30
 
- real(kind=wp),parameter::tol=1.e-10_wp
-
  !> @brief Generic object containing dimensions, storage format, and output unit
  type,abstract::gen_sparse
   private
@@ -428,6 +426,8 @@ module modsparse
   procedure,public::save=>save_crs3
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs3
+  !> @brief Solver using LDLt decomposition
+  procedure,public::solveldlt=>solveldlt_crs3
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs3
   final::deallocate_scal_crs3,deallocate_rank1_crs3
@@ -547,6 +547,13 @@ module modsparse
    ! sort vectors ja and a by increasing order
    class(crs3sparse),intent(inout)::sparse
   end subroutine
+  !**SOLVE WITH LDLt DECOMPOSITION
+  module subroutine solveldlt_crs3(sparse,x,y)
+   !sparse*x=y
+   class(crs3sparse),intent(in)::sparse
+   real(kind=wp),intent(out)::x(:)
+   real(kind=wp),intent(in)::y(:)
+  end subroutine
 
  end interface
 
@@ -575,8 +582,6 @@ module modsparse
 #endif
   !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
   procedure,public::isolve=>isolve_crs
-  !> @brief Solver using LDLt decomposition
-  procedure,public::solveldlt=>solveldlt_crs
 #if (_PARDISO==1)
   !> @brief Releases Pardiso memory if possible
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
@@ -642,13 +647,6 @@ module modsparse
   end subroutine
   !**SOLVE WITH A TRIANGULAR FACTOR
   module subroutine isolve_crs(sparse,x,y)
-   !sparse*x=y
-   class(crssparse),intent(in)::sparse
-   real(kind=wp),intent(out)::x(:)
-   real(kind=wp),intent(in)::y(:)
-  end subroutine
-  !**SOLVE WITH LDLt DECOMPOSITION
-  module subroutine solveldlt_crs(sparse,x,y)
    !sparse*x=y
    class(crssparse),intent(in)::sparse
    real(kind=wp),intent(out)::x(:)
