@@ -80,7 +80,6 @@ program test11
 
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #if (_METIS==1)
-print*,'ttt '
  perm=crs%getordering(compress=1,ctype=METIS_CTYPE_SHEM)
 #else
  perm=(/(i,i=1,crs%getdim(1))/)
@@ -97,7 +96,6 @@ print*,'perm ',perm
  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  perm=0
 #if (_METIS==1)
-print*,'ttt '
  perm=crs3%getordering(compress=1,ctype=METIS_CTYPE_SHEM)
 #else
  perm=(/(i,i=1,crs3%getdim(1))/)
@@ -110,6 +108,32 @@ print*,'perm ',perm
 
  call crs3%printstats()
 
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+ print*,'aaaa CRS'
+
+ call crs%printstats()
+
+ call crs%print(lint=.true.,output=450)
+ call crs%getldlt()
+
+ call crs%printstats()
+
+ call crs%print(lint=.true.,output=550)
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+ print*,'aaaa CRS3'
+
+ call crs3%printstats()
+
+ call crs3%print(lint=.true.,output=451)
+ call crs3%getldlt()
+
+ call crs3%printstats()
+
+ call crs3%print(lint=.true.,output=551)
 
 
 !
