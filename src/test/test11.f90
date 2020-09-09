@@ -77,18 +77,41 @@ program test11
  call crs%print()
  call crs3%print()
 
-!
-! !perm=crs%getordering()
-!#if (_METIS==1)
-! perm=crs%getordering(compress=1,ctype=METIS_CTYPE_SHEM)
-!#else
-! perm=(/(i,i=1,crs%getdim(1))/)
-!#endif
-!
-! call crs%printstats()
-!
-! call crs%setpermutation(perm)
-! call crs%printstats()
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#if (_METIS==1)
+print*,'ttt '
+ perm=crs%getordering(compress=1,ctype=METIS_CTYPE_SHEM)
+#else
+ perm=(/(i,i=1,crs%getdim(1))/)
+#endif
+
+print*,'perm ',perm
+
+ call crs%printstats()
+
+ call crs%setpermutation(perm)
+
+ call crs%printstats()
+
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ perm=0
+#if (_METIS==1)
+print*,'ttt '
+ perm=crs3%getordering(compress=1,ctype=METIS_CTYPE_SHEM)
+#else
+ perm=(/(i,i=1,crs3%getdim(1))/)
+#endif
+
+print*,'perm ',perm
+ call crs3%printstats()
+
+ call crs3%setpermutation(perm)
+
+ call crs3%printstats()
+
+
+
 !
 ! allocate(x(crs%getdim(1)),y(crs%getdim(1)))
 ! do i=1,crs%getdim(1)
