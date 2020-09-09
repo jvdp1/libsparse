@@ -41,7 +41,15 @@ module subroutine constructor_sub_crs3(sparse,m,nel,n,lupper,unlog)
  integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
 
- call sparse%initialize('CRS',m,m)
+ character(len=:),allocatable::namemat
+
+ namemat='CRS3'
+ select type(sparse)
+  type is(crssparse)
+   namemat='CRS'
+ end select
+
+ call sparse%initialize(namemat,m,m)
 
  if(present(n))sparse%dim2=n
  if(present(lupper))sparse%lupperstorage=lupper

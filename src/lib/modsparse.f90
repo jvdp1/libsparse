@@ -580,13 +580,6 @@ module modsparse
    integer(kind=int32),intent(in),optional::n,unlog
    logical,intent(in),optional::lupper
   end function
-  module subroutine constructor_sub_crs(sparse,m,nel,n,lupper,unlog)
-   class(crssparse),intent(out)::sparse
-   integer(kind=int32),intent(in)::m
-   integer(kind=int32),intent(in)::nel
-   integer(kind=int32),intent(in),optional::n,unlog
-   logical,intent(in),optional::lupper
-  end subroutine
   !**DIAGONAL ELEMENTS
   module function diag_vect_crs(sparse) result(array)
    class(crssparse),intent(inout)::sparse
