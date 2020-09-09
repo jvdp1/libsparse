@@ -885,7 +885,8 @@ end subroutine
 subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
- integer(kind=int32),intent(inout),allocatable::ia(:),ja(:)
+ integer(kind=int32),intent(inout)::ia(:)
+ integer(kind=int32),intent(inout),allocatable::ja(:)
  integer(kind=int32),intent(in)::perm(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
  real(kind=wp),intent(inout),allocatable::a(:)
