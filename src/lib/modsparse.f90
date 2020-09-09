@@ -1530,7 +1530,7 @@ subroutine convertfromcootocrs3(othersparse,sparse)
  othersparse%ia(2:othersparse%dim1+1)=rowpos
 
  do i=1,sparse%dim1
-  othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+  othersparse%ia(i+1)=othersparse%ia(i+1)+othersparse%ia(i)
  enddo
 
  !add the non-zero elements to crs (othersparse)
