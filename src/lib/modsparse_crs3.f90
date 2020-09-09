@@ -314,7 +314,7 @@ module subroutine printsquare_crs3(sparse,output)
   do j=1,sparse%dim2
    tmp(j)=sparse%get(i,j)
   enddo
-  write(un,'(*(g0.6,1x))')tmp
+  write(un,'(*(f10.5,1x))')tmp
  enddo
 
  deallocate(tmp)
@@ -379,6 +379,125 @@ module subroutine set_crs3(sparse,row,col,val,error)
  enddo
 
  if(present(error))error=-1
+
+end subroutine
+
+!**SORT ARRAY
+module subroutine sort_crs3(sparse)
+ ! sort vectors ja and a by increasing order
+ class(crs3sparse),intent(inout)::sparse
+
+ integer(kind=int32)::dir,endd,i,j,k,n,start,stkpnt
+ integer(kind=int32)::d1,d2,d3,dmnmx,tmp
+ integer(kind=int32)::stack(2,32)
+ integer(kind=int32),allocatable::d(:)
+ integer(kind=int32),parameter::select=20
+ real(kind=wp)::umnmx,tmpu
+ real(kind=wp),allocatable::u(:)
+
+ if(sparse%issorted())then
+  return
+ endif
+
+ do k=1,sparse%dim1
+  n=sparse%ia(k+1)-sparse%ia(k)
+  if(n.gt.1)then
+   allocate(d(n),u(n))
+   !copy of the vector to be sorted
+   d=sparse%ja(sparse%ia(k):sparse%ia(k+1)-1)
+   u=sparse%a(sparse%ia(k):sparse%ia(k+1)-1)
+   !sort the vectors
+   !from dlasrt.f !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !Quick return if possible
+   stkpnt = 1
+   stack( 1, 1 ) = 1
+   stack( 2, 1 ) = n
+   10 start = stack( 1, stkpnt )
+   endd = stack( 2, stkpnt )
+   stkpnt = stkpnt - 1
+   IF( endd-start <= select .AND. endd-start > 0 ) THEN
+   !Do Insertion sort on D( START:ENDD )
+   !Sort into increasing order
+     DO i = start + 1, endd
+      DO j = i, start + 1, -1
+       IF( d( j ) < d( j-1 ) ) THEN
+         dmnmx = d( j )
+         d( j ) = d( j-1 )
+         d( j-1 ) = dmnmx
+         umnmx = u( j )
+         u( j ) = u( j-1 )
+         u( j-1 ) = umnmx
+       ELSE
+         CYCLE
+       END IF
+      END DO
+     END DO
+   ELSE IF( endd-start > select ) THEN
+   !Partition D( START:ENDD ) and stack parts, largest one first
+   !Choose partition entry as median of 3
+    d1 = d( start )
+    d2 = d( endd )
+    i = ( start + endd ) / 2
+    d3 = d( i )
+    IF( d1 < d2 ) THEN
+      IF( d3 < d1 ) THEN
+        dmnmx = d1
+      ELSE IF( d3 < d2 ) THEN
+        dmnmx = d3
+      ELSE
+        dmnmx = d2
+      END IF
+    ELSE
+      IF( d3 < d2 ) THEN
+        dmnmx = d2
+      ELSE IF( d3 < d1 ) THEN
+        dmnmx = d3
+      ELSE
+        dmnmx = d1
+      END IF
+    END IF
+    !Sort into increasing order
+     i = start - 1
+     j = endd + 1
+     90 j = j - 1
+     IF( d( j ) > dmnmx ) GO TO 90
+     110 i = i + 1
+     IF( d( i ) < dmnmx ) GO TO 110
+     IF( i < j ) THEN
+       tmp = d( i )
+       d( i ) = d( j )
+       d( j ) = tmp
+       tmpu = u( i )
+       u( i ) = u( j )
+       u( j ) = tmpu
+       GO TO 90
+     END IF
+     IF( j-start > endd-j-1 ) THEN
+       stkpnt = stkpnt + 1
+       stack( 1, stkpnt ) = start
+       stack( 2, stkpnt ) = j
+       stkpnt = stkpnt + 1
+       stack( 1, stkpnt ) = j + 1
+       stack( 2, stkpnt ) = endd
+     ELSE
+       stkpnt = stkpnt + 1
+       stack( 1, stkpnt ) = j + 1
+       stack( 2, stkpnt ) = endd
+       stkpnt = stkpnt + 1
+       stack( 1, stkpnt ) = start
+       stack( 2, stkpnt ) = j
+     END IF
+   END IF
+   IF( stkpnt > 0 ) GO TO 10
+   !end from dlasrt.f !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !copy back the sorted vectors
+   sparse%ja(sparse%ia(k):sparse%ia(k+1)-1)=d
+   sparse%a(sparse%ia(k):sparse%ia(k+1)-1)=u
+   deallocate(d,u)
+  endif
+ enddo
+
+ call sparse%setsorted(.true.)
 
 end subroutine
 

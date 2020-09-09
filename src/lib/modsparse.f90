@@ -416,6 +416,8 @@ module modsparse
   procedure,public::save=>save_crs3
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs3
+  !> @brief Sorts the elements in a ascending order within a row
+  procedure,public::sort=>sort_crs3
   final::deallocate_scal_crs3,deallocate_rank1_crs3
  end type
 
@@ -505,6 +507,11 @@ module modsparse
    integer(kind=int32),intent(out),optional::error
    real(kind=wp),intent(in)::val
   end subroutine
+  !**SORT ARRAY
+  module subroutine sort_crs3(sparse)
+   ! sort vectors ja and a by increasing order
+   class(crs3sparse),intent(inout)::sparse
+  end subroutine
 
  end interface
 
@@ -555,8 +562,6 @@ module modsparse
   procedure,private::solve_crs_vector
   procedure,private::solve_crs_array
   generic,public::solve=>solve_crs_vector,solve_crs_array
-  !> @brief Sorts the elements in a ascending order within a row
-  procedure,public::sort=>sort_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces by the sparse inverse
   procedure,public::spainv=>getspainv_crs
@@ -655,11 +660,6 @@ module modsparse
    class(crssparse),intent(in)::sparse
    real(kind=wp),intent(out)::x(:)
    real(kind=wp),intent(in)::y(:)
-  end subroutine
-  !**SORT ARRAY
-  module subroutine sort_crs(sparse)
-   ! sort vectors ja and a by increasing order
-   class(crssparse),intent(inout)::sparse
   end subroutine
  end interface
 
