@@ -398,6 +398,10 @@ module modsparse
   procedure,public::get=>get_crs3
   !> @brief Gets memory used
   procedure,public::getmem=>getmem_crs3
+#if (_METIS==1)
+  !> @brief Returns the ordering array obtained from METIS
+  procedure,public::getordering=>getordering_crs3
+#endif
   !> @brief Initializes the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs3
   !> @brief Iniates crs3sparse and crssparse
@@ -451,6 +455,17 @@ module modsparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
+#if (_METIS==1)
+  !**GET ORDER
+  module function getordering_crs3(sparse&
+                            ,ctype,iptype,rtype,compress,ccorder&
+                            ,pfactor,nseps,bglvl&
+                            ) result(perm)
+   class(crs3sparse),intent(in)::sparse
+   integer(kind=int32),intent(in),optional::ctype,iptype,rtype,compress,ccorder,pfactor,nseps,bglvl
+   integer(kind=int32),allocatable::perm(:)
+  end function
+#endif
   !** GET MEMORY
   module function getmem_crs3(sparse) result(getmem)
    class(crs3sparse),intent(in)::sparse
@@ -550,10 +565,6 @@ module modsparse
   procedure,public::isolve=>isolve_crs
   !> @brief Solver using LDLt decomposition
   procedure,public::solveldlt=>solveldlt_crs
-#if (_METIS==1)
-  !> @brief Returns the ordering array obtained from METIS
-  procedure,public::getordering=>getordering_crs
-#endif
 #if (_PARDISO==1)
   !> @brief Releases Pardiso memory if possible
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
@@ -596,17 +607,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::minsizenode
   end subroutine
-#endif
-#if (_METIS==1)
-  !**GET ORDER
-  module function getordering_crs(sparse&
-                            ,ctype,iptype,rtype,compress,ccorder&
-                            ,pfactor,nseps,bglvl&
-                            ) result(perm)
-   class(crssparse),intent(in)::sparse
-   integer(kind=int32),intent(in),optional::ctype,iptype,rtype,compress,ccorder,pfactor,nseps,bglvl
-   integer(kind=int32),allocatable::perm(:)
-  end function
 #endif
 #if (_SPAINV==1)
   !**GET INCOMPLETE CHOLESKY FACTOR
@@ -853,7 +853,7 @@ module modsparse
   module procedure convertfromlltocoo,convertfromlltocrs&
                   ,convertfromcootocrs3&
                   ,convertfromcootocrs,convertfromcootoll&
-                  ,convertfromcrstometisgraph&
+                  ,convertfromcrs3tometisgraph&
                   ,convertfromcrs3tocoo,convertfromcrs3toll
  end interface
 
@@ -1719,9 +1719,9 @@ subroutine convertfromcrs3toll(othersparse,sparse)
 
 end subroutine
 
-subroutine convertfromcrstometisgraph(metis,sparse)
+subroutine convertfromcrs3tometisgraph(metis,sparse)
  type(metisgraph),intent(out)::metis
- type(crssparse),intent(in)::sparse
+ class(crs3sparse),intent(in)::sparse
 
  integer(kind=int32)::i,j,k
  integer(kind=int32)::n,nvertices,medges
@@ -1735,22 +1735,24 @@ subroutine convertfromcrstometisgraph(metis,sparse)
  n=sparse%getdim(1)
  nvertices=n
 
- medges=sparse%nonzero()-n  !number of off-diagonal elements
-
- !metis=metisgraph(nvertices,medges,unlog=sparse%unlog)
- call metis%init(nvertices,medges,unlog=sparse%unlog)
-
  allocate(rowpos(n))
  rowpos=0
+ medges=0  !number of off-diagonal elements
  do i=1,n
   do j=sparse%ia(i),sparse%ia(i+1)-1
    k=sparse%ja(j)
    if(i.ne.k)then
+    medges=medges+1
     rowpos(i)=rowpos(i)+1
     rowpos(k)=rowpos(k)+1
    endif
   enddo
  enddo
+
+ !medges=sparse%nonzero()-n  !number of off-diagonal elements for crssparse
+
+ !metis=metisgraph(nvertices,medges,unlog=sparse%unlog)
+ call metis%init(nvertices,medges,unlog=sparse%unlog)
 
  metis%xadj(1)=1
  do i=1,n

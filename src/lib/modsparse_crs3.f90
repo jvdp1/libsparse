@@ -4,6 +4,10 @@ submodule (modsparse) modsparse_crs3
 #else
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
+#if (_METIS==1)
+ use modmetis, only: metis_nodend,metis_setoptions,metis_checkerror&
+    ,METIS_CTYPE_RM,  METIS_IPTYPE_EDGE,  METIS_RTYPE_SEP2SIDED,  METIS_DBG_INFO
+#endif
   !$ use omp_lib
  implicit none
 
@@ -154,6 +158,93 @@ module function getmem_crs3(sparse) result(getmem)
 
 end function
 
+#if (_METIS==1)
+!**GET ORDER
+module function getordering_crs3(sparse&
+                          ,ctype,iptype,rtype,compress,ccorder&
+                          ,pfactor,nseps,bglvl&
+                          ) result(perm)
+ class(crs3sparse),intent(in)::sparse
+ integer(kind=int32),intent(in),optional::ctype,iptype,rtype,compress,ccorder,pfactor,nseps,bglvl
+ integer(kind=int32),allocatable::perm(:)
+
+ integer(kind=int32)::err
+ integer(kind=int32)::pctype,piptype,prtype,pcompress,pccorder,ppfactor,pnseps,pbglvl
+ integer(kind=int32),allocatable::options(:)
+ integer(kind=int32),allocatable::iperm(:)
+ type(metisgraph)::metis
+#if (_VERBOSE>0)
+ !$ real(kind=real64)::t1
+
+ !$ t1=omp_get_wtime()
+#endif
+
+ metis=sparse
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS=CRS',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ pctype=METIS_CTYPE_RM
+ if(present(ctype))pctype=ctype
+
+ piptype=METIS_IPTYPE_EDGE
+ if(present(iptype))piptype=iptype
+
+ prtype=METIS_RTYPE_SEP2SIDED
+ if(present(rtype))prtype=rtype
+
+ pcompress=0
+ if(present(compress))pcompress=compress
+
+ pccorder=0
+ if(present(ccorder))pccorder=ccorder
+
+ ppfactor=0
+ if(present(pfactor))ppfactor=pfactor
+
+ if(sparse%getdim(1).lt.50000)then
+  pnseps=1
+ elseif(sparse%getdim(1).lt.200000)then
+  pnseps=5
+ else
+  pnseps=10
+ endif
+ if(present(nseps))pnseps=nseps
+
+#if (_VERBOSE>1)
+ pbglvl=METIS_DBG_INFO
+#endif
+ if(present(bglvl))pbglvl=bglvl
+
+ err=metis_setoptions(options&
+                      ,ctype=pctype,iptype=piptype,rtype=prtype,compress=pcompress&
+                      ,ccorder=pccorder,pfactor=ppfactor,nseps=pnseps,dbglvl=pbglvl&
+                      )
+ call metis_checkerror(err,sparse%unlog)
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS options setting',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ allocate(perm(metis%nvertices),iperm(metis%nvertices))
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS arrays allocation',': Elapsed time (s) = ',omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#endif
+
+ err=metis_nodend(metis%nvertices,metis%xadj,metis%adjncy,metis%vwgt,options,perm,iperm)
+ call metis_checkerror(err,sparse%unlog)
+
+#if (_VERBOSE>0)
+ !$ write(sparse%unlog,'(x,a,t30,a,f0.5)')'METIS ordering',': Elapsed time (s) = ',omp_get_wtime()-t1
+#endif
+
+end function
+#endif
 
 !**EXTERNAL
 module subroutine external_crs3(sparse,ia,ja,a)
