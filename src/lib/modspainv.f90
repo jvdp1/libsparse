@@ -121,6 +121,7 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,lzerodiag,un)
  !$ t1=omp_get_wtime()
  lzero=.true.
  if(present(lzerodiag))lzero=lzerodiag
+print*,'wwww ',present(lzerodiag),lzero
  call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm,lzero)
  !$ time(6)=omp_get_wtime()-t1
 
@@ -238,7 +239,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  write(*,'(2x,a,i0)')'Max size of super-nodes        : ',maxnode
  write(*,'(2x,a,i0/)')'Rank of the matrix             : ',rank
 #endif
-#if (_VERBOSE >2)
+#if (_VERBOSE >4)
  do i=1,nnode
   write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
  end do
@@ -923,7 +924,6 @@ subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm,l
  ja=0
  a=0._wp
 
-
  ia(1:neqns+1)=xlnz(1:neqns+1)
 
  ndiag=0
@@ -944,15 +944,22 @@ subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm,l
    endif
   enddo
  endif
+
  ia(neqns+1)=xlnz(neqns+1)+ndiag
 
+ ndiag=0
  do irow=1,neqns
   ksub=xnzsub(irow)
+  if(lzero)then
+   ndiag=ndiag+1
+  else
+   if(diag(irow).ne.0._wp)ndiag=ndiag+1
+  endif
   do j=xlnz(irow),xlnz(irow+1)-1
    icol=ixsub(ksub)
    ksub=ksub+1
-   ja(j+irow)=icol
-   a(j+irow)=xspars(j)
+   ja(j+ndiag)=icol
+   a(j+ndiag)=xspars(j)
   enddo
  enddo
 
