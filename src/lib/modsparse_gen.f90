@@ -81,6 +81,66 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
 
 end subroutine
 
+module subroutine pcg_gen(sparse,x,y,M,maxiter,tol)
+ !sparse*x=y
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int32),intent(inout),optional::maxiter
+ real(kind=wp),intent(inout)::x(:)
+ real(kind=wp),intent(in)::y(:)
+ real(kind=wp),intent(in)::M(:)
+ real(kind=wp),intent(inout),optional::tol
+
+ integer(kind=int32)::i,maxiter_
+ real(kind=wp)::r(size(x))
+ real(kind=wp)::p(size(x))
+ real(kind=wp)::z(size(x))
+ real(kind=wp)::w(size(x))
+ real(kind=wp)::rsnew,tol_,alpha,beta
+ real(kind=wp)::ynorm,old_tau,tau
+
+ if(.not.sparse%issquare().or..not.sparse%lsymmetric&
+    .or.size(x).ne.size(y)&
+    .or.size(x).ne.sparse%getdim(2)&
+    .or.size(y).ne.sparse%getdim(1)&
+     )then
+  write(sparse%unlog,'(a)')' ERROR: one of multiple arguments are not conform'
+  error stop
+ endif
+
+ maxiter_ = min(1000,size(x)-1)
+ if(present(maxiter)) maxiter_ = min(maxiter,size(x)-1)
+
+ tol_ = tolerance
+ if(present(tol))tol_=tol * ynorm
+ ynorm = norm2(y)
+ tol_ = tol_ * ynorm
+
+ w=0._wp
+ call sparse%mult(1._wp,'n',x,0._wp,w)
+ r = y - w
+
+ p = 0._wp
+ old_tau = 1._wp
+
+ do i=1, maxiter_
+  z = M * r
+  tau = dot_product(z,r)
+  beta = tau/old_tau
+  old_tau = tau
+  p= z + beta * p
+  call sparse%mult(1._wp,'n',p,0._wp,w)
+  alpha = tau / dot_product(p,w)
+  x = x + alpha * p
+  r = r - alpha * w
+  rsnew = norm2(r)
+  if(rsnew < tol_)exit
+ enddo
+
+ if(present(maxiter)) maxiter = i
+ if(present(tol)) tol = rsnew / ynorm
+
+end subroutine
+
 !**GET ELEMENTS
 module function getdim_gen(sparse,dim1) result(dimget)
  class(gen_sparse),intent(in)::sparse

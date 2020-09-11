@@ -53,6 +53,8 @@ module modsparse
  
   !> @brief Iterative solver with the conjugate gradient method
   procedure,public::cg=>cg_gen
+  !> @brief Iterative solver with the preconditioned conjugate gradient method
+  procedure,public::pcg=>pcg_gen
   !> @brief Returns the dimension of the matrix; e.g., ...=mat%getdim(1)
   procedure,public::getdim=>getdim_gen
   !> @brief Initializes the values
@@ -138,6 +140,15 @@ module modsparse
    integer(kind=int32),intent(inout),optional::maxiter
    real(kind=wp),intent(inout)::x(:)
    real(kind=wp),intent(in)::y(:)
+   real(kind=wp),intent(inout),optional::tol
+  end subroutine
+  module subroutine pcg_gen(sparse,x,y,M,maxiter,tol)
+   !sparse*x=y
+   class(gen_sparse),intent(in)::sparse
+   integer(kind=int32),intent(inout),optional::maxiter
+   real(kind=wp),intent(inout)::x(:)
+   real(kind=wp),intent(in)::y(:)
+   real(kind=wp),intent(in)::M(:)
    real(kind=wp),intent(inout),optional::tol
   end subroutine
   !**GET ELEMENTS
