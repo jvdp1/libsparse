@@ -111,7 +111,7 @@ module subroutine pcg_gen(sparse,x,y,M,maxiter,tol)
  if(present(maxiter)) maxiter_ = min(maxiter,size(x)-1)
 
  tol_ = tolerance
- if(present(tol))tol_=tol * ynorm
+ if(present(tol))tol_=tol
  ynorm = norm2(y)
  tol_ = tol_ * ynorm
 
