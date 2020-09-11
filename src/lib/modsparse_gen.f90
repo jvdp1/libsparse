@@ -7,6 +7,8 @@ submodule (modsparse) modsparse_gen
  !$ use omp_lib
  implicit none
 
+ real(wp),parameter:: tolerance = 1.e-6
+
 contains
 
 !DESTROY
@@ -38,6 +40,7 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
  real(kind=wp)::p(size(x))
  real(kind=wp)::Ap(size(x))
  real(kind=wp)::rsnew,rsold,tol_,alpha
+ real(kind=wp)::ynorm
 
  if(.not.sparse%issquare().or..not.sparse%lsymmetric&
     .or.size(x).ne.size(y)&
@@ -51,8 +54,10 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
  maxiter_ = min(1000,size(x)-1)
  if(present(maxiter)) maxiter_ = min(maxiter,size(x)-1)
 
- tol_ = 1.e-6
+ tol_ = tolerance
  if(present(tol))tol_=tol
+ ynorm = norm2(y)
+ tol_ = tol_ * ynorm
 
  Ap=0._wp
  call sparse%mult(1._wp,'n',x,0._wp,Ap)
@@ -72,7 +77,7 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
  enddo
  
  if(present(maxiter)) maxiter = i
- if(present(tol)) tol = sqrt(rsnew)
+ if(present(tol)) tol = sqrt(rsnew) / ynorm
 
 end subroutine
 
