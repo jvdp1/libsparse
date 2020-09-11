@@ -407,6 +407,7 @@ module modsparse
 #endif
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_crs3
+  procedure,public::diag_vect_crs3
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs3
 #if (_SPAINV==1)
@@ -928,6 +929,24 @@ subroutine destroy_crs3(sparse)
  if(allocated(sparse%a))deallocate(sparse%a)
 
 end subroutine
+
+!**DIAGONAL ELEMENTS
+function diag_vect_crs3(sparse) result(array)
+ class(crs3sparse),intent(inout)::sparse
+ real(kind=wp),allocatable::array(:)
+
+ integer(kind=int32)::ndiag,i
+
+ ndiag=min(sparse%dim1,sparse%dim2)
+
+ allocate(array(ndiag))
+ array=0.0_wp
+
+ do i=1,ndiag
+  array(i)=sparse%get(i,i)
+ enddo
+
+end function
 
 !**LOAD
 function load_crs3(namefile,unlog)  result(sparse)
