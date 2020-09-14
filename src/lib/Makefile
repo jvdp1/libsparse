@@ -40,7 +40,7 @@ ifeq ($(SPAINVENABLE),0)
  SPAINV=0
 else
  SPAINV=1
- OBJ+=sgtrsm.o dgtrsm.o smbfct.o modspainv.o
+ OBJ+=sgtrsm.o dgtrsm.o smbfct.o modsmbfct.o modspainv.o
 endif
 
 
