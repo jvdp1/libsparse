@@ -12,6 +12,7 @@ module modspainv
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
  use modcommon
+ use modsmbfct, only:smbfctf90
  !$ use omp_lib
  implicit none
  private
@@ -30,19 +31,6 @@ module modspainv
 
  interface get_spainv
   module procedure get_spainv_crs
- end interface
-
- interface
-  subroutine smbfct(neqns,xadj,adjncy,perm,invp,&
-              xlnz,maxlnz,xnzsub,nzsub,maxsub,&
-              rchlnk,mrglnk,marker,flag&
-              )
-   integer,intent(in)::neqns
-   integer::maxsub,flag,maxlnz
-   integer,intent(in)::xadj(*),adjncy(*)
-   integer,intent(in)::perm(*),invp(*)
-   integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
-  end subroutine
  end interface
 
 contains
@@ -273,7 +261,7 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
   if(allocated(nzsub))deallocate(nzsub)
   allocate(nzsub(maxsub))
   nzsub=0
-  call smbfct(neqns,xadj,adjncy,perm,invp,xlnz,maxlnz,xnzsub,nzsub,maxsub,&
+  call smbfctf90(neqns,xadj,adjncy,perm,invp,xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )
   if(maxsub.ne.maxsubinit)cycle

@@ -20,19 +20,18 @@ subroutine smbfctf90(neqns, xadj, adjncy, perm, invp,&
  integer(kind=int32),intent(inout)::maxsub
 
  integer(kind=int32)::i,j,k,m
- integer(kind=int32)::nzbeg,nzbend,np1,knz,mrgk,mrkflg,nzend,node,jstrt,jstop,nabor,rchm,lmax,inz,kxsub
+ integer(kind=int32)::nzbeg,nzend,np1,knz,mrgk,mrkflg,node,jstrt,jstop,nabor,rchm,lmax,inz,kxsub
  logical::l_350,l_1200
 
  !initialization
  nzbeg = 1
- nzbend = 0
+ nzend = 0
  xlnz(1) = 1
  mrglnk = 0
  marker = 0
 
  !for each column:  knz counts the number of nonzeros in column k accumulated in rchlnk.
  np1 = neqns + 1
-
  do k = 1, neqns
   knz = 0
   mrgk = mrglnk(k)
@@ -49,7 +48,7 @@ subroutine smbfctf90(neqns, xadj, adjncy, perm, invp,&
    do_300: do j = jstrt, jstop
     nabor = adjncy(j)
     nabor = invp(nabor)
-    if ( nabor .le. k ) exit do_300
+    if ( nabor .le. k ) cycle do_300
     rchm = k
     do_200: do
      m = rchm
@@ -65,7 +64,9 @@ subroutine smbfctf90(neqns, xadj, adjncy, perm, invp,&
    lmax = 0
    l_350=.false.
    if(mrkflg.ne.0 .or. mrgk.eq.0)l_350=.true.
-   if(.not.l_350 .and. mrglnk(mrgk).ne.0)l_350=.true.
+   if(.not.l_350)then
+    if(mrglnk(mrgk).ne.0)l_350=.true.
+   endif
    !link through each column i that affects l(*,k).
    if(l_350)then
     i = k
@@ -88,7 +89,7 @@ subroutine smbfctf90(neqns, xadj, adjncy, perm, invp,&
        rchm = rchlnk(m)
        if(rchm.ge.nabor) exit do_600
       enddo do_600
-      if (rchm.eq.nabor) exit do_700
+      if (rchm.eq.nabor) cycle do_700
       knz = knz+1
       rchlnk(m) = nabor
       rchlnk(nabor) = rchm
@@ -99,8 +100,8 @@ subroutine smbfctf90(neqns, xadj, adjncy, perm, invp,&
     if (knz.ne.lmax) then
      !or if tail of k-1st column matches head of kth.
      if (nzbeg.le.nzend)then
-      i = rchlnk(k)
       l_1200 = .false.
+      i = rchlnk(k)
       do_900: do jstrt=nzbeg,nzend
        if ((nzsub(jstrt)-i).lt.0) then
         cycle do_900
@@ -112,14 +113,20 @@ subroutine smbfctf90(neqns, xadj, adjncy, perm, invp,&
           exit do_900
          endif
          i = rchlnk(i)
-         if (i.gt.neqns) exit do_900
+         if (i.gt.neqns)then
+          l_1200=.false.
+          exit do_900
+         endif
         enddo
         nzend = jstrt - 1
+        l_1200=.true.
        elseif ((nzsub(jstrt)-i) .gt.0)then
         l_1200=.true.
         exit do_900
        endif
       enddo do_900
+     else
+      l_1200 = .true.
      endif
      if(l_1200)then
       !copy the structure of l(*,k) from rchlnk to the data structure (xnzsub, nzsub).
