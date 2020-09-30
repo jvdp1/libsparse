@@ -469,6 +469,8 @@ module function getordering_crs(sparse&
 
 #if (_VERBOSE>1)
  pbglvl=METIS_DBG_INFO
+#else
+ pbglvl=0
 #endif
  if(present(bglvl))pbglvl=bglvl
 
