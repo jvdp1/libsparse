@@ -228,9 +228,14 @@ module subroutine setsymmetric(sparse,ll)
 
  logical::lll
 
- if(.not.sparse%issquare())then
+ if(.not.sparse%issquare().and..not.present(ll))then
   write(sparse%unlog,'(a)')' ERROR: the sparse matrix is not square and cannot be set to symmetric!'
   error stop
+ elseif(.not.sparse%issquare().and.present(ll))then
+  if(ll)then
+   write(sparse%unlog,'(a)')' ERROR: the sparse matrix is not square and cannot be set to symmetric as requested!'
+   error stop
+  endif
  endif
 
  lll=.true.
