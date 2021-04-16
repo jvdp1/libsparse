@@ -776,8 +776,8 @@ module subroutine solve_crs_vector(sparse,x,y)
  !$ real(kind=real64)::t1
 
  if(.not.sparse%issquare())then
-#if (_VERBOSE>0)
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+#if (_VERBOSE>0)
   write(sparse%unlog,'(x,a,x,i0)')__FILE__,__LINE__
 #endif
   return
@@ -805,6 +805,10 @@ module subroutine solve_crs_vector(sparse,x,y)
   parvar%phase=12
   parvar%iparm(2)=3
 !  parvar%iparm(8)=1
+#if (_VERBOSE == 1)
+  parvar%iparm(19)=-1
+#endif
+  parvar%iparm(24)=1
   parvar%iparm(27)=1
 #if (_DP==0)
   parvar%iparm(28)=1
@@ -827,11 +831,14 @@ module subroutine solve_crs_vector(sparse,x,y)
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
+
+  parvar%iparm(27)=0 !disable Pardiso checker
+  sparse%lpardisofirst=.false.
+
  endif
 
  !Solving
  parvar%phase=33
- parvar%iparm(27)=0
  call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
               parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
@@ -842,8 +849,6 @@ module subroutine solve_crs_vector(sparse,x,y)
 #else
  parvar%msglvl=0
 #endif
-
- sparse%lpardisofirst=.false.
 
  end associate
 
@@ -895,6 +900,11 @@ module subroutine solve_crs_array(sparse,x,y)
   !Ordering and factorization
   parvar%phase=12
   parvar%iparm(2)=3
+!  parvar%iparm(8)=1
+#if (_VERBOSE == 1)
+  parvar%iparm(19)=-1
+#endif
+  parvar%iparm(24)=1
   parvar%iparm(27)=1
 #if (_DP==0)
   parvar%iparm(28)=1
@@ -917,18 +927,24 @@ module subroutine solve_crs_array(sparse,x,y)
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
+
+  parvar%iparm(27)=0 !disable Pardiso checker
+  sparse%lpardisofirst=.false.
+
  endif
 
  !Solving
  parvar%phase=33
- parvar%iparm(27)=0
  call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
               parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
  call checkpardiso(parvar%phase,error,sparse%unlog)
 
+#if (_VERBOSE>0)
+ parvar%msglvl=1
+#else
  parvar%msglvl=0
- sparse%lpardisofirst=.false.
+#endif
 
  end associate
 
