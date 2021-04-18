@@ -765,8 +765,8 @@ end subroutine
 module subroutine solve_crs_vector(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
- real(kind=wp),intent(out)::x(:)
- real(kind=wp),intent(inout)::y(:)
+ real(kind=wp),intent(out),contiguous::x(:)
+ real(kind=wp),intent(inout),contiguous::y(:)
 
  !Pardiso variables
  integer(kind=int32)::error,phase
@@ -857,8 +857,8 @@ end subroutine
 module subroutine solve_crs_array(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
- real(kind=wp),intent(out)::x(:,:)
- real(kind=wp),intent(inout)::y(:,:)
+ real(kind=wp),intent(out),contiguous::x(:,:)
+ real(kind=wp),intent(inout),contiguous::y(:,:)
 
  !Pardiso variables
  integer(kind=int32)::error,phase
@@ -953,8 +953,8 @@ end subroutine
 module subroutine solve_crs_vector(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
- real(kind=wp),intent(out)::x(:)
- real(kind=wp),intent(inout)::y(:)
+ real(kind=wp),intent(out),contiguous::x(:)
+ real(kind=wp),intent(inout),contiguous::y(:)
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
@@ -964,8 +964,8 @@ end subroutine
 module subroutine solve_crs_array(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
- real(kind=wp),intent(out)::x(:,:)
- real(kind=wp),intent(inout)::y(:,:)
+ real(kind=wp),intent(out),contiguous::x(:,:)
+ real(kind=wp),intent(inout),contiguous::y(:,:)
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
