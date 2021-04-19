@@ -149,7 +149,7 @@ end subroutine
 
 !**GET ELEMENTS
 module function get_coo(sparse,row,col) result(val)
- class(coosparse),intent(inout)::sparse
+ class(coosparse),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
 
@@ -166,7 +166,7 @@ module function get_coo(sparse,row,col) result(val)
   tcol=row
  endif
 
- hash=hashf(trow,tcol,sparse%ij,sparse%nel,sparse%filled,.true.)
+ hash=hashf(trow,tcol,sparse%ij,sparse%nel)
 
  if(hash.gt.0_int64)val=sparse%a(hash)
 
