@@ -124,7 +124,7 @@ function hashf_array(row,col,mat,dim2,filled,getval) result(address)
 
 end function
 
-pure function hashf_array_getval(row,col,mat,dim2) result(address)  !getval = .true.
+pure function hashf_array_getval(row,col,mat,dim2) result(address)
  !address: address (column) of mat
  !mat of size dim1 (=2) x dim2
  !search for a value and returns 0 if absent
