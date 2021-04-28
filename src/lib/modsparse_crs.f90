@@ -146,7 +146,7 @@ end subroutine
 
 !**GET ELEMENTS
 module function get_crs(sparse,row,col) result(val)
- class(crssparse),intent(inout)::sparse
+ class(crssparse),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
 

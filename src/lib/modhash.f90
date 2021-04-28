@@ -8,8 +8,11 @@ module modhash
 
  interface hashf
    module procedure hashf_vect,hashf_array
+   module procedure hashf_array_getval
  end interface
 
+ integer(kind=int64), parameter :: bparam = 11_int64                 !default value for 2nd coordinate
+ integer(kind=int64), parameter :: cparam = 305419896_int64          !default value for 3rd coordinate
 contains
 !Inspired by lookup3.c from Bob Jenkins (http://burtleburtle.net/bob/hash/index.html#lookup)
 !Converted in Fortran by Francois Guillaume - 2011
@@ -37,8 +40,8 @@ function hashf_vect(row,mat,dim2,filled,getval) result(address)
  logical::indzero,indequal
 
  a=int(row,kind(a))        !conversion of 1st coordinate
- b=11_int64                 !conversion of 2nd coordinate
- c=305419896_int64          !default value for 3rd coordinate  
+ b=bparam                 !conversion of 2nd coordinate
+ c=cparam          !default value for 3rd coordinate
 
  !Cycle until a free entry is found
  do i=1,maxiter
@@ -90,7 +93,7 @@ function hashf_array(row,col,mat,dim2,filled,getval) result(address)
 
  a=int(row,kind(a))        !conversion of 1st coordinate
  b=int(col,kind(b))        !conversion of 2nd coordinate
- c=305419896_int64          !default value for 3rd coordinate  
+ c=cparam                  !default value for 3rd coordinate
 
  !Cycle until a free entry is found
  do i=1,maxiter
@@ -120,9 +123,48 @@ function hashf_array(row,col,mat,dim2,filled,getval) result(address)
  write(*,'(a)')' Warning: the maximum number of searches was reached!'
 
 end function
+
+pure function hashf_array_getval(row,col,mat,dim2) result(address)
+ !address: address (column) of mat
+ !mat of size dim1 (=2) x dim2
+ !search for a value and returns 0 if absent
+ integer(kind=int64)::address
+ integer(kind=int32),intent(in)::row,col
+ integer(kind=int32),intent(in)::mat(:,:)
+ integer(kind=int64),intent(in)::dim2
+
+ integer(kind=int32),parameter::maxiter=5000
+
+ integer(kind=int64)::a,b,c
+ integer(kind=int32)::i
+ logical::indzero,indequal
+
+ a=int(row,kind(a))        !conversion of 1st coordinate
+ b=int(col,kind(b))        !conversion of 2nd coordinate
+ c=cparam                  !default value for 3rd coordinate
+
+ !Cycle until a free entry is found
+ do i=1,maxiter
+  !Hashing
+  call mix(a,b,c)
+  !Computation of the address
+  address=iand(c,dim2-1)+1
+  !Check if the address is correct
+  indzero=.false.;indequal=.false.
+  if(mat(1,address).eq.row.and.mat(2,address).eq.col)indequal=.true.
+  if(mat(1,address).eq.0.or.mat(2,address).eq.0)indzero=.true.
+  if(indzero.or.indequal)then
+   if(indzero)address=0
+   return
+  endif
+ enddo
+
+ address=-1
+
+end function
   
 !> @brief Function returning the next power of 2 of a number
-function roundinguppower2(x) result(next)
+pure function roundinguppower2(x) result(next)
  integer(kind=int64),intent(in)::x
  integer(kind=int64)::next
 
@@ -133,15 +175,15 @@ function roundinguppower2(x) result(next)
 end function
 
 !PRIVATE
-function rot(i,j) result(rota)
- integer(kind=int64) :: i,j
+pure function rot(i,j) result(rota)
+ integer(kind=int64), intent(in) :: i,j
  integer(kind=int64)::rota
 
  rota=ior(ishft(i,j),ishft(i,-(32_int64-j)))
 
 end function
     
-subroutine mix(a,b,c)
+pure subroutine mix(a,b,c)
  integer(kind=int64),intent(inout)::a,b,c
 
  a=a-c;a=ieor(a,rot(c,4_int64));c=c+b 

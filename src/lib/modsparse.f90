@@ -89,7 +89,7 @@ module modsparse
   end subroutine
   function get_gen(sparse,row,col) result(val)
    import::int32,wp,gen_sparse
-   class(gen_sparse),intent(inout)::sparse
+   class(gen_sparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
@@ -298,7 +298,7 @@ module modsparse
   end subroutine
   !**GET ELEMENTS
   module function get_coo(sparse,row,col) result(val)
-   class(coosparse),intent(inout)::sparse
+   class(coosparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
@@ -498,7 +498,7 @@ module modsparse
   end subroutine
   !**GET ELEMENTS
   module function get_crs(sparse,row,col) result(val)
-   class(crssparse),intent(inout)::sparse
+   class(crssparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
@@ -736,7 +736,7 @@ module modsparse
   end subroutine
   !**GET ELEMENTS
   module function get_ll(sparse,row,col) result(val)
-   class(llsparse),intent(inout)::sparse
+   class(llsparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
   end function
