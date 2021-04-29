@@ -472,6 +472,13 @@ module subroutine save_coo(sparse,namefile)
 
 end subroutine
 
+!**SCALE ALL ENTRIES
+module subroutine scale_coo(sparse,val)
+ class(coosparse),intent(inout)::sparse
+ real(kind=wp),intent(in)::val
+ sparse%a = sparse%a * val
+end subroutine
+
 !**SET ELEMENTS
 module recursive subroutine set_coo(sparse,row,col,val)
  !from add_coo

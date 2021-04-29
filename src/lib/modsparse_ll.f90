@@ -255,6 +255,16 @@ end function
 
 !**SAVE
 
+!**SCALE ALL ENTRIES
+module subroutine scale_ll(sparse,val)
+ class(llsparse),intent(inout)::sparse
+ real(kind=wp),intent(in)::val
+
+ write(sparse%unlog,'(a)')' ERROR: scale not implemented for llsparse'
+ error stop
+
+end subroutine
+
 !**SET ELEMENTS
 
 !**SOLVE

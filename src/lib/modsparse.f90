@@ -51,6 +51,7 @@ module modsparse
   procedure(nonzero_gen),public,deferred::nonzero
   procedure(print_gen),public,deferred::print
   procedure(printsquare_gen),public,deferred::printsquare
+  procedure(scale_gen),public,deferred::scale
 
  
   !> @brief Iterative solver with the conjugate gradient method
@@ -83,6 +84,11 @@ module modsparse
  end type
 
  abstract interface
+  subroutine scale_gen(sparse, val)
+   import::gen_sparse,wp
+   class(gen_sparse),intent(inout)::sparse
+   real(kind=wp),intent(in)::val
+  end subroutine
   subroutine destroy_gen(sparse)
    import::gen_sparse
    class(gen_sparse),intent(inout)::sparse
@@ -258,6 +264,8 @@ module modsparse
   procedure,public::printsquare=>printsquare_coo
   !> @brief Saves the matrix (internal format) to stream file
   procedure,public::save=>save_coo
+  !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
+  procedure,public::scale=>scale_coo
   !> @brief Sets an entry to a certain value (even if equal to 0); e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_coo
   !> @brief Gets a submatrix from a sparse matrix
@@ -350,6 +358,11 @@ module modsparse
   module subroutine save_coo(sparse,namefile)
    class(coosparse),intent(in)::sparse
    character(len=*),intent(in)::namefile
+  end subroutine
+  !**SCALE ALL ENTRIES
+  module subroutine scale_coo(sparse,val)
+   class(coosparse),intent(inout)::sparse
+   real(kind=wp),intent(in)::val
   end subroutine
   !**SET ELEMENTS
   module recursive subroutine set_coo(sparse,row,col,val)
@@ -446,6 +459,8 @@ module modsparse
   procedure,public::printsquare=>printsquare_crs
   !> @brief Saves the matrix (internal format) to stream file
   procedure,public::save=>save_crs
+  !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
+  procedure,public::scale=>scale_crs
   !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_crs
   !> @brief MKL PARDISO solver
@@ -592,6 +607,11 @@ module modsparse
    class(crssparse),intent(in)::sparse
    character(len=*),intent(in)::namefile
   end subroutine
+  !**SCALE ALL ENTRIES
+  module subroutine scale_crs(sparse,val)
+   class(crssparse),intent(inout)::sparse
+   real(kind=wp),intent(in)::val
+  end subroutine
   !**SET ELEMENTS
   module subroutine set_crs(sparse,row,col,val,error)
    !add a value only to an existing one
@@ -676,6 +696,8 @@ module modsparse
   procedure,public::print=>print_ll
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_ll
+  !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
+  procedure,public::scale=>scale_ll
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_ll
   final::deallocate_scal_ll,deallocate_rank1_ll
@@ -769,6 +791,11 @@ module modsparse
    integer(kind=int64)::nel
   end function
   !**SAVE
+  !**SCALE ALL ENTRIES
+  module subroutine scale_ll(sparse,val)
+   class(llsparse),intent(inout)::sparse
+   real(kind=wp),intent(in)::val
+  end subroutine
   !**SET ELEMENTS
   !**SOLVE
   !**SORT ARRAY
