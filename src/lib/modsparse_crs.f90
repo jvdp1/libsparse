@@ -726,6 +726,13 @@ module subroutine save_crs(sparse,namefile)
 
 end subroutine
 
+!**SCALE ALL ENTRIES
+module subroutine scale_crs(sparse,val)
+ class(crssparse),intent(inout)::sparse
+ real(kind=wp),intent(in)::val
+ sparse%a = sparse%a * val
+end subroutine
+
 !**SET ELEMENTS
 module subroutine set_crs(sparse,row,col,val,error)
  !add a value only to an existing one
