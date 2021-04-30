@@ -91,14 +91,17 @@ function hashf_array(row,col,mat,dim2,filled,getval) result(address)
  integer(kind=int32)::i 
  logical::indzero,indequal
 
- a=int(row,kind(a))        !conversion of 1st coordinate
- b=int(col,kind(b))        !conversion of 2nd coordinate
- c=cparam                  !default value for 3rd coordinate
+ a=cparam + ishft(2_int64, 2)
+ b=a
+ c=a
+
+ a=a+int(row,kind(a))        !conversion of 1st coordinate
+ b=b+int(col,kind(b))        !conversion of 2nd coordinate
 
  !Cycle until a free entry is found
  do i=1,maxiter
   !Hashing
-  call mix(a,b,c)
+  call final(a,b,c)
   !Computation of the address
   address=iand(c,dim2-1)+1
   !Check if the address is correct
@@ -139,14 +142,17 @@ pure function hashf_array_getval(row,col,mat,dim2) result(address)
  integer(kind=int32)::i
  logical::indzero,indequal
 
- a=int(row,kind(a))        !conversion of 1st coordinate
- b=int(col,kind(b))        !conversion of 2nd coordinate
- c=cparam                  !default value for 3rd coordinate
+ a=cparam + ishft(2_int64, 2)
+ b=a
+ c=a
+
+ a=a+int(row,kind(a))        !conversion of 1st coordinate
+ b=b+int(col,kind(b))        !conversion of 2nd coordinate
 
  !Cycle until a free entry is found
  do i=1,maxiter
   !Hashing
-  call mix(a,b,c)
+  call final(a,b,c)
   !Computation of the address
   address=iand(c,dim2-1)+1
   !Check if the address is correct
@@ -194,5 +200,18 @@ pure subroutine mix(a,b,c)
  c=c-b;c=ieor(c,rot(b,4_int64));b=b+a 
 
 end subroutine 
+
+pure subroutine final(a, b, c)
+ integer(kind=int64), intent(inout) :: a, b, c
+
+ c = ieor(c, b); c = c - rot(b, 14_int64)
+ a = ieor(a, c); a = a - rot(c, 11_int64)
+ b = ieor(b, a); b = b - rot(a, 25_int64)
+ c = ieor(c, b); c = c - rot(b, 16_int64)
+ a = ieor(a, c); a = a - rot(c, 4_int64)
+ b = ieor(b, a); b = b - rot(a, 14_int64)
+ c = ieor(c, b); c = c - rot(b, 24_int64)
+
+end subroutine
 
 end module
