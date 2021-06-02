@@ -81,6 +81,83 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
 
 end subroutine
 
+!**PRECONDITIONED CONJUGATE GRADIENT
+module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
+ !sparse*x=y
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int32),intent(inout),optional::maxiter
+ real(kind=wp),intent(inout)::x(:)
+ real(kind=wp),intent(in)::y(:)
+ real(kind=wp),intent(inout),optional::tol
+ class(precond_class), intent(inout) :: precond
+
+ integer(kind=int32)::i,maxiter_
+ real(kind=wp)::r(size(x))
+ real(kind=wp)::p(size(x))
+ real(kind=wp)::Ap(size(x))
+ real(kind=wp)::z(size(x))
+ real(kind=wp)::y_norm
+ real(kind=wp)::rsnew,rsold,alpha
+ real(kind=wp)::tol_, thr, resvec1
+ real(kind=wp)::ynorm
+
+ if(.not.sparse%issquare().or..not.sparse%lsymmetric&
+    .or.size(x).ne.size(y)&
+    .or.size(x).ne.sparse%getdim(2)&
+    .or.size(y).ne.sparse%getdim(1)&
+     )then
+  write(sparse%unlog,'(a)')' ERROR: one of multiple arguments are not conform'
+  error stop
+ endif
+
+ maxiter_ = min(1000,size(x)-1)
+ if(present(maxiter)) maxiter_ = min(maxiter,size(x)-1)
+
+ tol_ = tolerance
+ if(present(tol))tol_=tol
+ ynorm = norm2(y)
+ tol_ = tol_ * ynorm
+
+
+ Ap = 0._wp
+ call sparse%mult(1._wp,'n',x,0._wp,Ap)
+ r = y - Ap
+
+ y_norm = norm2(y)
+ thr = tol_ * y_norm
+
+ resvec1 = norm2(r)
+
+ rsold = 1._wp
+ alpha = 1._wp
+
+ i = 2
+
+ do while (resvec1.gt.thr.and.i.le.maxiter_)
+  call precond%solve(z, r)
+
+  rsnew = dot_product(z, r)
+
+  p = z + (rsnew / rsold) * p
+  rsold = rsnew
+
+  call sparse%mult(1._wp,'n',p,0._wp,Ap)
+
+  alpha = rsold / dot_product(p,Ap)
+
+  x = x + alpha * p
+  r = r - alpha * Ap
+
+  resvec1 = norm2(r)
+
+  i = i + 1
+ enddo
+
+ if(present(maxiter)) maxiter = i
+ if(present(tol)) tol = resvec1 / y_norm
+
+end subroutine
+
 !**GET ELEMENTS
 module function getdim_gen(sparse,dim1) result(dimget)
  class(gen_sparse),intent(in)::sparse

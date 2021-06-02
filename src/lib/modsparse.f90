@@ -27,6 +27,25 @@ module modsparse
  public::llsparse,coosparse,crssparse
  public::assignment(=)
 
+ public::precond_class
+
+
+ !> define derived type for pcg algorithm
+ type, abstract :: precond_class
+ contains
+  procedure(precond_solve_gen), public, deferred :: solve
+ end type
+
+ abstract interface
+  subroutine precond_solve_gen(precond,x,y)
+   import precond_class, wp
+   class(precond_class), intent(in) :: precond
+   real(kind=wp),intent(in) :: y(:)
+   real(kind=wp),intent(out) :: x(:)
+  end subroutine
+ end interface
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
 
@@ -56,6 +75,8 @@ module modsparse
  
   !> @brief Iterative solver with the conjugate gradient method
   procedure,public::cg=>cg_gen
+  !> @brief Iterative solver with the preconditioned conjugate gradient method
+  procedure,public::pcg=>pcg_gen
   !> @brief Returns the dimension of the matrix; e.g., ...=mat%getdim(1)
   procedure,public::getdim=>getdim_gen
   !> @brief Initializes the values
@@ -147,6 +168,16 @@ module modsparse
    real(kind=wp),intent(inout)::x(:)
    real(kind=wp),intent(in)::y(:)
    real(kind=wp),intent(inout),optional::tol
+  end subroutine
+  !**PRECONDITIONED CONJUGATE GRADIENT
+  module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
+   !sparse*x=y
+   class(gen_sparse),intent(in)::sparse
+   integer(kind=int32),intent(inout),optional::maxiter
+   real(kind=wp),intent(inout)::x(:)
+   real(kind=wp),intent(in)::y(:)
+   real(kind=wp),intent(inout),optional::tol
+   class(precond_class), intent(inout) :: precond
   end subroutine
   !**GET ELEMENTS
   module function getdim_gen(sparse,dim1) result(dimget)
