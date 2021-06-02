@@ -96,7 +96,6 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
  real(kind=wp)::p(size(x))
  real(kind=wp)::Ap(size(x))
  real(kind=wp)::z(size(x))
- real(kind=wp)::y_norm
  real(kind=wp)::rsnew,rsold,alpha
  real(kind=wp)::tol_, resvec1
  real(kind=wp)::ynorm
@@ -151,7 +150,7 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
  enddo
 
  if(present(maxiter)) maxiter = i
- if(present(tol)) tol = resvec1 / y_norm
+ if(present(tol)) tol = resvec1 / ynorm
 
 end subroutine
 

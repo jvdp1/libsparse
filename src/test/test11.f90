@@ -104,7 +104,9 @@ program test10
  
  x=0._wp
  xx=x
- call coo%cg(xx,y)
+ i=100
+ call coo%cg(xx,y,maxiter=i)
+ print*,'maxiter ',i
 
  call crs%solve(x,y)
  print*,'xx ',xx
@@ -117,11 +119,15 @@ program test10
 
  block
  type(precond_type) :: precond
- allocate(precond%invdiag, source = crs%diag())
+ allocate(precond%invdiag(crs%getdim(1)))
+ precond%invdiag = merge(1._wp/crs%diag(), 0._wp, crs%diag().ne.0._wp)
  i=100
- call crs%pcg(xx,y,maxiter=i,precond=precond)
+ xx=0
+ val=1.d-6
+ call crs%pcg(xx,y,maxiter=i,tol=val,precond=precond)
  print*,'cg ',xx
  print*,'iter ', i
+ print*,'val ',val
  end block
   
  
