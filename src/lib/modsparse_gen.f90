@@ -98,7 +98,7 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
  real(kind=wp)::z(size(x))
  real(kind=wp)::y_norm
  real(kind=wp)::rsnew,rsold,alpha
- real(kind=wp)::tol_, thr, resvec1
+ real(kind=wp)::tol_, resvec1
  real(kind=wp)::ynorm
 
  if(.not.sparse%issquare().or..not.sparse%lsymmetric&
@@ -123,9 +123,6 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
  call sparse%mult(1._wp,'n',x,0._wp,Ap)
  r = y - Ap
 
- y_norm = norm2(y)
- thr = tol_ * y_norm
-
  resvec1 = norm2(r)
 
  rsold = 1._wp
@@ -133,7 +130,7 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
 
  i = 2
 
- do while (resvec1.gt.thr.and.i.le.maxiter_)
+ do while (resvec1.gt.tol_.and.i.le.maxiter_)
   call precond%solve(z, r)
 
   rsnew = dot_product(z, r)
