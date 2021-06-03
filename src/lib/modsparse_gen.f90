@@ -96,7 +96,7 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
  real(kind=wp)::p(size(x))
  real(kind=wp)::Ap(size(x))
  real(kind=wp)::z(size(x))
- real(kind=wp)::rsnew,rsold,alpha
+ real(kind=wp)::tau,old_tau,alpha
  real(kind=wp)::tol_, resvec1
  real(kind=wp)::ynorm
 
@@ -122,24 +122,25 @@ module subroutine pcg_gen(sparse,x,y,maxiter,tol,precond)
  call sparse%mult(1._wp,'n',x,0._wp,Ap)
  r = y - Ap
 
+ i = 2
+
  resvec1 = norm2(r)
 
- rsold = 1._wp
+ p = 0._wp
+ old_tau = 1._wp
  alpha = 1._wp
-
- i = 2
 
  do while (resvec1.gt.tol_.and.i.le.maxiter_)
   call precond%solve(z, r)
 
-  rsnew = dot_product(z, r)
+  tau = dot_product(z, r)
 
-  p = z + (rsnew / rsold) * p
-  rsold = rsnew
+  p = z + (tau / old_tau) * p
+  old_tau = tau
 
   call sparse%mult(1._wp,'n',p,0._wp,Ap)
 
-  alpha = rsold / dot_product(p,Ap)
+  alpha = tau / dot_product(p,Ap)
 
   x = x + alpha * p
   r = r - alpha * Ap
