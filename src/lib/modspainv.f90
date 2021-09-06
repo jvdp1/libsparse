@@ -189,14 +189,14 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !$ time(1)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
- !$ write(*,'(x,a,t30,a,g0)')'CRS Symb. fact.',': Elapsed time = ',time(1)
+ !$ write(*,'(1x,a,t30,a,g0)')'CRS Symb. fact.',': Elapsed time = ',time(1)
 #endif
 
  call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  !$ time(2)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
- !$ write(*,'(x,a,t30,a,g0)')'CRS Compute xspars',': Elapsed time = ',time(2)
+ !$ write(*,'(1x,a,t30,a,g0)')'CRS Compute xspars',': Elapsed time = ',time(2)
 #endif
 
  !super following Karin Meyer
@@ -205,7 +205,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
- !$ write(*,'(x,a,t30,a,g0)')'CRS Super nodes',': Elapsed time = ',time(3)
+ !$ write(*,'(1x,a,t30,a,g0)')'CRS Super nodes',': Elapsed time = ',time(3)
 #endif
 
  ! Cholesky factorization
@@ -213,7 +213,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
- !$ write(*,'(x,a,t30,a,g0)')'CRS Chol. fact.',': Elapsed time = ',time(4)
+ !$ write(*,'(1x,a,t30,a,g0)')'CRS Chol. fact.',': Elapsed time = ',time(4)
 #endif
 
  if(lspainv)then
@@ -222,7 +222,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
   !$ time(5)=omp_get_wtime()-t1
   !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
-  !$ write(*,'(x,a,t30,a,g0)')'CRS Inversion',': Elapsed time = ',time(5)
+  !$ write(*,'(1x,a,t30,a,g0)')'CRS Inversion',': Elapsed time = ',time(5)
 #endif
  endif
  

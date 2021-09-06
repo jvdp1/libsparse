@@ -1044,7 +1044,7 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  !determine the number of elements
  !possibilities
  nel=0
- if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+ if(sparse%lupperstorage.eqv.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
   ! upper -> upper  ||  full -> full
   do i=startdim1,enddim1
    do j=sparse%ia(i),sparse%ia(i+1)-1
@@ -1085,7 +1085,7 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  endif
 
  !add the elements
- if((sparse%lupperstorage.eq.lupperstorage).or.(sparse%lupperstorage.and..not.lincludediag))then
+ if((sparse%lupperstorage.eqv.lupperstorage).or.(sparse%lupperstorage.and..not.lincludediag))then
   ! upper -> upper  ||  full -> full
   if(present(unlog))then
    subsparse=crssparse(enddim1-startdim1+1,nel,enddim2-startdim2+1,lupperstorage,unlog)

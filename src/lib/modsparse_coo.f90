@@ -583,7 +583,7 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
  endif
 
 
- if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+ if(sparse%lupperstorage.eqv.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
   ! upper -> upper  ||  full -> full
   do i8=1,sparse%nel
    i=sparse%ij(1,i8)
