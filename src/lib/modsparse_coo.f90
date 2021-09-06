@@ -1,9 +1,4 @@
 submodule (modsparse) modsparse_coo
-#if (_DP==0)
- use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
-#else
- use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
-#endif
  use modhash, only:hashf,roundinguppower2
  !$ use omp_lib
  implicit none
@@ -583,7 +578,7 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
  endif
 
 
- if(sparse%lupperstorage.eq.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
+ if(sparse%lupperstorage.eqv.lupperstorage.or.(sparse%lupperstorage.and..not.lincludediag))then
   ! upper -> upper  ||  full -> full
   do i8=1,sparse%nel
    i=sparse%ij(1,i8)

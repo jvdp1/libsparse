@@ -5,7 +5,7 @@ include ../Makeinit
 OBJ=modcommon.o
 
 ifeq ($(DEBUGENABLE),1)
- DEBUG=-check all -traceback -debug extended
+ DEBUG=-check all -traceback -debug extended -stand f18
 else
  DEBUG=
 endif
