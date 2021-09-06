@@ -7,10 +7,6 @@
 !> @todo Implementation of ordering for ll and coo
 !> @todo Generalization of the solve_crs method (for different solvers)
 
-!#if (_PARDISO==1)
-!include 'mkl_pardiso.f90'
-!#endif
-
 module modsparse
 #if (_DP==0)
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
