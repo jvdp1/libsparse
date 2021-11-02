@@ -799,7 +799,9 @@ module subroutine solve_crs_vector(sparse,x,y)
   call sparse%sort()
 
   !Preparation of Cholesky of A with Pardiso
-  parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !to avoid ifort 2021.4.0 bug
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
 
   !initialize iparm
   call pardisoinit(parvar%pt,parvar%mtype,parvar%iparm)
@@ -895,7 +897,9 @@ module subroutine solve_crs_array(sparse,x,y)
   call sparse%sort()
 
   !Preparation of Cholesky of A with Pardiso
-  parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !to avoid ifort 2021.4.0 bug
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
 
   !initialize iparm
   call pardisoinit(parvar%pt,parvar%mtype,parvar%iparm)
