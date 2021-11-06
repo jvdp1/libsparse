@@ -39,36 +39,43 @@ subroutine test_constructor(error)
  coo = coosparse(nrow)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), nrow, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.nrow, 'isquare')
  if (allocated(error)) return
 
  coo = coosparse(nrow, nel = 4_int64)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), nrow, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.nrow, 'isquare')
  if (allocated(error)) return
 
  coo = coosparse(nrow, lupper = .true.)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), nrow, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.nrow, 'isquare')
  if (allocated(error)) return
 
  coo = coosparse(nrow, n = ncol)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), ncol, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.ncol, 'isquare')
  if (allocated(error)) return
 
  coo = coosparse(nrow, n = ncol, nel = 4_int64)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), ncol, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.ncol, 'isquare')
  if (allocated(error)) return
 
  coo = coosparse(nrow, n = ncol, nel = 4_int64, lupper = .true.)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), ncol, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.ncol, 'isquare')
  if (allocated(error)) return
 
  coo = coosparse(nrow, n = ncol, nel = 4_int64, lupper = .true., unlog = output_unit)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), ncol, more = 'getdim(2)')
+ call check(error, coo%issquare(), nrow.eq.ncol, 'isquare')
  if (allocated(error)) return
 
 
