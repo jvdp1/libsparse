@@ -3,7 +3,6 @@ submodule (modsparse) modsparse_crs
  use modspainv
 #endif
 #if (_PARDISO==1)
- use mkl_pardiso
  use modvariablepardiso, only: checkpardiso, pardiso_variable
 #endif
 #if (_METIS==1)
