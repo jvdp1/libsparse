@@ -789,7 +789,7 @@ module subroutine solve_crs_vector(sparse,x,y)
   return
  endif
 
- associate(parvar=>sparse%pardisovar)
+! associate(parvar=>sparse%pardisovar)
 
  nrhs=1 !always 1 since y is a vector
 
@@ -799,64 +799,77 @@ module subroutine solve_crs_vector(sparse,x,y)
   call sparse%sort()
 
   !Preparation of Cholesky of A with Pardiso
-  parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !to avoid ifort 2021.4.0 bug
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
 
   !initialize iparm
-  call pardisoinit(parvar%pt,parvar%mtype,parvar%iparm)
+  call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)
 !  do i=1,64
-!   write(sparse%unlog,*)'iparm',i,parvar%iparm(i)
+!   write(sparse%unlog,*)'iparm',i,sparse%pardisovar%iparm(i)
 !  enddo
 
   !Ordering and factorization
-  parvar%phase=12
-  parvar%iparm(2)=3
-!  parvar%iparm(8)=1
+  sparse%pardisovar%phase=12
+  sparse%pardisovar%iparm(2)=3
+!  sparse%pardisovar%iparm(8)=1
 #if (_VERBOSE == 1)
-  parvar%iparm(19)=-1
+  sparse%pardisovar%iparm(19)=-1
 #endif
-  parvar%iparm(24)=1
-  parvar%iparm(27)=1
+  sparse%pardisovar%iparm(24)=1
+  sparse%pardisovar%iparm(27)=1
 #if (_DP==0)
-  parvar%iparm(28)=1
+  sparse%pardisovar%iparm(28)=1
 #else
-  parvar%iparm(28)=0
+  sparse%pardisovar%iparm(28)=0
 #endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
   if(allocated(sparse%perm))then
-   parvar%iparm(5)=1;parvar%iparm(31)=0;parvar%iparm(36)=0
-   call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+   sparse%pardisovar%iparm(5)=1
+   sparse%pardisovar%iparm(31)=0
+   sparse%pardisovar%iparm(36)=0
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+                sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-                sparse%perm,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+                sparse%perm,nrhs,sparse%pardisovar%iparm,sparse%pardisovar%msglvl,&
+                sparse%pardisovar%ddum,sparse%pardisovar%ddum,error)
   else
-   call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+                sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-                parvar%idum,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+                sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
+                sparse%pardisovar%msglvl,sparse%pardisovar%ddum,sparse%pardisovar%ddum,&
+                error)
   endif
-  call checkpardiso(parvar%phase,error,sparse%unlog)
+  call checkpardiso(sparse%pardisovar%phase,error,sparse%unlog)
 
-  write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
-  write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
+  write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',&
+                              sparse%pardisovar%iparm(18)
+  write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',&
+                              sparse%pardisovar%iparm(19)
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
 
-  parvar%iparm(27)=0 !disable Pardiso checker
+  sparse%pardisovar%iparm(27)=0 !disable Pardiso checker
   sparse%lpardisofirst=.false.
 
  endif
 
  !Solving
- parvar%phase=33
- call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+ sparse%pardisovar%phase=33
+ call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+              sparse%pardisovar%mtype,sparse%pardisovar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-              parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
- call checkpardiso(parvar%phase,error,sparse%unlog)
+              sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
+              sparse%pardisovar%msglvl,y,x,error)
+ call checkpardiso(sparse%pardisovar%phase,error,sparse%unlog)
 
 #if (_VERBOSE>0)
- parvar%msglvl=1
+ sparse%pardisovar%msglvl=1
 #else
- parvar%msglvl=0
+ sparse%pardisovar%msglvl=0
 #endif
 
- end associate
+! end associate
 
 end subroutine
 
@@ -881,7 +894,7 @@ module subroutine solve_crs_array(sparse,x,y)
   return
  endif
 
- associate(parvar=>sparse%pardisovar)
+! associate(parvar=>sparse%pardisovar)
 
  nrhs=size(x,2)
  if(nrhs.ne.size(y,2))then
@@ -895,64 +908,77 @@ module subroutine solve_crs_array(sparse,x,y)
   call sparse%sort()
 
   !Preparation of Cholesky of A with Pardiso
-  parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  !to avoid ifort 2021.4.0 bug
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
 
   !initialize iparm
-  call pardisoinit(parvar%pt,parvar%mtype,parvar%iparm)
+  call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)
 !  do i=1,64
-!   write(sparse%unlog,*)'iparm',i,parvar%iparm(i)
+!   write(sparse%unlog,*)'iparm',i,sparse%pardisovar%iparm(i)
 !  enddo
 
   !Ordering and factorization
-  parvar%phase=12
-  parvar%iparm(2)=3
-!  parvar%iparm(8)=1
+  sparse%pardisovar%phase=12
+  sparse%pardisovar%iparm(2)=3
+!  sparse%pardisovar%iparm(8)=1
 #if (_VERBOSE == 1)
-  parvar%iparm(19)=-1
+  sparse%pardisovar%iparm(19)=-1
 #endif
-  parvar%iparm(24)=1
-  parvar%iparm(27)=1
+  sparse%pardisovar%iparm(24)=1
+  sparse%pardisovar%iparm(27)=1
 #if (_DP==0)
-  parvar%iparm(28)=1
+  sparse%pardisovar%iparm(28)=1
 #else
-  parvar%iparm(28)=0
+  sparse%pardisovar%iparm(28)=0
 #endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
   if(allocated(sparse%perm))then
-   parvar%iparm(5)=1;parvar%iparm(31)=0;parvar%iparm(36)=0
-   call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+   sparse%pardisovar%iparm(5)=1
+   sparse%pardisovar%iparm(31)=0
+   sparse%pardisovar%iparm(36)=0
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+                sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-                sparse%perm,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+                sparse%perm,nrhs,sparse%pardisovar%iparm,sparse%pardisovar%msglvl,&
+                sparse%pardisovar%ddum,sparse%pardisovar%ddum,error)
   else
-   call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+                sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-                parvar%idum,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
+                sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
+                sparse%pardisovar%msglvl,sparse%pardisovar%ddum,sparse%pardisovar%ddum,&
+                error)
   endif
-  call checkpardiso(parvar%phase,error,sparse%unlog)
+  call checkpardiso(sparse%pardisovar%phase,error,sparse%unlog)
 
-  write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',parvar%iparm(18)
-  write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',parvar%iparm(19)
+  write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',&
+                               sparse%pardisovar%iparm(18)
+  write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',&
+                               sparse%pardisovar%iparm(19)
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
 
-  parvar%iparm(27)=0 !disable Pardiso checker
+  sparse%pardisovar%iparm(27)=0 !disable Pardiso checker
   sparse%lpardisofirst=.false.
 
  endif
 
  !Solving
- parvar%phase=33
- call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+ sparse%pardisovar%phase=33
+ call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+              sparse%pardisovar%mtype,sparse%pardisovar%phase,&
               sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,&
-              parvar%idum,nrhs,parvar%iparm,parvar%msglvl,y,x,error)
- call checkpardiso(parvar%phase,error,sparse%unlog)
+              sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
+              sparse%pardisovar%msglvl,y,x,error)
+ call checkpardiso(sparse%pardisovar%phase,error,sparse%unlog)
 
 #if (_VERBOSE>0)
- parvar%msglvl=1
+ sparse%pardisovar%msglvl=1
 #else
- parvar%msglvl=0
+ sparse%pardisovar%msglvl=0
 #endif
 
- end associate
+! end associate
 
 end subroutine
 #else
