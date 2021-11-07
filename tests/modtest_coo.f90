@@ -31,6 +31,8 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo ncol diag vect lupper", test_ncol_diag_vect_lupper) &
     ]
 
+  !to check: diag_mat
+
 end subroutine collect_coo
 
 subroutine test_constructor(error)
