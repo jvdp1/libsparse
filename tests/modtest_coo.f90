@@ -25,6 +25,10 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo ncol add", test_ncol_add) &
     , new_unittest("coo ncol nel", test_ncol_add_nel) &
     , new_unittest("coo ncol lupper", test_ncol_add_lupper) &
+    , new_unittest("coo diag vect", test_diag_vect) &
+    , new_unittest("coo diag vect lupper", test_diag_vect_lupper) &
+    , new_unittest("coo ncol diag vect", test_ncol_diag_vect) &
+    , new_unittest("coo ncol diag vect lupper", test_ncol_diag_vect_lupper) &
     ]
 
 end subroutine collect_coo
@@ -89,32 +93,15 @@ subroutine test_add(error)
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
- integer :: i, j
  integer, allocatable :: iat(:), jat(:)
  real(real64), allocatable :: at(:)
- real(real64) :: val
  real(real64) :: mat(nrow, nrow)
  logical, allocatable :: lvalid(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, unlog = sparse_unit)
 
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(i.le.nrow.and.j.le.nrow)mat(i, j) = val
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
 
  lvalid = ia.le.nrow .and. ja.le.nrow
 
@@ -139,32 +126,15 @@ subroutine test_add_nel(error)
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
- integer :: i, j
  integer, allocatable :: iat(:), jat(:)
  real(real64), allocatable :: at(:)
- real(real64) :: val
  real(real64) :: mat(nrow, nrow)
  logical, allocatable :: lvalid(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, nel = 4_int64, unlog = sparse_unit)
 
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(i.le.nrow.and.j.le.nrow)mat(i, j) = val
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
 
  lvalid = ia.le.nrow .and. ja.le.nrow
 
@@ -189,32 +159,15 @@ subroutine test_add_lupper(error)
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
- integer :: i, j
  integer, allocatable :: iat(:), jat(:)
  real(real64), allocatable :: at(:)
- real(real64) :: val
  real(real64) :: mat(nrow, nrow)
  logical, allocatable :: lvalid(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
 
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(i.le.nrow.and.j.le.nrow)mat(i, j) = val
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
 
  lvalid = ia.le.nrow .and. ja.le.nrow .and. ia .le. ja
 
@@ -240,32 +193,15 @@ subroutine test_ncol_add(error)
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
- integer :: i, j
  integer, allocatable :: iat(:), jat(:)
  real(real64), allocatable :: at(:)
- real(real64) :: val
  real(real64) :: mat(nrow, ncol)
  logical, allocatable :: lvalid(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
 
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(i.le.nrow.and.j.le.ncol)mat(i, j) = val
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
 
  lvalid = ia.le.nrow .and. ja.le.ncol
 
@@ -291,32 +227,15 @@ subroutine test_ncol_add_nel(error)
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
- integer :: i, j
  integer, allocatable :: iat(:), jat(:)
  real(real64), allocatable :: at(:)
- real(real64) :: val
  real(real64) :: mat(nrow, ncol)
  logical, allocatable :: lvalid(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, nel = 2_int64,  unlog = sparse_unit)
 
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(i.le.nrow.and.j.le.ncol)mat(i, j) = val
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
 
  lvalid = ia.le.nrow .and. ja.le.ncol
 
@@ -342,32 +261,15 @@ subroutine test_ncol_add_lupper(error)
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
- integer :: i, j
  integer, allocatable :: iat(:), jat(:)
  real(real64), allocatable :: at(:)
- real(real64) :: val
  real(real64) :: mat(nrow, ncol)
  logical, allocatable :: lvalid(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
 
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(i.le.nrow.and.j.le.ncol)mat(i, j) = val
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
 
  lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
@@ -381,6 +283,178 @@ subroutine test_ncol_add_lupper(error)
  call check(error, all(at == pack(a, lvalid)), 'a')
 
  if(verbose)call printmat(mat)
+
+end subroutine
+
+subroutine test_diag_vect(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ integer, parameter :: ia(12) = [1, 1, 2, 2, 3, 3, 3, 4, 5, 5, 5, 6]
+ integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
+ real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
+                                         , 44, 51, 52, 55, 66]
+ integer :: sizediag
+ real(real64), allocatable :: diag(:), diagcheck(:)
+ logical, allocatable :: lvalid(:)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ diag = coo%diag()
+
+ lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
+
+ sizediag = min(coo%getdim(1), coo%getdim(2))
+ allocate(diagcheck(sizediag), source = 0._real64)
+ diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
+
+ call check(error, size(diag), sizediag, more = 'size(diag)')
+ if (allocated(error)) return
+
+ call check(error, all(diag == diagcheck), 'diag')
+
+end subroutine
+
+subroutine test_diag_vect_lupper(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ integer, parameter :: ia(12) = [1, 1, 2, 2, 3, 3, 3, 4, 5, 5, 5, 6]
+ integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
+ real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
+                                         , 44, 51, 52, 55, 66]
+ integer :: sizediag
+ real(real64), allocatable :: diag(:), diagcheck(:)
+ logical, allocatable :: lvalid(:)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ diag = coo%diag()
+
+ lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
+
+ sizediag = min(coo%getdim(1), coo%getdim(2))
+ allocate(diagcheck(sizediag), source = 0._real64)
+ diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
+
+ call check(error, size(diag), sizediag, more = 'size(diag)')
+ if (allocated(error)) return
+
+ call check(error, all(diag == diagcheck), 'diag')
+
+end subroutine
+
+subroutine test_ncol_diag_vect(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = 4
+ integer, parameter :: ia(12) = [1, 1, 2, 2, 3, 3, 3, 4, 5, 5, 5, 6]
+ integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
+ real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
+                                         , 44, 51, 52, 55, 66]
+ integer :: sizediag
+ real(real64), allocatable :: diag(:), diagcheck(:)
+ logical, allocatable :: lvalid(:)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ diag = coo%diag()
+
+ lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
+
+ sizediag = min(coo%getdim(1), coo%getdim(2))
+ allocate(diagcheck(sizediag), source = 0._real64)
+ diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
+
+ call check(error, size(diag), sizediag, more = 'size(diag)')
+ if (allocated(error)) return
+
+ call check(error, all(diag == diagcheck), 'diag')
+
+end subroutine
+
+subroutine test_ncol_diag_vect_lupper(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = 4
+ integer, parameter :: ia(12) = [1, 1, 2, 2, 3, 3, 3, 4, 5, 5, 5, 6]
+ integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
+ real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
+                                         , 44, 51, 52, 55, 66]
+ integer :: sizediag
+ real(real64), allocatable :: diag(:), diagcheck(:)
+ logical, allocatable :: lvalid(:)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ diag = coo%diag()
+
+ lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
+
+ sizediag = min(coo%getdim(1), coo%getdim(2))
+ allocate(diagcheck(sizediag), source = 0._real64)
+ diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
+
+ call check(error, size(diag), sizediag, more = 'size(diag)')
+ if (allocated(error)) return
+
+ call check(error, all(diag == diagcheck), 'diag')
+
+end subroutine
+
+!
+subroutine addval(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
+ type(coosparse), intent(inout) :: coo
+ integer, intent(in) :: nrow, ncol
+ integer, intent(in) :: ia(:), ja(:) 
+ real(real64), intent(in) :: a(:)
+ integer, allocatable , intent(out), optional :: iat(:), jat(:) 
+ real(real64), allocatable , intent(out), optional :: at(:)
+ real(real64), intent(out), optional :: mat(:,:)
+
+ integer :: i, j
+ real(real64) :: val
+
+ if(present(mat))then
+  if(nrow.ne.size(mat,1) .or. ncol.ne.size(mat,2))return
+ endif
+
+ do i = 1, size(ia)
+  call coo%add(ia(i), ja(i), a(i))
+ enddo
+
+ if(.not.present(iat).or..not.present(jat).or..not.present(at).or..not.present(mat))return
+
+ allocate(iat(0), jat(0), at(0))
+ do i = 1, maxval(ia)
+  do j = 1, maxval(ja)
+   val = coo%get(i, j)
+   if(present(mat))then
+    if(i.le.nrow.and.j.le.ncol)mat(i, j) = val
+   endif
+   if (val .ne. 0._real64) then
+    iat = [iat, i]
+    jat = [jat, j]
+    at = [at, val]
+   endif
+  enddo
+ enddo
 
 end subroutine
 
