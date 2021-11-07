@@ -57,6 +57,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo multbymat_y_n_y", test_multbymat_y_n_y) &
     , new_unittest("coo multbymat_y_y_n", test_multbymat_y_y_n) &
     , new_unittest("coo multbymat_y_y_y", test_multbymat_y_y_y) &
+    , new_unittest("coo nonzero", test_nonzero) &
     , new_unittest("coo scale", test_scale) &
     ]
 
@@ -741,6 +742,28 @@ subroutine test_multbymat_gen(error, col, trans, upper)
  
  call check(error, all(abs(y - ycheck) < tol_real64)&
                  , 'multbymat_'//col//'_'//trans//'_'//upper)
+
+end subroutine
+
+
+
+!NONZERO
+subroutine test_nonzero(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = 4
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+
+ integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._real64)
+ real(real64), parameter :: scalefact = 1000._real64
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call check(error, coo%nonzero(), p(1), 'nonzero')
 
 end subroutine
 
