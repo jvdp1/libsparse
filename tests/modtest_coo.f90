@@ -7,6 +7,8 @@ module modtest_coo
 
  public :: collect_coo
 
+ real(real64), parameter :: tol_real64 = epsilon(1._real64) * 10**4
+
  integer, parameter :: sparse_unit = 555
  logical, parameter :: verbose = .false.
  
@@ -39,10 +41,22 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo ncol get", test_ncol_get) &
     , new_unittest("coo ncol get nel", test_ncol_get_nel) &
     , new_unittest("coo ncol get lupper", test_ncol_get_lupper) &
-    , new_unittest("coo multbyv", test_multbyv) &
-    , new_unittest("coo multbyv lupper", test_multbyv_lupper) &
-    , new_unittest("coo ncol multbyv", test_ncol_multbyv) &
-    , new_unittest("coo ncol multbyv lupper", test_ncol_multbyv_lupper) &
+    , new_unittest("coo multbyv_n_n_n", test_multbyv_n_n_n) &
+    , new_unittest("coo multbyv_n_n_y", test_multbyv_n_n_y) &
+    , new_unittest("coo multbyv_n_y_n", test_multbyv_n_y_n) &
+    , new_unittest("coo multbyv_n_y_y", test_multbyv_n_y_y) &
+    , new_unittest("coo multbyv_y_n_n", test_multbyv_y_n_n) &
+    , new_unittest("coo multbyv_y_n_y", test_multbyv_y_n_y) &
+    , new_unittest("coo multbyv_y_y_n", test_multbyv_y_y_n) &
+    , new_unittest("coo multbyv_y_y_y", test_multbyv_y_y_y) &
+    , new_unittest("coo multbymat_n_n_n", test_multbymat_n_n_n) &
+    , new_unittest("coo multbymat_n_n_y", test_multbymat_n_n_y) &
+    , new_unittest("coo multbymat_n_y_n", test_multbymat_n_y_n) &
+    , new_unittest("coo multbymat_n_y_y", test_multbymat_n_y_y) &
+    , new_unittest("coo multbymat_y_n_n", test_multbymat_y_n_n) &
+    , new_unittest("coo multbymat_y_n_y", test_multbymat_y_n_y) &
+    , new_unittest("coo multbymat_y_y_n", test_multbymat_y_y_n) &
+    , new_unittest("coo multbymat_y_y_y", test_multbymat_y_y_y) &
     ]
 
   !to check: diag_mat
@@ -504,143 +518,228 @@ end subroutine
 
 
 !MULT BY VECT
-subroutine test_multbyv(error)
+subroutine test_multbyv_n_n_n(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer :: i
+ call test_multbyv_gen(error, col = 'n', trans = 'n', upper = 'n')
+end subroutine
 
- character(len=1), parameter :: trans = 'n'
+subroutine test_multbyv_n_n_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'n', trans = 'n', upper = 'y')
+end subroutine
+
+subroutine test_multbyv_n_y_n(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'n', trans = 'y', upper = 'n')
+end subroutine
+
+subroutine test_multbyv_n_y_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'n', trans = 'y', upper = 'y')
+end subroutine
+
+subroutine test_multbyv_y_n_n(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'y', trans = 'n', upper = 'n')
+end subroutine
+
+subroutine test_multbyv_y_n_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'y', trans = 'n', upper = 'y')
+end subroutine
+
+subroutine test_multbyv_y_y_n(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'y', trans = 'y', upper = 'n')
+end subroutine
+
+subroutine test_multbyv_y_y_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbyv_gen(error, col = 'y', trans = 'y', upper = 'y')
+end subroutine
+
+
+subroutine test_multbyv_gen(error, col, trans, upper)
+ character(len=*), intent(in) :: col
+ character(len=*), intent(in) :: trans
+ character(len=*), intent(in) :: upper
+ type(error_type), allocatable, intent(out) :: error
+
+
  integer, parameter :: nrow = 5
- integer, parameter :: ncol = nrow
- logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
  real(real64), parameter :: alpha = 0.3_real64
  real(real64), parameter :: val = 10000._real64
- real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
-                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
 
- real(real64) :: y(merge(nrow, ncol, trans == 'n'))
- real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
+ integer :: i, ncol
+ real(real64), allocatable :: x(:), y(:), ycheck(:)
+ logical :: lvalid(size(ia))
  type(coosparse) :: coo
 
- coo = coosparse(nrow, unlog = sparse_unit)
+ ncol = merge(4, nrow, col == 'y')
 
- call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+ if(upper == 'y')then
+  lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+ else
+  lvalid = ia.le.nrow .and. ja.le.ncol
+ endif
 
- y = 1
- call coo%mult(alpha, trans, x, val, y)
+ allocate(x(merge(nrow, ncol, trans == 'y')), source = &
+                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))])
+ allocate(y(merge(ncol, nrow, trans == 'y')), source = 1._real64)
+ allocate(ycheck(merge(ncol, nrow, trans == 'y')), source = 1._real64)
 
- ycheck = 1
- ycheck = ycheck * val + alpha * matmul(&
-   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
-         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
+
+ if(col == 'y')then
+  if(upper == 'y')then
+   coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+  else
+   coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+  endif
+ else
+  if(upper == 'y')then
+   coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+  else
+   coo = coosparse(nrow, unlog = sparse_unit)
+  endif
+ endif
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call coo%mult(alpha, merge('t', 'n', trans == 'y'), x, val, y)
+
+ if(trans == 'y')then
+  ycheck = ycheck * val + alpha * matmul(&
+   transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)) &
    , x)
+ else
+  ycheck = ycheck * val + alpha * matmul(&
+   matcheck(nrow, ncol, ia, ja, a, lvalid) &
+   , x)
+ endif
  
- call check(error, all(y == ycheck), 'multbyv')
+ call check(error, all(abs(y - ycheck) < tol_real64)&
+                 , 'multbyv_'//col//'_'//trans//'_'//upper)
 
 end subroutine
 
-subroutine test_multbyv_lupper(error)
+
+!MULT BY MAT
+subroutine test_multbymat_n_n_n(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer :: i
-
- character(len=1), parameter :: trans = 'n'
- integer, parameter :: nrow = 5
- integer, parameter :: ncol = nrow
- logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
- real(real64), parameter :: alpha = 0.3_real64
- real(real64), parameter :: val = 10000._real64
- real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
-                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
-
- real(real64) :: y(merge(nrow, ncol, trans == 'n'))
- real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
- type(coosparse) :: coo
-
- coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
-
- call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
-
- y = 1
- call coo%mult(alpha, trans, x, val, y)
-
- ycheck = 1
- ycheck = ycheck * val + alpha * matmul(&
-   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
-         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
-   , x)
- 
- call check(error, all(y == ycheck), 'multbyv')
-
+ call test_multbymat_gen(error, col = 'n', trans = 'n', upper = 'n')
 end subroutine
 
-subroutine test_ncol_multbyv(error)
+subroutine test_multbymat_n_n_y(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer :: i
-
- character(len=1), parameter :: trans = 'n'
- integer, parameter :: nrow = 5
- integer, parameter :: ncol = 4
- logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
- real(real64), parameter :: alpha = 0.3_real64
- real(real64), parameter :: val = 10000._real64
- real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
-                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
-
- real(real64) :: y(merge(nrow, ncol, trans == 'n'))
- real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
- type(coosparse) :: coo
-
- coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
-
- call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
-
- y = 1
- call coo%mult(alpha, trans, x, val, y)
-
- ycheck = 1
- ycheck = ycheck * val + alpha * matmul(&
-   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
-         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
-   , x)
- 
- call check(error, all(y == ycheck), 'multbyv')
-
+ call test_multbymat_gen(error, col = 'n', trans = 'n', upper = 'y')
 end subroutine
 
-subroutine test_ncol_multbyv_lupper(error)
+subroutine test_multbymat_n_y_n(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer :: i
+ call test_multbymat_gen(error, col = 'n', trans = 'y', upper = 'n')
+end subroutine
 
- character(len=1), parameter :: trans = 'n'
+subroutine test_multbymat_n_y_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbymat_gen(error, col = 'n', trans = 'y', upper = 'y')
+end subroutine
+
+subroutine test_multbymat_y_n_n(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbymat_gen(error, col = 'y', trans = 'n', upper = 'n')
+end subroutine
+
+subroutine test_multbymat_y_n_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbymat_gen(error, col = 'y', trans = 'n', upper = 'y')
+end subroutine
+
+subroutine test_multbymat_y_y_n(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbymat_gen(error, col = 'y', trans = 'y', upper = 'n')
+end subroutine
+
+subroutine test_multbymat_y_y_y(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ call test_multbymat_gen(error, col = 'y', trans = 'y', upper = 'y')
+end subroutine
+
+
+subroutine test_multbymat_gen(error, col, trans, upper)
+ character(len=*), intent(in) :: col
+ character(len=*), intent(in) :: trans
+ character(len=*), intent(in) :: upper
+ type(error_type), allocatable, intent(out) :: error
+
+
+ integer, parameter :: nrhs = 3
  integer, parameter :: nrow = 5
- integer, parameter :: ncol = 4
- logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
  real(real64), parameter :: alpha = 0.3_real64
  real(real64), parameter :: val = 10000._real64
- real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
-                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
 
- real(real64) :: y(merge(nrow, ncol, trans == 'n'))
- real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
+ integer :: i, ncol
+ real(real64), allocatable :: x(:,:), y(:,:), ycheck(:,:)
+ logical :: lvalid(size(ia))
  type(coosparse) :: coo
 
- coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+ ncol = merge(4, nrow, col == 'y')
 
- call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+ if(upper == 'y')then
+  lvalid = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+ else
+  lvalid = ia.le.nrow .and. ja.le.ncol
+ endif
 
- y = 1
- call coo%mult(alpha, trans, x, val, y)
+ allocate(x(merge(nrow, ncol, trans == 'y'), nrhs), source = 1._real64)
+ allocate(y(merge(ncol, nrow, trans == 'y'), nrhs), source = 1._real64)
+ allocate(ycheck(merge(ncol, nrow, trans == 'y'), nrhs), source = 1._real64)
 
- ycheck = 1
- ycheck = ycheck * val + alpha * matmul(&
-   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
-         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
+ if(col == 'y')then
+  if(upper == 'y')then
+   coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+  else
+   coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+  endif
+ else
+  if(upper == 'y')then
+   coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+  else
+   coo = coosparse(nrow, unlog = sparse_unit)
+  endif
+ endif
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call coo%mult(alpha, merge('t', 'n', trans == 'y'), x, val, y)
+
+ if(trans == 'y')then
+  ycheck = ycheck * val + alpha * matmul(&
+   transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)) &
    , x)
+ else
+  ycheck = ycheck * val + alpha * matmul(&
+   matcheck(nrow, ncol, ia, ja, a, lvalid) &
+   , x)
+ endif
  
- call check(error, all(y == ycheck), 'multbyv')
+ call check(error, all(abs(y - ycheck) < tol_real64)&
+                 , 'multbymat_'//col//'_'//trans//'_'//upper)
 
 end subroutine
 
