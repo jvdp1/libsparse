@@ -65,7 +65,7 @@ subroutine collect_coo(testsuite)
 
 end subroutine collect_coo
 
-!CONSTRUCTOR + GETDIM
+!CONSTRUCTOR + GETDIM + ISSQUARE
 subroutine test_constructor(error)
  type(error_type), allocatable, intent(out) :: error
 
