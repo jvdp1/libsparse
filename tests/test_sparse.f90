@@ -1,5 +1,5 @@
 program test_sparse
-  use, intrinsic :: iso_fortran_env, only : error_unit
+  use, intrinsic :: iso_fortran_env, only : error_unit, output_unit
   use testdrive, only : run_testsuite, new_testsuite, testsuite_type
   use modtest_coo, only : collect_coo
   implicit none
@@ -21,6 +21,8 @@ program test_sparse
   if (stat > 0) then
     write(error_unit, '(i0, 1x, a)') stat, "test(s) failed!"
     error stop
+  else
+    write(output_unit, '(a)') 'All tests passed!'
   end if
 
 end program test_sparse
