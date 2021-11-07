@@ -39,6 +39,10 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo ncol get", test_ncol_get) &
     , new_unittest("coo ncol get nel", test_ncol_get_nel) &
     , new_unittest("coo ncol get lupper", test_ncol_get_lupper) &
+    , new_unittest("coo multbyv", test_multbyv) &
+    , new_unittest("coo multbyv lupper", test_multbyv_lupper) &
+    , new_unittest("coo ncol multbyv", test_ncol_multbyv) &
+    , new_unittest("coo ncol multbyv lupper", test_ncol_multbyv_lupper) &
     ]
 
   !to check: diag_mat
@@ -280,8 +284,7 @@ subroutine test_ncol_add_lupper(error)
 
 end subroutine
 
-
-!DIAG
+!DIAG VECT
 subroutine test_diag_vect(error)
  type(error_type), allocatable, intent(out) :: error
 
@@ -496,6 +499,148 @@ subroutine test_ncol_get_lupper(error)
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
  call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+
+end subroutine
+
+
+!MULT BY VECT
+subroutine test_multbyv(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ character(len=1), parameter :: trans = 'n'
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+ real(real64), parameter :: alpha = 0.3_real64
+ real(real64), parameter :: val = 10000._real64
+ real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
+                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
+
+ real(real64) :: y(merge(nrow, ncol, trans == 'n'))
+ real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ y = 1
+ call coo%mult(alpha, trans, x, val, y)
+
+ ycheck = 1
+ ycheck = ycheck * val + alpha * matmul(&
+   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
+         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
+   , x)
+ 
+ call check(error, all(y == ycheck), 'multbyv')
+
+end subroutine
+
+subroutine test_multbyv_lupper(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ character(len=1), parameter :: trans = 'n'
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
+ real(real64), parameter :: alpha = 0.3_real64
+ real(real64), parameter :: val = 10000._real64
+ real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
+                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
+
+ real(real64) :: y(merge(nrow, ncol, trans == 'n'))
+ real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ y = 1
+ call coo%mult(alpha, trans, x, val, y)
+
+ ycheck = 1
+ ycheck = ycheck * val + alpha * matmul(&
+   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
+         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
+   , x)
+ 
+ call check(error, all(y == ycheck), 'multbyv')
+
+end subroutine
+
+subroutine test_ncol_multbyv(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ character(len=1), parameter :: trans = 'n'
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = 4
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+ real(real64), parameter :: alpha = 0.3_real64
+ real(real64), parameter :: val = 10000._real64
+ real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
+                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
+
+ real(real64) :: y(merge(nrow, ncol, trans == 'n'))
+ real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ y = 1
+ call coo%mult(alpha, trans, x, val, y)
+
+ ycheck = 1
+ ycheck = ycheck * val + alpha * matmul(&
+   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
+         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
+   , x)
+ 
+ call check(error, all(y == ycheck), 'multbyv')
+
+end subroutine
+
+subroutine test_ncol_multbyv_lupper(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ character(len=1), parameter :: trans = 'n'
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = 4
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
+ real(real64), parameter :: alpha = 0.3_real64
+ real(real64), parameter :: val = 10000._real64
+ real(real64), parameter :: x(merge(ncol, nrow, trans == 'n')) = &
+                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))]
+
+ real(real64) :: y(merge(nrow, ncol, trans == 'n'))
+ real(real64) :: ycheck(merge(nrow, ncol, trans == 'n'))
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ y = 1
+ call coo%mult(alpha, trans, x, val, y)
+
+ ycheck = 1
+ ycheck = ycheck * val + alpha * matmul(&
+   merge(matcheck(nrow, ncol, ia, ja, a, lvalid), &
+         transpose(matcheck(nrow, ncol, ia, ja, a, lvalid)), trans == 'n')&
+   , x)
+ 
+ call check(error, all(y == ycheck), 'multbyv')
 
 end subroutine
 
