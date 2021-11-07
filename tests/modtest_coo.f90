@@ -57,6 +57,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo multbymat_y_n_y", test_multbymat_y_n_y) &
     , new_unittest("coo multbymat_y_y_n", test_multbymat_y_y_n) &
     , new_unittest("coo multbymat_y_y_y", test_multbymat_y_y_y) &
+    , new_unittest("coo scale", test_scale) &
     ]
 
   !to check: diag_mat
@@ -743,6 +744,26 @@ subroutine test_multbymat_gen(error, col, trans, upper)
 
 end subroutine
 
+!SCALE
+subroutine test_scale(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = 4
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+
+ real(real64), parameter :: scalefact = 1000._real64
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+
+ call coo%scale(scalefact)
+
+ call check(error, all(getmat(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
+
+end subroutine
 
 !INTERNAL
 subroutine addval(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
@@ -798,7 +819,7 @@ subroutine printmat(mat)
  write(output_unit, '(a)')repeat('*',size(mat, 1))
 end subroutine
 
-function matcheck(nrow, ncol, ia, ja, a, lvalid) result(mat)
+pure function matcheck(nrow, ncol, ia, ja, a, lvalid) result(mat)
  integer, intent(in) :: nrow, ncol, ia(:), ja(:)
  real(real64), intent(in) :: a(:)
  logical, intent(in) :: lvalid(:)
