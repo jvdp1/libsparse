@@ -26,10 +26,10 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol add", test_ncol_add) &
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
-!    , new_unittest("crs diag vect", test_diag_vect) &
-!    , new_unittest("crs diag vect lupper", test_diag_vect_lupper) &
-!    , new_unittest("crs ncol diag vect", test_ncol_diag_vect) &
-!    , new_unittest("crs ncol diag vect lupper", test_ncol_diag_vect_lupper) &
+    , new_unittest("crs diag vect", test_diag_vect) &
+    , new_unittest("crs diag vect lupper", test_diag_vect_lupper) &
+    , new_unittest("crs ncol diag vect", test_ncol_diag_vect) &
+    , new_unittest("crs ncol diag vect lupper", test_ncol_diag_vect_lupper) &
 !    , new_unittest("crs get", test_get) &
 !    , new_unittest("crs get nel", test_get_nel) &
 !    , new_unittest("crs get lupper", test_get_lupper) &
@@ -321,12 +321,14 @@ subroutine test_diag_vect(error)
  real(wp) :: diagcheck(sizediag)
  real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, unlog = sparse_unit)
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
+ crs = coo
 
- diag = coo%diag()
+ diag = crs%diag()
 
  diagcheck = 0
  diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
@@ -350,12 +352,14 @@ subroutine test_diag_vect_lupper(error)
  real(wp) :: diagcheck(sizediag)
  real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
-
  call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
 
- diag = coo%diag()
+ crs = coo
+
+ diag = crs%diag()
 
  diagcheck = 0
  diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
@@ -379,12 +383,14 @@ subroutine test_ncol_diag_vect(error)
  real(wp) :: diagcheck(sizediag)
  real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol,  unlog = sparse_unit)
-
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- diag = coo%diag()
+ crs = coo
+
+ diag = crs%diag()
 
  diagcheck = 0
  diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
@@ -407,12 +413,14 @@ subroutine test_ncol_diag_vect_lupper(error)
  real(wp) :: diagcheck(sizediag)
  real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol,  unlog = sparse_unit)
-
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- diag = coo%diag()
+ crs = coo
+
+ diag = crs%diag()
 
  diagcheck = 0
  diagcheck(pack(ia, lvalid)) = pack(a, lvalid)
