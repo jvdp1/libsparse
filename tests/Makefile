@@ -8,7 +8,7 @@ NAME = sparse
 
 CPPFLAGS += -I../src/lib/ -I.
 
-OBJS += modtest_coo.o
+OBJS = modtest_common.o modtest_coo.o
 
 LIB = $(patsubst %, ../src/lib/lib%.a, $(NAME))
 
@@ -38,4 +38,5 @@ $(LIBTEST): $(OBJTEST)
 $(PROGS): %: $(OBJS) $(LIBTEST) $(LIB)  %.o
 	$(f90) $(F90FLAGS) $(CPPFLAGS) -o $@ $^ $(LIBMETISROOT)$(LIBMETIS)$(LMETIS)
 
-test_coo.o: modtest_coo.f90
+test_coo.o: modtest_coo.o
+modtest_coo.o: modtest_common.o
