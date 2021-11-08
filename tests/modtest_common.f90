@@ -43,7 +43,7 @@ subroutine addval_coo(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
    if(present(mat))then
     if(i.le.nrow.and.j.le.ncol)mat(i, j) = val
    endif
-   if (val .ne. 0._real64) then
+   if (val .ne. 0._wp) then
     iat = [iat, i]
     jat = [jat, j]
     at = [at, val]
