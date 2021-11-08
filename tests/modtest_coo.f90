@@ -1,5 +1,5 @@
 module modtest_coo
- use, intrinsic :: iso_fortran_env, only: int64, real64, output_unit
+ use, intrinsic :: iso_fortran_env, only: int64, real64, output_unit, wp => real64
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse
  implicit none
@@ -7,14 +7,14 @@ module modtest_coo
 
  public :: collect_coo
 
- real(real64), parameter :: tol_real64 = epsilon(1._real64) * 10**4
+ real(wp), parameter :: tol_real64 = epsilon(1._real64) * 10**4
 
  integer, parameter :: sparse_unit = 555
  logical, parameter :: verbose = .false.
  
  integer, parameter :: ia(12) = [1, 1, 2, 2, 3, 3, 3, 4, 5, 5, 5, 6]
  integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
- real(real64), parameter :: a(12) = [real(real64):: 11, 13, 22, 25, 31, 33, 34&
+ real(wp), parameter :: a(12) = [real(wp):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
 contains
 
@@ -130,8 +130,8 @@ subroutine test_add(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  integer, allocatable :: iat(:), jat(:)
- real(real64), allocatable :: at(:)
- real(real64) :: mat(nrow, ncol)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, unlog = sparse_unit)
@@ -160,8 +160,8 @@ subroutine test_add_nel(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  integer, allocatable :: iat(:), jat(:)
- real(real64), allocatable :: at(:)
- real(real64) :: mat(nrow, ncol)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, nel = 4_int64, unlog = sparse_unit)
@@ -190,8 +190,8 @@ subroutine test_add_lupper(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
 
  integer, allocatable :: iat(:), jat(:)
- real(real64), allocatable :: at(:)
- real(real64) :: mat(nrow, ncol)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
@@ -220,8 +220,8 @@ subroutine test_ncol_add(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  integer, allocatable :: iat(:), jat(:)
- real(real64), allocatable :: at(:)
- real(real64) :: mat(nrow, ncol)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
@@ -250,8 +250,8 @@ subroutine test_ncol_add_nel(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  integer, allocatable :: iat(:), jat(:)
- real(real64), allocatable :: at(:)
- real(real64) :: mat(nrow, ncol)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, nel = 2_int64,  unlog = sparse_unit)
@@ -280,8 +280,8 @@ subroutine test_ncol_add_lupper(error)
  logical, parameter :: lvalid(size(ia)) =  ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
  integer, allocatable :: iat(:), jat(:)
- real(real64), allocatable :: at(:)
- real(real64) :: mat(nrow, ncol)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
@@ -312,8 +312,8 @@ subroutine test_diag_vect(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
  integer, parameter :: sizediag =min(nrow, ncol)
 
- real(real64) :: diagcheck(sizediag)
- real(real64), allocatable :: diag(:)
+ real(wp) :: diagcheck(sizediag)
+ real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, unlog = sparse_unit)
@@ -341,8 +341,8 @@ subroutine test_diag_vect_lupper(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
  integer, parameter :: sizediag = min(nrow, ncol)
 
- real(real64) :: diagcheck(sizediag)
- real(real64), allocatable :: diag(:)
+ real(wp) :: diagcheck(sizediag)
+ real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
@@ -370,8 +370,8 @@ subroutine test_ncol_diag_vect(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
  integer, parameter :: sizediag = min(nrow, ncol)
 
- real(real64) :: diagcheck(sizediag)
- real(real64), allocatable :: diag(:)
+ real(wp) :: diagcheck(sizediag)
+ real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol,  unlog = sparse_unit)
@@ -398,8 +398,8 @@ subroutine test_ncol_diag_vect_lupper(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.eq.ja
  integer, parameter :: sizediag = min(nrow, ncol)
 
- real(real64) :: diagcheck(sizediag)
- real(real64), allocatable :: diag(:)
+ real(wp) :: diagcheck(sizediag)
+ real(wp), allocatable :: diag(:)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol,  unlog = sparse_unit)
@@ -598,12 +598,12 @@ subroutine test_multbyv_sym(error)
 
  integer, parameter :: nrow = 5
  integer, parameter :: ncol = nrow
- real(real64), parameter :: alpha = 0.3_real64
- real(real64), parameter :: val = 10000._real64
- real(real64), parameter :: x(ncol) = [(real(i, real64), i = 1, ncol)]
+ real(wp), parameter :: alpha = 0.3_real64
+ real(wp), parameter :: val = 10000._real64
+ real(wp), parameter :: x(ncol) = [(real(i, wp), i = 1, ncol)]
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
- real(real64) :: y(nrow), ycheck(nrow)
+ real(wp) :: y(nrow), ycheck(nrow)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
@@ -633,11 +633,11 @@ subroutine test_multbyv_gen(error, col, trans, upper)
 
 
  integer, parameter :: nrow = 5
- real(real64), parameter :: alpha = 0.3_real64
- real(real64), parameter :: val = 10000._real64
+ real(wp), parameter :: alpha = 0.3_real64
+ real(wp), parameter :: val = 10000._real64
 
  integer :: i, ncol
- real(real64), allocatable :: x(:), y(:), ycheck(:)
+ real(wp), allocatable :: x(:), y(:), ycheck(:)
  logical :: lvalid(size(ia))
  type(coosparse) :: coo
 
@@ -650,7 +650,7 @@ subroutine test_multbyv_gen(error, col, trans, upper)
  endif
 
  allocate(x(merge(nrow, ncol, trans == 'y')), source = &
-                              [(real(i, real64), i = 1, merge(nrow, ncol, trans == 'y'))])
+                              [(real(i, wp), i = 1, merge(nrow, ncol, trans == 'y'))])
  allocate(y(merge(ncol, nrow, trans == 'y')), source = 1._real64)
  allocate(ycheck(merge(ncol, nrow, trans == 'y')), source = 1._real64)
 
@@ -744,13 +744,13 @@ subroutine test_multbymat_sym(error)
  integer, parameter :: nrhs = 3
  integer, parameter :: nrow = 5
  integer, parameter :: ncol = nrow
- real(real64), parameter :: alpha = 0.3_real64
- real(real64), parameter :: val = 10000._real64
- real(real64), parameter :: x(ncol, nrhs) = 1._real64
+ real(wp), parameter :: alpha = 0.3_real64
+ real(wp), parameter :: val = 10000._real64
+ real(wp), parameter :: x(ncol, nrhs) = 1._real64
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
  integer :: i
- real(real64) :: y(nrow, nrhs), ycheck(nrow, nrhs)
+ real(wp) :: y(nrow, nrhs), ycheck(nrow, nrhs)
  type(coosparse) :: coo
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
@@ -781,11 +781,11 @@ subroutine test_multbymat_gen(error, col, trans, upper)
 
  integer, parameter :: nrhs = 3
  integer, parameter :: nrow = 5
- real(real64), parameter :: alpha = 0.3_real64
- real(real64), parameter :: val = 10000._real64
+ real(wp), parameter :: alpha = 0.3_real64
+ real(wp), parameter :: val = 10000._real64
 
  integer :: i, ncol
- real(real64), allocatable :: x(:,:), y(:,:), ycheck(:,:)
+ real(wp), allocatable :: x(:,:), y(:,:), ycheck(:,:)
  logical :: lvalid(size(ia))
  type(coosparse) :: coo
 
@@ -844,7 +844,7 @@ subroutine test_nonzero(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._real64)
- real(real64), parameter :: scalefact = 1000._real64
+ real(wp), parameter :: scalefact = 1000._real64
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
@@ -863,7 +863,7 @@ subroutine test_scale(error)
  integer, parameter :: ncol = 4
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
- real(real64), parameter :: scalefact = 1000._real64
+ real(wp), parameter :: scalefact = 1000._real64
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
@@ -881,13 +881,13 @@ subroutine addval(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
  type(coosparse), intent(inout) :: coo
  integer, intent(in) :: nrow, ncol
  integer, intent(in) :: ia(:), ja(:) 
- real(real64), intent(in) :: a(:)
+ real(wp), intent(in) :: a(:)
  integer, allocatable , intent(out), optional :: iat(:), jat(:) 
- real(real64), allocatable , intent(out), optional :: at(:)
- real(real64), intent(out), optional :: mat(:,:)
+ real(wp), allocatable , intent(out), optional :: at(:)
+ real(wp), intent(out), optional :: mat(:,:)
 
  integer :: i, j
- real(real64) :: val
+ real(wp) :: val
 
  if(present(mat))then
   if(nrow.ne.size(mat,1) .or. ncol.ne.size(mat,2))return
@@ -917,7 +917,7 @@ subroutine addval(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
 end subroutine
 
 subroutine printmat(mat)
- real(real64), intent(in) :: mat(:,:)
+ real(wp), intent(in) :: mat(:,:)
 
  integer :: i
 
@@ -932,10 +932,10 @@ end subroutine
 
 pure function matcheck(nrow, ncol, ia, ja, a, lvalid) result(mat)
  integer, intent(in) :: nrow, ncol, ia(:), ja(:)
- real(real64), intent(in) :: a(:)
+ real(wp), intent(in) :: a(:)
  logical, intent(in) :: lvalid(:)
 
- real(real64) :: mat(nrow, ncol)
+ real(wp) :: mat(nrow, ncol)
  integer :: i
 
  mat = 0
@@ -950,10 +950,10 @@ end function
 function getmat(coo) result(mat)
  type(coosparse), intent(inout) :: coo
 
- real(real64) :: mat(coo%getdim(1), coo%getdim(2))
+ real(wp) :: mat(coo%getdim(1), coo%getdim(2))
 
  integer :: i, j
- real(real64) :: val
+ real(wp) :: val
 
  mat = -1
 
