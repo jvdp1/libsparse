@@ -46,16 +46,18 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs multbyv_y_n_y", test_multbyv_y_n_y) &
     , new_unittest("crs multbyv_y_y_n", test_multbyv_y_y_n) &
     , new_unittest("crs multbyv_y_y_y", test_multbyv_y_y_y) &
-!    , new_unittest("crs multbyv_sym", test_multbyv_sym) &
-!    , new_unittest("crs multbymat_n_n_n", test_multbymat_n_n_n) &
-!    , new_unittest("crs multbymat_n_n_y", test_multbymat_n_n_y) &
-!    , new_unittest("crs multbymat_n_y_n", test_multbymat_n_y_n) &
-!    , new_unittest("crs multbymat_n_y_y", test_multbymat_n_y_y) &
-!    , new_unittest("crs multbymat_y_n_n", test_multbymat_y_n_n) &
-!    , new_unittest("crs multbymat_y_n_y", test_multbymat_y_n_y) &
-!    , new_unittest("crs multbymat_y_y_n", test_multbymat_y_y_n) &
-!    , new_unittest("crs multbymat_y_y_y", test_multbymat_y_y_y) &
-!    , new_unittest("crs multbymat_sym", test_multbymat_sym) &
+    , new_unittest("crs multbyv_sym", test_multbyv_sym) &
+    , new_unittest("crs multbyv_sym1", test_multbyv_sym1) &
+    , new_unittest("crs multbymat_n_n_n", test_multbymat_n_n_n) &
+    , new_unittest("crs multbymat_n_n_y", test_multbymat_n_n_y) &
+    , new_unittest("crs multbymat_n_y_n", test_multbymat_n_y_n) &
+    , new_unittest("crs multbymat_n_y_y", test_multbymat_n_y_y) &
+    , new_unittest("crs multbymat_y_n_n", test_multbymat_y_n_n) &
+    , new_unittest("crs multbymat_y_n_y", test_multbymat_y_n_y) &
+    , new_unittest("crs multbymat_y_y_n", test_multbymat_y_y_n) &
+    , new_unittest("crs multbymat_y_y_y", test_multbymat_y_y_y) &
+    , new_unittest("crs multbymat_sym", test_multbymat_sym) &
+    , new_unittest("crs multbymat_sym1", test_multbymat_sym1) &
 !    , new_unittest("crs nonzero", test_nonzero) &
 !    , new_unittest("crs scale", test_scale) &
     ]
@@ -640,14 +642,53 @@ subroutine test_multbyv_sym(error)
 
  real(wp) :: y(nrow), ycheck(nrow)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
  call coo%setsymmetric()
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
+ crs = coo
+
  y = 1._wp
- call coo%mult(alpha, 'n', x, val, y)
+ call crs%mult(alpha, 'n', x, val, y)
+
+ ycheck = 1._wp
+ ycheck = ycheck * val + alpha * matmul(&
+   matcheck(nrow, ncol, ia, ja, a, lvalid) &
+     + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja))&
+   , x)
+ 
+ call check(error, all(abs(y - ycheck) < tol_wp), 'multbyv_sym')
+
+end subroutine
+
+subroutine test_multbyv_sym1(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ real(wp), parameter :: alpha = 0.3_wp
+ real(wp), parameter :: val = 10000._wp
+ real(wp), parameter :: x(ncol) = [(real(i, wp), i = 1, ncol)]
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ real(wp) :: y(nrow), ycheck(nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ crs = coo
+ call crs%setsymmetric()
+
+ y = 1._wp
+ call crs%mult(alpha, 'n', x, val, y)
 
  ycheck = 1._wp
  ycheck = ycheck * val + alpha * matmul(&
@@ -790,14 +831,53 @@ subroutine test_multbymat_sym(error)
  integer :: i
  real(wp) :: y(nrow, nrhs), ycheck(nrow, nrhs)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
  call coo%setsymmetric()
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
+ crs = coo
+
  y = 1._wp
- call coo%mult(alpha, 'n', x, val, y)
+ call crs%mult(alpha, 'n', x, val, y)
+
+ ycheck = 1._wp
+ ycheck = ycheck * val + alpha * matmul(&
+   matcheck(nrow, ncol, ia, ja, a, lvalid) &
+   + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja))&
+   , x)
+ 
+ call check(error, all(abs(y - ycheck) < tol_wp), 'multbymat_sym')
+
+end subroutine
+
+subroutine test_multbymat_sym1(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrhs = 3
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ real(wp), parameter :: alpha = 0.3_wp
+ real(wp), parameter :: val = 10000._wp
+ real(wp), parameter :: x(ncol, nrhs) = 1._wp
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: i
+ real(wp) :: y(nrow, nrhs), ycheck(nrow, nrhs)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ crs = coo
+ call crs%setsymmetric()
+
+ y = 1._wp
+ call crs%mult(alpha, 'n', x, val, y)
 
  ycheck = 1._wp
  ycheck = ycheck * val + alpha * matmul(&
@@ -826,6 +906,7 @@ subroutine test_multbymat_gen(error, col, trans, upper)
  real(wp), allocatable :: x(:,:), y(:,:), ycheck(:,:)
  logical :: lvalid(size(ia))
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  ncol = merge(4, nrow, col == 'y')
 
@@ -854,8 +935,10 @@ subroutine test_multbymat_gen(error, col, trans, upper)
  endif
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+ 
+ crs = coo
 
- call coo%mult(alpha, merge('t', 'n', trans == 'y'), x, val, y)
+ call crs%mult(alpha, merge('t', 'n', trans == 'y'), x, val, y)
 
  if(trans == 'y')then
   ycheck = ycheck * val + alpha * matmul(&
