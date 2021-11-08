@@ -3,7 +3,7 @@ module modtest_coo
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse
  use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
-                       , matcheck, printmat
+                       , getmat => getmat_coo, matcheck, printmat
  implicit none
  private
 
@@ -870,24 +870,5 @@ subroutine test_scale(error)
  call check(error, all(getmat(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
 
 end subroutine
-
-!INTERNAL
-function getmat(coo) result(mat)
- type(coosparse), intent(inout) :: coo
-
- real(wp) :: mat(coo%getdim(1), coo%getdim(2))
-
- integer :: i, j
- real(wp) :: val
-
- mat = -1
-
- do i = 1, coo%getdim(1)
-  do j = 1, coo%getdim(2)
-   mat(i, j) = coo%get(i, j)
-  enddo
- enddo
-
-end function
 
 end module modtest_coo

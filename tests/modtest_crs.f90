@@ -3,7 +3,8 @@ module modtest_crs
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse, crssparse, assignment(=)
  use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
-                       , matcheck, printmat
+                       , getmat => getmat_crs, matcheck, printmat
+ use modtest_common, only: getmat_coo !to be deleted
  implicit none
  private
 
@@ -30,13 +31,13 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs diag vect lupper", test_diag_vect_lupper) &
     , new_unittest("crs ncol diag vect", test_ncol_diag_vect) &
     , new_unittest("crs ncol diag vect lupper", test_ncol_diag_vect_lupper) &
-!    , new_unittest("crs get", test_get) &
-!    , new_unittest("crs get nel", test_get_nel) &
-!    , new_unittest("crs get lupper", test_get_lupper) &
-!    , new_unittest("crs get lupper_sym", test_get_lupper_sym) &
-!    , new_unittest("crs ncol get", test_ncol_get) &
-!    , new_unittest("crs ncol get nel", test_ncol_get_nel) &
-!    , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
+    , new_unittest("crs get", test_get) &
+    , new_unittest("crs get nel", test_get_nel) &
+    , new_unittest("crs get lupper", test_get_lupper) &
+    , new_unittest("crs get lupper_sym", test_get_lupper_sym) &
+    , new_unittest("crs ncol get", test_ncol_get) &
+    , new_unittest("crs ncol get nel", test_ncol_get_nel) &
+    , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
 !    , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
 !    , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
 !    , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
@@ -441,12 +442,14 @@ subroutine test_get(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, unlog = sparse_unit)
-
  call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
 
- call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+ crs = coo
+
+ call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
 
@@ -458,12 +461,15 @@ subroutine test_get_nel(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, nel = 4_int64, unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+ crs = coo
+
+ call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
 
@@ -475,12 +481,15 @@ subroutine test_get_lupper(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+ crs = coo
+
+ call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
 
@@ -492,13 +501,16 @@ subroutine test_get_lupper_sym(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
  call coo%setsymmetric()
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, all(getmat(coo) == &
+ crs = coo
+
+ call check(error, all(getmat(crs) == &
              matcheck(nrow, ncol, ia, ja, a, lvalid) &
              + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja)))&
              , 'get sym')
@@ -513,12 +525,15 @@ subroutine test_ncol_get(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+ crs = coo
+
+ call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
 
@@ -530,12 +545,15 @@ subroutine test_ncol_get_nel(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol, nel = 2_int64,  unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+ crs = coo
+
+ call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
 
@@ -547,12 +565,15 @@ subroutine test_ncol_get_lupper(error)
  logical, parameter :: lvalid(size(ia)) =  ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, all(getmat(coo) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+ crs = coo
+
+ call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
 
@@ -886,29 +907,11 @@ subroutine test_scale(error)
 
  call coo%scale(scalefact)
 
- call check(error, all(getmat(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
+ call check(error, all(getmat_coo(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
 
 end subroutine
 
 !INTERNAL
-function getmat(coo) result(mat)
- type(coosparse), intent(inout) :: coo
-
- real(wp) :: mat(coo%getdim(1), coo%getdim(2))
-
- integer :: i, j
- real(wp) :: val
-
- mat = -1
-
- do i = 1, coo%getdim(1)
-  do j = 1, coo%getdim(2)
-   mat(i, j) = coo%get(i, j)
-  enddo
- enddo
-
-end function
-
 subroutine getija_crs(crs, iat, jat, at, mat)
  type(crssparse), intent(inout) :: crs
  integer, allocatable , intent(out), optional :: iat(:), jat(:) 
