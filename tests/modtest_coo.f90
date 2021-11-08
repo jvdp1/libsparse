@@ -38,6 +38,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo get", test_get) &
     , new_unittest("coo get nel", test_get_nel) &
     , new_unittest("coo get lupper", test_get_lupper) &
+    , new_unittest("coo get lupper_sym", test_get_lupper_sym) &
     , new_unittest("coo ncol get", test_ncol_get) &
     , new_unittest("coo ncol get nel", test_ncol_get_nel) &
     , new_unittest("coo ncol get lupper", test_ncol_get_lupper) &
@@ -49,6 +50,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo multbyv_y_n_y", test_multbyv_y_n_y) &
     , new_unittest("coo multbyv_y_y_n", test_multbyv_y_y_n) &
     , new_unittest("coo multbyv_y_y_y", test_multbyv_y_y_y) &
+    , new_unittest("coo multbyv_sym", test_multbyv_sym) &
     , new_unittest("coo multbymat_n_n_n", test_multbymat_n_n_n) &
     , new_unittest("coo multbymat_n_n_y", test_multbymat_n_n_y) &
     , new_unittest("coo multbymat_n_y_n", test_multbymat_n_y_n) &
@@ -57,6 +59,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo multbymat_y_n_y", test_multbymat_y_n_y) &
     , new_unittest("coo multbymat_y_y_n", test_multbymat_y_y_n) &
     , new_unittest("coo multbymat_y_y_y", test_multbymat_y_y_y) &
+    , new_unittest("coo multbymat_sym", test_multbymat_sym) &
     , new_unittest("coo nonzero", test_nonzero) &
     , new_unittest("coo scale", test_scale) &
     ]
@@ -467,6 +470,27 @@ subroutine test_get_lupper(error)
 
 end subroutine
 
+subroutine test_get_lupper_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
+
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call check(error, all(getmat(coo) == &
+             matcheck(nrow, ncol, ia, ja, a, lvalid) &
+             + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja)))&
+             , 'get sym')
+
+end subroutine
+
 subroutine test_ncol_get(error)
  type(error_type), allocatable, intent(out) :: error
 
@@ -518,7 +542,6 @@ subroutine test_ncol_get_lupper(error)
 
 end subroutine
 
-
 !MULT BY VECT
 subroutine test_multbyv_n_n_n(error)
  type(error_type), allocatable, intent(out) :: error
@@ -568,6 +591,39 @@ subroutine test_multbyv_y_y_y(error)
  call test_multbyv_gen(error, col = 'y', trans = 'y', upper = 'y')
 end subroutine
 
+subroutine test_multbyv_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ real(real64), parameter :: alpha = 0.3_real64
+ real(real64), parameter :: val = 10000._real64
+ real(real64), parameter :: x(ncol) = [(real(i, real64), i = 1, ncol)]
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ real(real64) :: y(nrow), ycheck(nrow)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ y = 1._real64
+ call coo%mult(alpha, 'n', x, val, y)
+
+ ycheck = 1._real64
+ ycheck = ycheck * val + alpha * matmul(&
+   matcheck(nrow, ncol, ia, ja, a, lvalid) &
+     + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja))&
+   , x)
+ 
+ call check(error, all(abs(y - ycheck) < tol_real64), 'multbyv_sym')
+
+end subroutine
+
 
 subroutine test_multbyv_gen(error, col, trans, upper)
  character(len=*), intent(in) :: col
@@ -594,7 +650,7 @@ subroutine test_multbyv_gen(error, col, trans, upper)
  endif
 
  allocate(x(merge(nrow, ncol, trans == 'y')), source = &
-                              [(real(i, real64), i = 1, merge(ncol, nrow, trans == 'n'))])
+                              [(real(i, real64), i = 1, merge(nrow, ncol, trans == 'y'))])
  allocate(y(merge(ncol, nrow, trans == 'y')), source = 1._real64)
  allocate(ycheck(merge(ncol, nrow, trans == 'y')), source = 1._real64)
 
@@ -682,6 +738,39 @@ subroutine test_multbymat_y_y_y(error)
  call test_multbymat_gen(error, col = 'y', trans = 'y', upper = 'y')
 end subroutine
 
+subroutine test_multbymat_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrhs = 3
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ real(real64), parameter :: alpha = 0.3_real64
+ real(real64), parameter :: val = 10000._real64
+ real(real64), parameter :: x(ncol, nrhs) = 1._real64
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: i
+ real(real64) :: y(nrow, nrhs), ycheck(nrow, nrhs)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ y = 1._real64
+ call coo%mult(alpha, 'n', x, val, y)
+
+ ycheck = 1._real64
+ ycheck = ycheck * val + alpha * matmul(&
+   matcheck(nrow, ncol, ia, ja, a, lvalid) &
+   + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja))&
+   , x)
+ 
+ call check(error, all(abs(y - ycheck) < tol_real64), 'multbymat_sym')
+
+end subroutine
+
 
 subroutine test_multbymat_gen(error, col, trans, upper)
  character(len=*), intent(in) :: col
@@ -744,7 +833,6 @@ subroutine test_multbymat_gen(error, col, trans, upper)
                  , 'multbymat_'//col//'_'//trans//'_'//upper)
 
 end subroutine
-
 
 
 !NONZERO
