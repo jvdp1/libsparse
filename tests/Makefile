@@ -8,7 +8,7 @@ NAME = sparse
 
 CPPFLAGS += -I../src/lib/ -I.
 
-OBJS += modtest_coo.o
+OBJS = modtest_coo.o modtest_crs.o
 
 LIB = $(patsubst %, ../src/lib/lib%.a, $(NAME))
 
