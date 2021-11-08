@@ -2,20 +2,15 @@ module modtest_coo
  use, intrinsic :: iso_fortran_env, only: int64, real64, output_unit, wp => real64
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse
+ use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
+                       , matcheck, printmat
  implicit none
  private
 
  public :: collect_coo
 
- real(wp), parameter :: tol_real64 = epsilon(1._real64) * 10**4
-
  integer, parameter :: sparse_unit = 555
- logical, parameter :: verbose = .false.
  
- integer, parameter :: ia(12) = [1, 1, 2, 2, 3, 3, 3, 4, 5, 5, 5, 6]
- integer, parameter :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
- real(wp), parameter :: a(12) = [real(wp):: 11, 13, 22, 25, 31, 33, 34&
-                                         , 44, 51, 52, 55, 66]
 contains
 
 !> Collect all exported unit tests
@@ -598,8 +593,8 @@ subroutine test_multbyv_sym(error)
 
  integer, parameter :: nrow = 5
  integer, parameter :: ncol = nrow
- real(wp), parameter :: alpha = 0.3_real64
- real(wp), parameter :: val = 10000._real64
+ real(wp), parameter :: alpha = 0.3_wp
+ real(wp), parameter :: val = 10000._wp
  real(wp), parameter :: x(ncol) = [(real(i, wp), i = 1, ncol)]
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
@@ -611,16 +606,16 @@ subroutine test_multbyv_sym(error)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- y = 1._real64
+ y = 1._wp
  call coo%mult(alpha, 'n', x, val, y)
 
- ycheck = 1._real64
+ ycheck = 1._wp
  ycheck = ycheck * val + alpha * matmul(&
    matcheck(nrow, ncol, ia, ja, a, lvalid) &
      + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja))&
    , x)
  
- call check(error, all(abs(y - ycheck) < tol_real64), 'multbyv_sym')
+ call check(error, all(abs(y - ycheck) < tol_wp), 'multbyv_sym')
 
 end subroutine
 
@@ -633,8 +628,8 @@ subroutine test_multbyv_gen(error, col, trans, upper)
 
 
  integer, parameter :: nrow = 5
- real(wp), parameter :: alpha = 0.3_real64
- real(wp), parameter :: val = 10000._real64
+ real(wp), parameter :: alpha = 0.3_wp
+ real(wp), parameter :: val = 10000._wp
 
  integer :: i, ncol
  real(wp), allocatable :: x(:), y(:), ycheck(:)
@@ -651,8 +646,8 @@ subroutine test_multbyv_gen(error, col, trans, upper)
 
  allocate(x(merge(nrow, ncol, trans == 'y')), source = &
                               [(real(i, wp), i = 1, merge(nrow, ncol, trans == 'y'))])
- allocate(y(merge(ncol, nrow, trans == 'y')), source = 1._real64)
- allocate(ycheck(merge(ncol, nrow, trans == 'y')), source = 1._real64)
+ allocate(y(merge(ncol, nrow, trans == 'y')), source = 1._wp)
+ allocate(ycheck(merge(ncol, nrow, trans == 'y')), source = 1._wp)
 
 
  if(col == 'y')then
@@ -683,7 +678,7 @@ subroutine test_multbyv_gen(error, col, trans, upper)
    , x)
  endif
  
- call check(error, all(abs(y - ycheck) < tol_real64)&
+ call check(error, all(abs(y - ycheck) < tol_wp)&
                  , 'multbyv_'//col//'_'//trans//'_'//upper)
 
 end subroutine
@@ -744,9 +739,9 @@ subroutine test_multbymat_sym(error)
  integer, parameter :: nrhs = 3
  integer, parameter :: nrow = 5
  integer, parameter :: ncol = nrow
- real(wp), parameter :: alpha = 0.3_real64
- real(wp), parameter :: val = 10000._real64
- real(wp), parameter :: x(ncol, nrhs) = 1._real64
+ real(wp), parameter :: alpha = 0.3_wp
+ real(wp), parameter :: val = 10000._wp
+ real(wp), parameter :: x(ncol, nrhs) = 1._wp
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
  integer :: i
@@ -758,16 +753,16 @@ subroutine test_multbymat_sym(error)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- y = 1._real64
+ y = 1._wp
  call coo%mult(alpha, 'n', x, val, y)
 
- ycheck = 1._real64
+ ycheck = 1._wp
  ycheck = ycheck * val + alpha * matmul(&
    matcheck(nrow, ncol, ia, ja, a, lvalid) &
    + transpose(matcheck(nrow, ncol, ia, ja, a, lvalid .and. ia.lt.ja))&
    , x)
  
- call check(error, all(abs(y - ycheck) < tol_real64), 'multbymat_sym')
+ call check(error, all(abs(y - ycheck) < tol_wp), 'multbymat_sym')
 
 end subroutine
 
@@ -781,8 +776,8 @@ subroutine test_multbymat_gen(error, col, trans, upper)
 
  integer, parameter :: nrhs = 3
  integer, parameter :: nrow = 5
- real(wp), parameter :: alpha = 0.3_real64
- real(wp), parameter :: val = 10000._real64
+ real(wp), parameter :: alpha = 0.3_wp
+ real(wp), parameter :: val = 10000._wp
 
  integer :: i, ncol
  real(wp), allocatable :: x(:,:), y(:,:), ycheck(:,:)
@@ -797,9 +792,9 @@ subroutine test_multbymat_gen(error, col, trans, upper)
   lvalid = ia.le.nrow .and. ja.le.ncol
  endif
 
- allocate(x(merge(nrow, ncol, trans == 'y'), nrhs), source = 1._real64)
- allocate(y(merge(ncol, nrow, trans == 'y'), nrhs), source = 1._real64)
- allocate(ycheck(merge(ncol, nrow, trans == 'y'), nrhs), source = 1._real64)
+ allocate(x(merge(nrow, ncol, trans == 'y'), nrhs), source = 1._wp)
+ allocate(y(merge(ncol, nrow, trans == 'y'), nrhs), source = 1._wp)
+ allocate(ycheck(merge(ncol, nrow, trans == 'y'), nrhs), source = 1._wp)
 
  if(col == 'y')then
   if(upper == 'y')then
@@ -829,7 +824,7 @@ subroutine test_multbymat_gen(error, col, trans, upper)
    , x)
  endif
  
- call check(error, all(abs(y - ycheck) < tol_real64)&
+ call check(error, all(abs(y - ycheck) < tol_wp)&
                  , 'multbymat_'//col//'_'//trans//'_'//upper)
 
 end subroutine
@@ -843,8 +838,8 @@ subroutine test_nonzero(error)
  integer, parameter :: ncol = 4
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
- integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._real64)
- real(wp), parameter :: scalefact = 1000._real64
+ integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._wp)
+ real(wp), parameter :: scalefact = 1000._wp
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
@@ -863,7 +858,7 @@ subroutine test_scale(error)
  integer, parameter :: ncol = 4
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
- real(wp), parameter :: scalefact = 1000._real64
+ real(wp), parameter :: scalefact = 1000._wp
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
@@ -877,76 +872,6 @@ subroutine test_scale(error)
 end subroutine
 
 !INTERNAL
-subroutine addval(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
- type(coosparse), intent(inout) :: coo
- integer, intent(in) :: nrow, ncol
- integer, intent(in) :: ia(:), ja(:) 
- real(wp), intent(in) :: a(:)
- integer, allocatable , intent(out), optional :: iat(:), jat(:) 
- real(wp), allocatable , intent(out), optional :: at(:)
- real(wp), intent(out), optional :: mat(:,:)
-
- integer :: i, j
- real(wp) :: val
-
- if(present(mat))then
-  if(nrow.ne.size(mat,1) .or. ncol.ne.size(mat,2))return
- endif
-
- do i = 1, size(ia)
-  call coo%add(ia(i), ja(i), a(i))
- enddo
-
- if(.not.present(iat).or..not.present(jat).or..not.present(at).or..not.present(mat))return
-
- allocate(iat(0), jat(0), at(0))
- do i = 1, maxval(ia)
-  do j = 1, maxval(ja)
-   val = coo%get(i, j)
-   if(present(mat))then
-    if(i.le.nrow.and.j.le.ncol)mat(i, j) = val
-   endif
-   if (val .ne. 0._real64) then
-    iat = [iat, i]
-    jat = [jat, j]
-    at = [at, val]
-   endif
-  enddo
- enddo
-
-end subroutine
-
-subroutine printmat(mat)
- real(wp), intent(in) :: mat(:,:)
-
- integer :: i
-
- write(output_unit, '(a)')repeat('*',size(mat, 1))
-
- do i = 1, size(mat, 1)
-  write(output_unit, '(*(f0.2,1x))')mat(i,:)
- enddo
-
- write(output_unit, '(a)')repeat('*',size(mat, 1))
-end subroutine
-
-pure function matcheck(nrow, ncol, ia, ja, a, lvalid) result(mat)
- integer, intent(in) :: nrow, ncol, ia(:), ja(:)
- real(wp), intent(in) :: a(:)
- logical, intent(in) :: lvalid(:)
-
- real(wp) :: mat(nrow, ncol)
- integer :: i
-
- mat = 0
- do i = 1, size(ia)
-  if(lvalid(i))then
-   mat(ia(i), ja(i)) = a(i)
-  endif
- enddo
-
-end function
-
 function getmat(coo) result(mat)
  type(coosparse), intent(inout) :: coo
 
