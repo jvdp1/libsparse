@@ -38,14 +38,14 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get", test_ncol_get) &
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
-!    , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
-!    , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
-!    , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
-!    , new_unittest("crs multbyv_n_y_y", test_multbyv_n_y_y) &
-!    , new_unittest("crs multbyv_y_n_n", test_multbyv_y_n_n) &
-!    , new_unittest("crs multbyv_y_n_y", test_multbyv_y_n_y) &
-!    , new_unittest("crs multbyv_y_y_n", test_multbyv_y_y_n) &
-!    , new_unittest("crs multbyv_y_y_y", test_multbyv_y_y_y) &
+    , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
+    , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
+    , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
+    , new_unittest("crs multbyv_n_y_y", test_multbyv_n_y_y) &
+    , new_unittest("crs multbyv_y_n_n", test_multbyv_y_n_n) &
+    , new_unittest("crs multbyv_y_n_y", test_multbyv_y_n_y) &
+    , new_unittest("crs multbyv_y_y_n", test_multbyv_y_y_n) &
+    , new_unittest("crs multbyv_y_y_y", test_multbyv_y_y_y) &
 !    , new_unittest("crs multbyv_sym", test_multbyv_sym) &
 !    , new_unittest("crs multbymat_n_n_n", test_multbymat_n_n_n) &
 !    , new_unittest("crs multbymat_n_n_y", test_multbymat_n_n_y) &
@@ -675,6 +675,7 @@ subroutine test_multbyv_gen(error, col, trans, upper)
  real(wp), allocatable :: x(:), y(:), ycheck(:)
  logical :: lvalid(size(ia))
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  ncol = merge(4, nrow, col == 'y')
 
@@ -706,7 +707,9 @@ subroutine test_multbyv_gen(error, col, trans, upper)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call coo%mult(alpha, merge('t', 'n', trans == 'y'), x, val, y)
+ crs = coo
+
+ call crs%mult(alpha, merge('t', 'n', trans == 'y'), x, val, y)
 
  if(trans == 'y')then
   ycheck = ycheck * val + alpha * matmul(&
