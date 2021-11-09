@@ -56,6 +56,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo multbymat_y_y_y", test_multbymat_y_y_y) &
     , new_unittest("coo multbymat_sym", test_multbymat_sym) &
     , new_unittest("coo nonzero", test_nonzero) &
+    , new_unittest("coo nonzero_sym", test_nonzero_sym) &
     , new_unittest("coo scale", test_scale) &
     ]
 
@@ -839,10 +840,29 @@ subroutine test_nonzero(error)
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
  integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._wp)
- real(wp), parameter :: scalefact = 1000._wp
  type(coosparse) :: coo
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call check(error, coo%nonzero(), p(1), 'nonzero')
+
+end subroutine
+
+subroutine test_nonzero_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._wp)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+
+ call coo%setsymmetric()
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
