@@ -4,7 +4,6 @@ module modtest_crs
  use modsparse, only: coosparse, crssparse, assignment(=)
  use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
                        , getmat => getmat_crs, matcheck, printmat
- use modtest_common, only: getmat_coo !to be deleted
  implicit none
  private
 
@@ -58,8 +57,9 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs multbymat_y_y_y", test_multbymat_y_y_y) &
     , new_unittest("crs multbymat_sym", test_multbymat_sym) &
     , new_unittest("crs multbymat_sym1", test_multbymat_sym1) &
-!    , new_unittest("crs nonzero", test_nonzero) &
-!    , new_unittest("crs scale", test_scale) &
+    , new_unittest("crs nonzero", test_nonzero) &
+    , new_unittest("crs nonzero_sym", test_nonzero_sym) &
+    , new_unittest("crs scale", test_scale) &
     ]
 
   !to check: diag_mat
@@ -962,17 +962,43 @@ subroutine test_nonzero(error)
 
  integer, parameter :: nrow = 5
  integer, parameter :: ncol = 4
- logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
 
- integer(int64), parameter :: p(1) = count(lvalid .and. a.ne.0._wp)
- real(wp), parameter :: scalefact = 1000._wp
+ integer(int64) :: p(1)
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
 
- call check(error, coo%nonzero(), p(1), 'nonzero')
+ crs = coo
+
+ p = count(ia.le.nrow .and. ja.le.ncol .and. ja.ne.ncol .and. a.ne.0._wp) + nrow
+
+ call check(error, crs%nonzero(), p(1), 'nonzero')
+
+end subroutine
+
+subroutine test_nonzero_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+
+ integer(int64) :: p(1)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ crs = coo
+
+ p = count(ia.le.nrow .and. ja.le.ncol .and. ia.lt.ja .and. a.ne.0._wp) + nrow
+
+ call check(error, crs%nonzero(), p(1), 'nonzero_sym')
 
 end subroutine
 
@@ -986,14 +1012,17 @@ subroutine test_scale(error)
 
  real(wp), parameter :: scalefact = 1000._wp
  type(coosparse) :: coo
+ type(crssparse) :: crs
 
  coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
 
  call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a)
 
- call coo%scale(scalefact)
+ crs = coo
 
- call check(error, all(getmat_coo(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
+ call crs%scale(scalefact)
+
+ call check(error, all(getmat(crs) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
 
 end subroutine
 
