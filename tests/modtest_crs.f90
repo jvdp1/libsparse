@@ -26,6 +26,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol add", test_ncol_add) &
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
+    , new_unittest("crs chol", test_chol) &
     , new_unittest("crs diag vect", test_diag_vect) &
     , new_unittest("crs diag vect lupper", test_diag_vect_lupper) &
     , new_unittest("crs ncol diag vect", test_ncol_diag_vect) &
@@ -311,6 +312,47 @@ subroutine test_ncol_add_lupper(error)
  if(verbose)call printmat(mat)
 
 end subroutine
+
+#if (_SPAINV==1)
+!CHOLESKY FACTOR
+subroutine test_chol(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp) :: matchol(nrow, ncol)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2]&
+             , merge([a, 22._wp] + 1000, [a, 22._wp], [ia, 2] ==  [ja, 2]))
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !Complete Cholesky decomposition
+ call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%chol()
+
+ deallocate(iat); deallocate(jat); deallocate(at)
+ call getija_crs(crs, iat, jat, at, matchol)
+ 
+ call check(error, all(abs(mat - & 
+                       matmul(transpose(matchol), matchol)) < tol_wp)&
+                 , 'Chol')
+
+end subroutine
+#endif
 
 !DIAG VECT
 subroutine test_diag_vect(error)

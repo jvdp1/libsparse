@@ -114,7 +114,7 @@ subroutine printmat(mat)
  write(output_unit, '(a)')repeat('*',size(mat, 1))
 
  do i = 1, size(mat, 1)
-  write(output_unit, '(*(f0.2,1x))')mat(i,:)
+  write(output_unit, '(*(f0.3,1x))')mat(i,:)
  enddo
 
  write(output_unit, '(a)')repeat('*',size(mat, 1))
