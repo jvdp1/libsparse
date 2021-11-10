@@ -13,6 +13,9 @@ module modtest_common
  integer, parameter, public :: ja(12) = [1, 3, 6, 5, 1, 3, 4, 4, 1, 2, 5, 6]
  real(wp), parameter, public :: a(12) = [real(wp):: 11, 13, 22, 25, 31, 33, 34&
                                          , 44, 51, 52, 55, 66]
+ real(wp), parameter, public :: aspsd(12) = [real(wp):: 101, 13, 0, 0, 31, 303, 34&
+                                            , 404, 51, 52, 505, 606]
+
 contains
 subroutine addval_coo(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
  type(coosparse), intent(inout) :: coo
@@ -114,7 +117,7 @@ subroutine printmat(mat)
  write(output_unit, '(a)')repeat('*',size(mat, 1))
 
  do i = 1, size(mat, 1)
-  write(output_unit, '(*(f0.3,1x))')mat(i,:)
+  write(output_unit, '(*(f0.4,1x))')mat(i,:)
  enddo
 
  write(output_unit, '(a)')repeat('*',size(mat, 1))

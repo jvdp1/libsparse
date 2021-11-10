@@ -2,7 +2,7 @@ module modtest_crs
  use, intrinsic :: iso_fortran_env, only: int64, real64, output_unit, wp => real64
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse, crssparse, assignment(=)
- use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
+ use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd, addval => addval_coo&
                        , getmat => getmat_crs, matcheck, printmat
  implicit none
  private
@@ -38,6 +38,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get", test_ncol_get) &
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
+    , new_unittest("crs ldlt", test_ldlt) &
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
     , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
     , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
@@ -620,6 +621,54 @@ subroutine test_ncol_get_lupper(error)
  call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
 
 end subroutine
+
+#if (_SPAINV==1)
+!LDLt
+subroutine test_ldlt(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !LDLt
+ call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%getldlt()
+
+ deallocate(iat); deallocate(jat); deallocate(at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ 
+ mat_d = 0
+ do i = 1, nrow
+  mat_d(i, i) = mat_l(i, i)
+  mat_l(i, i) = 1
+ enddo
+
+ call check(error, all(abs(mat - & 
+                       matmul(transpose(mat_l), matmul(mat_d, mat_l))) < tol_wp)&
+                 , 'LDLt')
+
+end subroutine
+#endif
+
 
 !MULT BY VECT
 subroutine test_multbyv_n_n_n(error)
