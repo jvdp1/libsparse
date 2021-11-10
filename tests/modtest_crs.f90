@@ -334,8 +334,9 @@ subroutine test_chol(error)
  coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
  call coo%setsymmetric()
 
- call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2]&
-             , merge([a, 22._wp] + 1000, [a, 22._wp], [ia, 2] ==  [ja, 2]))
+! call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2]&
+!             , merge([a, 22._wp] + 1000, [a, 22._wp], [ia, 2] ==  [ja, 2]))
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
 
  crs = coo
 
