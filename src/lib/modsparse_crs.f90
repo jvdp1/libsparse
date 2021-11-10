@@ -357,6 +357,8 @@ module subroutine getchol_crs(sparse,minsizenode)
  !$ t1=omp_get_wtime()
 #endif
 
+ call sparse%setsymmetric(.false.)
+
  call sparse%setsorted(.false.)
  call sparse%sort()
 
