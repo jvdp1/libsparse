@@ -18,6 +18,8 @@ subroutine collect_crs(testsuite)
   !> Collection of tests
   type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
+  !how to test: ichol, getordering, print, printsquare, save, sort, spainv, submatrix
+
   testsuite = [ &
     new_unittest("crs constructor", test_constructor) &
     , new_unittest("crs add", test_add) &
@@ -1162,7 +1164,6 @@ subroutine test_scale(error)
 end subroutine
 
 #if (_PARDISO==1)
-
 !SOLVE using PARDISO VECTOR
 subroutine test_solve_vector(error)
  type(error_type), allocatable, intent(out) :: error
