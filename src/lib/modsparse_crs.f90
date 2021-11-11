@@ -846,8 +846,10 @@ module subroutine solve_crs_vector(sparse,x,y)
 
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',&
                               sparse%pardisovar%iparm(18)
+#if (_VERBOSE == 1)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',&
                               sparse%pardisovar%iparm(19)
+#endif
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
 
   sparse%pardisovar%iparm(27)=0 !disable Pardiso checker
@@ -955,8 +957,10 @@ module subroutine solve_crs_array(sparse,x,y)
 
   write(sparse%unlog,'(a,i0)')' Number of nonzeros in factors  = ',&
                                sparse%pardisovar%iparm(18)
+#if (_VERBOSE == 1)
   write(sparse%unlog,'(a,i0)')' Number of factorization MFLOPS = ',&
                                sparse%pardisovar%iparm(19)
+#endif
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
 
   sparse%pardisovar%iparm(27)=0 !disable Pardiso checker
