@@ -346,13 +346,13 @@ subroutine test_chol(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !Complete Cholesky decomposition
- call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
  call crs%chol()
 
  deallocate(iat); deallocate(jat); deallocate(at)
  call getija_crs(crs, iat, jat, at, matchol)
  
- call check(error, all(abs(mat - & 
+ call check(error, all(abs(mat([(i, i = nrow, 1, -1)],[(i, i = nrow, 1, -1)]) - & 
                        matmul(transpose(matchol), matchol)) < tol_wp)&
                  , 'Chol')
 
@@ -654,7 +654,7 @@ subroutine test_isolve(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !Cholesky
- call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
  call crs%chol()
  
  do i = 1, nrow
@@ -695,7 +695,7 @@ subroutine test_ldlt(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !LDLt
- call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
  call crs%getldlt()
 
  deallocate(iat); deallocate(jat); deallocate(at)
@@ -707,7 +707,7 @@ subroutine test_ldlt(error)
   mat_l(i, i) = 1
  enddo
 
- call check(error, all(abs(mat - & 
+ call check(error, all(abs(mat([(i, i = nrow, 1, -1)], [(i, i = nrow, 1, -1)]) - & 
                        matmul(transpose(mat_l), matmul(mat_d, mat_l))) < tol_wp)&
                  , 'LDLt')
 
@@ -1224,7 +1224,7 @@ subroutine test_solve_vector_perm(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !SOLVE
- call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
  
  do i = 1, nrow
   call crs%solve(mat_d(:,i), mat(:,i))
@@ -1296,7 +1296,7 @@ subroutine test_solve_array_perm(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !SOLVE
- call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
  
  call crs%solve(mat_d, mat)
 
@@ -1335,7 +1335,7 @@ subroutine test_solveldlt(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !LDLt
- call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
  call crs%getldlt()
  
  do i = 1, nrow
