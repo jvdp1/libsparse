@@ -63,6 +63,8 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs nonzero", test_nonzero) &
     , new_unittest("crs nonzero_sym", test_nonzero_sym) &
     , new_unittest("crs scale", test_scale) &
+    , new_unittest("crs solveldlt", test_solve_vector) &
+    , new_unittest("crs solveldlt", test_solve_vector_perm) &
     , new_unittest("crs solveldlt", test_solveldlt) &
     ]
 
@@ -1158,6 +1160,154 @@ subroutine test_scale(error)
  call check(error, all(getmat(crs) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
 
 end subroutine
+
+#if (_PARDISO==1)
+
+!SOLVE using PARDISO VECTOR
+subroutine test_solve_vector(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !SOLVE
+ do i = 1, nrow
+  call crs%solve(mat_d(:,i), mat(:,i))
+ enddo
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector')
+
+end subroutine
+
+subroutine test_solve_vector_perm(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !SOLVE
+ call crs%setpermutation([(i, i = 1, nrow)])
+ 
+ do i = 1, nrow
+  call crs%solve(mat_d(:,i), mat(:,i))
+ enddo
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector perm')
+
+end subroutine
+
+subroutine test_solve_array(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !SOLVE
+ call crs%solve(mat_d, mat)
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector')
+
+end subroutine
+
+subroutine test_solve_array_perm(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !SOLVE
+ call crs%setpermutation([(i, i = 1, nrow)])
+ 
+ call crs%solve(mat_d, mat)
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector perm')
+
+end subroutine
+#endif
 
 #if (_SPAINV==1)
 !SOLVE LDLt
