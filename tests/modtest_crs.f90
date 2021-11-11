@@ -38,6 +38,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get", test_ncol_get) &
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
+    , new_unittest("crs isolve", test_isolve) &
     , new_unittest("crs ldlt", test_ldlt) &
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
     , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
@@ -624,6 +625,48 @@ subroutine test_ncol_get_lupper(error)
 end subroutine
 
 #if (_SPAINV==1)
+!ISOLVE
+subroutine test_isolve(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ !mat must be SPD
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2]&
+             , merge([a, 22._wp] + 1000, [a, 22._wp], [ia, 2] ==  [ja, 2]))
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ !Cholesky
+ call crs%setpermutation([(i, i = 1, nrow)])
+ call crs%chol()
+ 
+ do i = 1, nrow
+  call crs%isolve(mat_d(:,i), mat(:,i))
+ enddo
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'isolve')
+
+end subroutine
+
 !LDLt
 subroutine test_ldlt(error)
  type(error_type), allocatable, intent(out) :: error
