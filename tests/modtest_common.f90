@@ -1,5 +1,9 @@
 module modtest_common
+#if (_DP==0)
+ use, intrinsic :: iso_fortran_env, only: output_unit, wp => real32
+#else
  use, intrinsic :: iso_fortran_env, only: output_unit, wp => real64
+#endif
  use modsparse, only: gen_sparse, coosparse
  implicit none
  private

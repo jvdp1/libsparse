@@ -1,4 +1,33 @@
-include ../src/Makeinit
+include ../Makeinit
+
+ifeq ($(DPENABLE),0)
+ DP=0
+else
+ DP=1
+endif
+
+ifeq ($(PARDISOENABLE),0)
+ PARDISO=0
+else
+ PARDISO=1
+endif
+
+ifeq ($(METISENABLE),0)
+ METIS=0
+ LIBMETISROOT=
+ LIBMETIS=
+ LMETIS=
+else
+ METIS=1
+ F90FLAGS+=-I$(LIBMETISROOT)$(LIBMETIS)
+endif
+
+ifeq ($(SPAINVENABLE),0)
+ SPAINV=0
+else
+ SPAINV=1
+endif
+
 PROGS_SRC = test_sparse.f90
 
 LIBTEST = libtestrive.a
@@ -7,6 +36,8 @@ OBJTEST = testdrive.o
 NAME = sparse
 
 CPPFLAGS += -I../src/lib/ -I.
+
+CPPFLAGS += -fpp -D_PARDISO=$(PARDISO) -D_DP=$(DP) -D_METIS=$(METIS) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE) 
 
 OBJS = modtest_common.o modtest_coo.o modtest_crs.o
 
