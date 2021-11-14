@@ -1,6 +1,6 @@
 # Makes libraries
 
-include ../Makeinit
+include ../../Makeinit
 
 OBJ=modcommon.o
 

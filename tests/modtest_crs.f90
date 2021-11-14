@@ -1,5 +1,9 @@
 module modtest_crs
+#if (_DP==0)
+ use, intrinsic :: iso_fortran_env, only: int64, wp => real32
+#else
  use, intrinsic :: iso_fortran_env, only: int64, wp => real64
+#endif
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse, crssparse, assignment(=)
  use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd, addval => addval_coo&
@@ -28,7 +32,9 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol add", test_ncol_add) &
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
+#if (_SPAINV==1)
     , new_unittest("crs chol", test_chol) &
+#endif
     , new_unittest("crs diag vect", test_diag_vect) &
     , new_unittest("crs diag vect lupper", test_diag_vect_lupper) &
     , new_unittest("crs ncol diag vect", test_ncol_diag_vect) &
@@ -40,10 +46,12 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get", test_ncol_get) &
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
+#if (_SPAINV==1)
     , new_unittest("crs ichol", test_ichol) &
     , new_unittest("crs ichol_failed", test_ichol_failed, should_fail = .true.) &
     , new_unittest("crs isolve", test_isolve) &
     , new_unittest("crs ldlt", test_ldlt) &
+#endif
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
     , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
     , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
@@ -67,11 +75,13 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs nonzero", test_nonzero) &
     , new_unittest("crs nonzero_sym", test_nonzero_sym) &
     , new_unittest("crs scale", test_scale) &
+#if (_SPAINV==1)
     , new_unittest("crs solveldlt", test_solve_vector) &
     , new_unittest("crs solveldlt", test_solve_vector_perm) &
     , new_unittest("crs solveldlt", test_solveldlt) &
     , new_unittest("crs spainv", test_spainv) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
+#endif
     ]
 
   !to check: diag_mat
