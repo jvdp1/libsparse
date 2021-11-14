@@ -758,7 +758,7 @@ subroutine test_ichol_failed(error)
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat_l)
 
- call check(error, all(abs(mat_l - matchol) < tol_wp), 'ichol_failed')
+ call check(error, all(abs(mat_l - matchol) < tol_wp), 'should_ichol_failed')
 
 end subroutine
 
@@ -1662,7 +1662,7 @@ subroutine test_spainv_failed(error)
  call getija_crs(crs, iat, jat, at, mat_l)
 
  !this test should failed because matinv contains more non-zero elements than mat_l
- call check(error, all(abs(mat_l - matinv ) < tol_wp), 'spainv_failed')
+ call check(error, all(abs(mat_l - matinv ) < tol_wp), 'should_spainv_failed')
 
 end subroutine
 #endif
