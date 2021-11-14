@@ -1,4 +1,4 @@
-include ../src/Makeinit
+include ../Makeinit
 PROGS_SRC = test_sparse.f90
 
 LIBTEST = libtestrive.a

@@ -1,4 +1,4 @@
-include ../Makeinit
+include ../../Makeinit
 
 F90FLAGS+=-I$(LIBSPARSEROOT)$(LIBSPARSE)
 
