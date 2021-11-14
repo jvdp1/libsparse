@@ -40,6 +40,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get", test_ncol_get) &
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
+    , new_unittest("crs ichol", test_ichol) &
     , new_unittest("crs isolve", test_isolve) &
     , new_unittest("crs ldlt", test_ldlt) &
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
@@ -631,6 +632,56 @@ subroutine test_ncol_get_lupper(error)
 end subroutine
 
 #if (_SPAINV==1)
+!ICHOL
+subroutine test_ichol(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matchol(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2], [aspsd, 0._wp])
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation([(i, i = nrow, 1, -1)])
+ call crschol%chol()
+ 
+ call getija_crs(crschol, iat, jat, at, matchol)
+
+ !ICHOL
+ crs = coo
+
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat)
+
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%ichol()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+call printmat(mat)
+call printmat(matchol)
+call printmat(mat_l)
+
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matchol, mat.ne.0)) < tol_wp), 'ichol')
+
+end subroutine
+
 !ISOLVE
 subroutine test_isolve(error)
  type(error_type), allocatable, intent(out) :: error
