@@ -1,9 +1,0 @@
-#VARIABLES
-
-#COMPILERS
-
-#LIBRARIES PATHS AND OTHER
-LIBSPARSEROOT=../../../
-LIBSPARSE=libsparse/src/lib/
-LSPARSE=libsparse.a
-

@@ -1,5 +1,3 @@
-include ../Makeinit
-
 ifeq ($(PARDISOENABLE),0)
  PARDISO=0
 else

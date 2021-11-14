@@ -1,5 +1,3 @@
-include ../../Makeinit
-
 FFLAGS+=-I../lib
 
 LIB = ../lib/libsparse.a

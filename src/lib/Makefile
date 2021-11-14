@@ -1,7 +1,5 @@
 # Makes libraries
 
-include ../../Makeinit
-
 OBJ=modcommon.o
 
 ifeq ($(PARDISOENABLE),0)
