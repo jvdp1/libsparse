@@ -3,11 +3,7 @@
 OBJ=modcommon.o
 
 ifeq ($(PARDISOENABLE),0)
- PARDISO=0
- FFLAGS+=
 else
- PARDISO=1
- FFLAGS+=
  OBJ+=modvariablepardiso.o
 endif
 
@@ -30,10 +26,10 @@ libsparse.a: $(OBJ)
 	ar cr  libsparse.a $(OBJ)
 
 %.o:	%.f90
-	$(FC) -c  $(FFLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) $<
+	$(FC) -c  $(FFLAGS) $(DEBUG) $<
 
 %.o:	%.f
-	$(FC) -c  $(FFLAGS) $(DEBUG) -fpp -D_PARDISO=$(PARDISO) $<
+	$(FC) -c  $(FFLAGS) $(DEBUG) $<
 
 clean:
 	rm -fv *.o *.optrpt *.a *.mod *.smod

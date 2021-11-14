@@ -1,9 +1,3 @@
-ifeq ($(PARDISOENABLE),0)
- PARDISO=0
-else
- PARDISO=1
-endif
-
 PROGS_SRC = test_sparse.f90
 
 LIBTEST = libtestrive.a
@@ -12,8 +6,6 @@ OBJTEST = testdrive.o
 NAME = sparse
 
 CPPFLAGS += -I../src/lib/ -I.
-
-FFLAGS += -fpp -D_PARDISO=$(PARDISO)
 
 OBJS = modtest_common.o modtest_coo.o modtest_crs.o
 

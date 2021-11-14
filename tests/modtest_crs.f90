@@ -75,9 +75,18 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs nonzero", test_nonzero) &
     , new_unittest("crs nonzero_sym", test_nonzero_sym) &
     , new_unittest("crs scale", test_scale) &
-#if (_SPAINV==1)
+#if (_PARDISO==1)
     , new_unittest("crs solveldlt", test_solve_vector) &
     , new_unittest("crs solveldlt", test_solve_vector_perm) &
+    , new_unittest("crs solveldlt_arr", test_solve_array) &
+    , new_unittest("crs solveldlt_arr", test_solve_array_perm) &
+#else
+    , new_unittest("crs solveldlt", test_solve_vector, should_fail = .true.) &
+    , new_unittest("crs solveldlt", test_solve_vector_perm, should_fail = .true.) &
+    , new_unittest("crs solveldlt_arr", test_solve_array, should_fail = .true.) &
+    , new_unittest("crs solveldlt_arr", test_solve_array_perm, should_fail = .true.) &
+#endif
+#if (_SPAINV==1)
     , new_unittest("crs solveldlt", test_solveldlt) &
     , new_unittest("crs spainv", test_spainv) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
@@ -1343,7 +1352,6 @@ subroutine test_scale(error)
 
 end subroutine
 
-#if (_PARDISO==1)
 !SOLVE using PARDISO VECTOR
 subroutine test_solve_vector(error)
  type(error_type), allocatable, intent(out) :: error
@@ -1513,7 +1521,6 @@ subroutine test_solve_array_perm(error)
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve array permf')
 
 end subroutine
-#endif
 
 #if (_SPAINV==1)
 !SOLVE LDLt
