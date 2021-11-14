@@ -18,7 +18,7 @@ subroutine collect_crs(testsuite)
   !> Collection of tests
   type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
-  !how to test: ichol, getordering, print, printsquare, save, sort, spainv, submatrix
+  !how to test: ichol, getordering, print, printsquare, save, sort, submatrix
 
   testsuite = [ &
     new_unittest("crs constructor", test_constructor) &
@@ -68,6 +68,8 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs solveldlt", test_solve_vector) &
     , new_unittest("crs solveldlt", test_solve_vector_perm) &
     , new_unittest("crs solveldlt", test_solveldlt) &
+    , new_unittest("crs spainv", test_spainv) &
+    , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
     ]
 
   !to check: diag_mat
@@ -1348,6 +1350,98 @@ subroutine test_solveldlt(error)
  where(mat <= tol_wp) mat_l = 0._wp
 
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt')
+
+end subroutine
+
+!GET SPARSE INVERSE
+subroutine test_spainv(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2], [aspsd, 2._wp])
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation([(i, i = nrow, 1, -1)])
+ call crschol%chol()
+ 
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%isolve(matinv(:,i), vect) !matinv reference
+ enddo
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
+
+end subroutine
+
+subroutine test_spainv_failed(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2], [aspsd, 2._wp])
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation([(i, i = nrow, 1, -1)])
+ call crschol%chol()
+ 
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%isolve(matinv(:,i), vect) !matinv reference
+ enddo
+
+ !SPAINV
+ crs = coo
+
+ call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%spainv()
+ 
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+ !this test should failed because matinv contains more non-zero elements than mat_l
+ call check(error, all(abs(mat_l - matinv ) < tol_wp), 'spainv_failed')
 
 end subroutine
 #endif
