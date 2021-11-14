@@ -329,10 +329,12 @@ end subroutine
 subroutine test_chol(error)
  type(error_type), allocatable, intent(out) :: error
 
+ integer :: i
+
  integer, parameter :: nrow = 6
  integer, parameter :: ncol = nrow
+ integer, parameter :: perm(nrow) = [(i, i =nrow, 1, -1)]
 
- integer :: i
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
@@ -352,15 +354,28 @@ subroutine test_chol(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !Complete Cholesky decomposition
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%chol()
 
  deallocate(iat); deallocate(jat); deallocate(at)
  call getija_crs(crs, iat, jat, at, matchol)
  
- call check(error, all(abs(mat([(i, i = nrow, 1, -1)],[(i, i = nrow, 1, -1)]) - & 
+ call check(error, all(abs(mat(perm, perm) - & 
                        matmul(transpose(matchol), matchol)) < tol_wp)&
                  , 'Chol')
+ if(allocated(error))return
+
+ !Complete Cholesky decomposition
+ crs = coo
+ call crs%setpermutation(permf(nrow))
+ call crs%chol()
+
+ deallocate(iat); deallocate(jat); deallocate(at)
+ call getija_crs(crs, iat, jat, at, matchol)
+ 
+ call check(error, all(abs(mat(permf(nrow), permf(nrow)) - & 
+                       matmul(transpose(matchol), matchol)) < tol_wp)&
+                 , 'Chol_permf')
 
 end subroutine
 #endif
@@ -651,12 +666,14 @@ subroutine test_ichol(error)
  type(coosparse) :: coo
  type(crssparse) :: crs
  type(crssparse) :: crschol
+ logical :: lvalid(nrow, nrow)
 
  coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
  call coo%setsymmetric()
 
  call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2], [aspsd, 0._wp])
 
+ !ICHOL
  !Cholesky
  crschol= coo
  call crschol%setpermutation(perm)
@@ -664,7 +681,6 @@ subroutine test_ichol(error)
  
  call getija_crs(crschol, iat, jat, at, matchol)
 
- !ICHOL
  crs = coo
 
  deallocate(iat, jat, at)
@@ -676,7 +692,30 @@ subroutine test_ichol(error)
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat_l)
 
- call check(error, all(abs(pack(mat_l, mat(perm, perm).ne.0) - pack(matchol, mat(perm, perm).ne.0)) < tol_wp), 'ichol')
+ lvalid = mat(perm, perm).ne.0
+
+ call check(error, all(abs(pack(mat_l, lvalid) - pack(matchol, lvalid)) < tol_wp), 'ichol')
+ if(allocated(error))return
+
+ !ICHOL
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(permf(nrow))
+ call crschol%chol()
+ 
+ call getija_crs(crschol, iat, jat, at, matchol)
+
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ call crs%ichol()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+ lvalid = mat(permf(nrow), permf(nrow)).ne.0
+
+ call check(error, all(abs(pack(mat_l, lvalid) - pack(matchol, lvalid)) < tol_wp), 'ichol_permf')
 
 end subroutine
 
@@ -727,9 +766,10 @@ end subroutine
 subroutine test_isolve(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, nrow)
@@ -750,7 +790,7 @@ subroutine test_isolve(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !Cholesky
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%chol()
  
  do i = 1, nrow
@@ -762,6 +802,23 @@ subroutine test_isolve(error)
  where(mat <= tol_wp) mat_l = 0._wp
 
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'isolve')
+ if(allocated(error))return
+
+ !Cholesky
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ call crs%chol()
+ 
+ do i = 1, nrow
+  call crs%isolve(mat_d(:,i), mat(:,i))
+ enddo
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'isolve_permf')
 
 end subroutine
 
@@ -769,10 +826,11 @@ end subroutine
 subroutine test_ldlt(error)
  type(error_type), allocatable, intent(out) :: error
 
+ integer :: i
  integer, parameter :: nrow = 6
  integer, parameter :: ncol = nrow
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
 
- integer :: i
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
@@ -791,7 +849,7 @@ subroutine test_ldlt(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !LDLt
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%getldlt()
 
  deallocate(iat); deallocate(jat); deallocate(at)
@@ -803,9 +861,27 @@ subroutine test_ldlt(error)
   mat_l(i, i) = 1
  enddo
 
- call check(error, all(abs(mat([(i, i = nrow, 1, -1)], [(i, i = nrow, 1, -1)]) - & 
+ call check(error, all(abs(mat(perm, perm) - & 
                        matmul(transpose(mat_l), matmul(mat_d, mat_l))) < tol_wp)&
                  , 'LDLt')
+
+ !LDLt
+ crs = coo
+ call crs%setpermutation(permf(nrow))
+ call crs%getldlt()
+
+ deallocate(iat); deallocate(jat); deallocate(at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ 
+ mat_d = 0
+ do i = 1, nrow
+  mat_d(i, i) = mat_l(i, i)
+  mat_l(i, i) = 1
+ enddo
+
+ call check(error, all(abs(mat(permf(nrow), permf(nrow)) - & 
+                       matmul(transpose(mat_l), matmul(mat_d, mat_l))) < tol_wp)&
+                 , 'LDLt_permf')
 
 end subroutine
 #endif
@@ -1298,9 +1374,10 @@ end subroutine
 subroutine test_solve_vector_perm(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, nrow)
@@ -1319,7 +1396,7 @@ subroutine test_solve_vector_perm(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !SOLVE
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  
  do i = 1, nrow
   call crs%solve(mat_d(:,i), mat(:,i))
@@ -1330,6 +1407,19 @@ subroutine test_solve_vector_perm(error)
  where(mat <= tol_wp) mat_l = 0._wp
 
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector perm')
+ if(allocated(error))return
+
+ !SOLVE
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ 
+ do i = 1, nrow
+  call crs%solve(mat_d(:,i), mat(:,i))
+ enddo
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector permf')
+
 
 end subroutine
 
@@ -1370,9 +1460,10 @@ end subroutine
 subroutine test_solve_array_perm(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, nrow)
@@ -1391,7 +1482,7 @@ subroutine test_solve_array_perm(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !SOLVE
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  
  call crs%solve(mat_d, mat)
 
@@ -1399,7 +1490,17 @@ subroutine test_solve_array_perm(error)
  mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
  where(mat <= tol_wp) mat_l = 0._wp
 
- call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve vector perm')
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve array perm')
+ if(allocated(error))return
+
+ !SOLVE
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ 
+ call crs%solve(mat_d, mat)
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve array permf')
 
 end subroutine
 #endif
@@ -1409,9 +1510,10 @@ end subroutine
 subroutine test_solveldlt(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, nrow)
@@ -1430,7 +1532,7 @@ subroutine test_solveldlt(error)
  call getija_crs(crs, iat, jat, at, mat)
 
  !LDLt
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%getldlt()
  
  do i = 1, nrow
@@ -1442,6 +1544,19 @@ subroutine test_solveldlt(error)
  where(mat <= tol_wp) mat_l = 0._wp
 
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt')
+ if(allocated(error))return
+
+ !LDLt
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ call crs%getldlt()
+ 
+ do i = 1, nrow
+  call crs%solveldlt(mat_d(:,i), mat(:,i))
+ enddo
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt permf')
 
 end subroutine
 
@@ -1449,9 +1564,10 @@ end subroutine
 subroutine test_spainv(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: vect(nrow)
@@ -1469,7 +1585,7 @@ subroutine test_spainv(error)
 
  !Cholesky
  crschol= coo
- call crschol%setpermutation([(i, i = nrow, 1, -1)])
+ call crschol%setpermutation(perm)
  call crschol%chol()
  
  do i = 1, nrow
@@ -1483,22 +1599,35 @@ subroutine test_spainv(error)
 
  call getija_crs(crs, iat, jat, at, mat)
 
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%spainv()
  
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat_l)
 
  call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
+ if(allocated(error))return
+
+ !SPAINV
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_permf')
 
 end subroutine
 
 subroutine test_spainv_failed(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: vect(nrow)
@@ -1515,7 +1644,7 @@ subroutine test_spainv_failed(error)
 
  !Cholesky
  crschol= coo
- call crschol%setpermutation([(i, i = nrow, 1, -1)])
+ call crschol%setpermutation(perm)
  call crschol%chol()
  
  do i = 1, nrow
@@ -1527,7 +1656,7 @@ subroutine test_spainv_failed(error)
  !SPAINV
  crs = coo
 
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%spainv()
  
  call getija_crs(crs, iat, jat, at, mat_l)
@@ -1573,5 +1702,15 @@ subroutine getija_crs(crs, iat, jat, at, mat)
  enddo
 
 end subroutine
+
+function permf(nrow) result(perm)
+ integer, intent(in) :: nrow
+ integer :: perm(nrow)
+
+ integer :: i
+
+ perm = [(i, i = nrow, nrow/2 + 1, -1), (i, i = 1, nrow/2)]
+
+end function
 
 end module
