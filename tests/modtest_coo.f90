@@ -1,9 +1,9 @@
 module modtest_coo
- use, intrinsic :: iso_fortran_env, only: int64, real64, output_unit, wp => real64
+ use, intrinsic :: iso_fortran_env, only: int64, output_unit, wp => real64
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse
  use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
-                       , getmat => getmat_coo, matcheck, printmat
+                       , getmat, matcheck, printmat
  implicit none
  private
 

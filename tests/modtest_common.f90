@@ -1,9 +1,9 @@
 module modtest_common
- use, intrinsic :: iso_fortran_env, only: real64, output_unit, wp => real64
- use modsparse, only: coosparse, crssparse
+ use, intrinsic :: iso_fortran_env, only: output_unit, wp => real64
+ use modsparse, only: gen_sparse, coosparse
  implicit none
  private
- public :: addval_coo, getmat_coo, getmat_crs, matcheck, printmat
+ public :: addval_coo, getmat, matcheck, printmat
 
  real(wp), parameter, public :: tol_wp = epsilon(1._wp) * 10**4
 
@@ -56,37 +56,19 @@ subroutine addval_coo(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
 
 end subroutine
 
-function getmat_coo(coo) result(mat)
- type(coosparse), intent(inout) :: coo
+function getmat(sparse) result(mat)
+ class(gen_sparse), intent(inout) :: sparse
 
- real(wp) :: mat(coo%getdim(1), coo%getdim(2))
-
- integer :: i, j
- real(wp) :: val
-
- mat = -1
-
- do i = 1, coo%getdim(1)
-  do j = 1, coo%getdim(2)
-   mat(i, j) = coo%get(i, j)
-  enddo
- enddo
-
-end function
-
-function getmat_crs(crs) result(mat)
- type(crssparse), intent(inout) :: crs
-
- real(wp) :: mat(crs%getdim(1), crs%getdim(2))
+ real(wp) :: mat(sparse%getdim(1), sparse%getdim(2))
 
  integer :: i, j
  real(wp) :: val
 
  mat = -1
 
- do i = 1, crs%getdim(1)
-  do j = 1, crs%getdim(2)
-   mat(i, j) = crs%get(i, j)
+ do i = 1, sparse%getdim(1)
+  do j = 1, sparse%getdim(2)
+   mat(i, j) = sparse%get(i, j)
   enddo
  enddo
 
