@@ -4,3 +4,4 @@
 *.a
 *.optrpt
 out.*
+tests/testdrive.f90
