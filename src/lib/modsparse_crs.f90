@@ -357,6 +357,8 @@ module subroutine getchol_crs(sparse,minsizenode)
  !$ t1=omp_get_wtime()
 #endif
 
+ call sparse%setsymmetric(.false.)
+
  call sparse%setsorted(.false.)
  call sparse%sort()
 
@@ -548,6 +550,8 @@ module subroutine getichol_crs(sparse,minsizenode)
  else
   call get_ichol(sparse%ia,sparse%ja,sparse%a,metis%xadj,metis%adjncy,sparse%perm,un=sparse%unlog)
  endif
+
+ call sparse%setsymmetric(.false.)
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'ICHOL CRS Chol. fact.',': Elapsed time (s) = ',omp_get_wtime()-t1
