@@ -139,9 +139,9 @@ subroutine test_add(error)
  call check(error, size(at), size(pack(a, lvalid)), more = 'size(at)')
  if (allocated(error)) return
 
- call check(error, all(iat == pack(ia, lvalid)), 'ia')
- call check(error, all(jat == pack(ja, lvalid)), 'ja')
- call check(error, all(at == pack(a, lvalid)), 'a')
+ call check(error, all(iat == pack(ia, lvalid)), 'coo_ia')
+ call check(error, all(jat == pack(ja, lvalid)), 'coo_ja')
+ call check(error, all(at == pack(a, lvalid)), 'coo_a')
  if (allocated(error)) return
 
  if(verbose)call printmat(mat)

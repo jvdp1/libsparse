@@ -9,12 +9,12 @@ module modtest_common
 
  logical, parameter, public :: verbose = .false.
  
- integer, parameter, public :: ia(15) = [1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6, 1]
- integer, parameter, public :: ja(15) = [1, 3, 4, 6, 5, 1, 3, 4, 4, 6, 1, 2, 5, 6, 6]
- real(wp), parameter, public :: a(15) = [real(wp):: 11, 13, 14, 22, 25, 31, 33, 34&
-                                         , 44, 46, 51, 52, 55, 66, 16]
- real(wp), parameter, public :: aspsd(15) = [real(wp):: 101, 13, 14, 0, 0, 31, 303, 34&
-                                            , 404, 46, 51, 52, 505, 606, 16]
+ integer, parameter, public :: ia(16) = [1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6]
+ integer, parameter, public :: ja(16) = [1, 3, 4, 5, 6, 6, 5, 1, 3, 4, 4, 6, 1, 2, 5, 6]
+ real(wp), parameter, public :: a(16) = [real(wp):: 11, 13, 14, 15, 16, 22, 25, 31, 33, 34&
+                                         , 44, 46, 51, 52, 55, 66]
+ real(wp), parameter, public :: aspsd(16) = [real(wp):: 101, 13, 14, 15, 16, 0, 0, 31, 303, 34&
+                                            , 404, 46, 51, 52, 505, 606]
 
 contains
 subroutine addval_coo(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)

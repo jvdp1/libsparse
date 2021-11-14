@@ -41,6 +41,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
     , new_unittest("crs ichol", test_ichol) &
+    , new_unittest("crs ichol_failed", test_ichol_failed, should_fail = .true.) &
     , new_unittest("crs isolve", test_isolve) &
     , new_unittest("crs ldlt", test_ldlt) &
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
@@ -636,9 +637,11 @@ end subroutine
 subroutine test_ichol(error)
  type(error_type), allocatable, intent(out) :: error
 
- integer, parameter :: nrow = 6
-
  integer :: i
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = 1, nrow)]
+
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: vect(nrow)
@@ -656,7 +659,7 @@ subroutine test_ichol(error)
 
  !Cholesky
  crschol= coo
- call crschol%setpermutation([(i, i = nrow, 1, -1)])
+ call crschol%setpermutation(perm)
  call crschol%chol()
  
  call getija_crs(crschol, iat, jat, at, matchol)
@@ -667,18 +670,56 @@ subroutine test_ichol(error)
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat)
 
- call crs%setpermutation([(i, i = nrow, 1, -1)])
+ call crs%setpermutation(perm)
  call crs%ichol()
  
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat_l)
 
-call printmat(mat)
-call printmat(matchol)
-call printmat(mat_l)
+ call check(error, all(abs(pack(mat_l, mat(perm, perm).ne.0) - pack(matchol, mat(perm, perm).ne.0)) < tol_wp), 'ichol')
 
+end subroutine
 
- call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matchol, mat.ne.0)) < tol_wp), 'ichol')
+subroutine test_ichol_failed(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = 1, nrow)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matchol(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2], [aspsd, 0._wp])
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(perm)
+ call crschol%chol()
+ 
+ call getija_crs(crschol, iat, jat, at, matchol)
+
+ !ICHOL
+ crs = coo
+
+ call crs%setpermutation(perm)
+ call crs%ichol()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+ call check(error, all(abs(mat_l - matchol) < tol_wp), 'ichol_failed')
 
 end subroutine
 
