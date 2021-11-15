@@ -11,11 +11,11 @@ FC = ifort
 #FC = gfortran
 
 #FFLAGS = -g -Wall -std=f2008
-FFLAGS=-O3 -heap-arrays -qopenmp -liomp5 -parallel -qopt-matmul -qopt-report=5
+FFLAGS=-O3 -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5
 FFLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
 
-FLIBS = -lpthread -ldl
-FLIBS += -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core 
+FLIBS += -liomp5 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core 
+FLIBS += -lpthread -ldl
 
 ifeq ($(METISENABLE), 1)
  LIBMETISROOT=~/metis-5.1.0
