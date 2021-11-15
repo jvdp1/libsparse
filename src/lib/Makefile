@@ -1,26 +1,24 @@
 # Makes libraries
 
-OBJ=modcommon.o
-
-ifeq ($(PARDISOENABLE),0)
-else
- OBJ+=modvariablepardiso.o
+ifeq ($(PARDISOENABLE),1)
+ OBJPARDISO = modvariablepardiso.o
 endif
 
-ifeq ($(METISENABLE),0)
-else
- OBJ+=modmetis.o
+ifeq ($(METISENABLE),1)
+ OBJMETIS = modmetis.o
 endif
 
-ifeq ($(SPAINVENABLE),0)
-else
- OBJ+=sgtrsm.o dgtrsm.o smbfct.o modspainv.o
+ifeq ($(SPAINVENABLE),1)
+ OBJSPAINV = sgtrsm.o dgtrsm.o smbfct.o modspainv.o
 endif
 
 
 all: libsparse.a
 
-OBJ+=modhash.o modsparse.o modsparse_gen.o modsparse_coo.o modsparse_crs.o modsparse_ll.o modsparse_metisgraph.o
+OBJ = modcommon.o \
+      $(OBJPARDISO) $(OBJMETIS) $(OBJSPAINV) \
+      modhash.o modsparse.o modsparse_gen.o modsparse_coo.o \
+      modsparse_crs.o modsparse_ll.o modsparse_metisgraph.o
 
 libsparse.a: $(OBJ)
 	ar cr  libsparse.a $(OBJ)
@@ -36,4 +34,5 @@ clean:
 	
 cleanlib:
 	rm -fv *.a
-	
+
+

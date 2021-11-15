@@ -20,8 +20,10 @@ FLIBS += -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thre
 ifeq ($(METISENABLE), 1)
  LIBMETISROOT=~/metis-5.1.0
  LIBMETIS=$(LIBMETISROOT)/build/Linux-x86_64/libmetis
- FFLAGS += -D_METIS=$(METISENABLE)
  FLIBS += $(LIBMETIS)/libmetis.a
+ METIS = 1
+else
+ METIS = 0
 endif
 
 ifeq ($(DEBUGENABLE), 1)
@@ -34,22 +36,24 @@ else
  DP=1
 endif
 
-ifeq ($(PARDISOENABLE),0)
- PARDISO=0
-else
+ifeq ($(PARDISOENABLE),1)
  PARDISO=1
-endif
-
-
-ifeq ($(SPAINVENABLE),0)
- SPAINV=0
 else
- SPAINV=1
+ PARDISO=0
 endif
 
-FFLAGS += -fpp -D_DP=$(DP)  -D_PARDISO=$(PARDISO) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE)
 
-FYPPFLAGS=
+ifeq ($(SPAINVENABLE),1)
+ SPAINV=1
+else
+ SPAINV=0
+endif
+
+FFLAGS += -fpp -D_DP=$(DP) -D_METIS=$(METIS) -D_PARDISO=$(PARDISO) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE)
+
+FYPPFLAGS =
+
+MAKEFLAGS = METISENABLE=$(METISENABLE) PARDISOENABLE=$(PARDISOENABLE) SPAINVENABLE=$(SPAINVENABLE)
 
 export FC
 export FFLAGS
@@ -59,11 +63,11 @@ export FYPPFLAGS
 .PHONY: all clean test
 
 all:
-	$(MAKE) --directory=src/lib
+	$(MAKE) --directory=src/lib $(MAKEFLAGS)
 	$(MAKE) --directory=tests
 
 example:
-	$(MAKE) --directory=src/test
+	$(MAKE) --directory=src/test $(MAKEFLAGS)
 
 test:
 	$(MAKE) --directory=tests test
@@ -71,6 +75,6 @@ test:
 	@echo "All tests passed."
 
 clean:
-	$(MAKE) clean --directory=src/lib
-	$(MAKE) clean --directory=src/test
+	$(MAKE) clean --directory=src/lib $(MAKEFLAGS)
+	$(MAKE) clean --directory=src/test $(MAKEFLAGS)
 	$(MAKE) clean --directory=tests
