@@ -157,7 +157,6 @@ module function get_ll(sparse,row,col) result(val)
  real(kind=wp)::val
 
  integer(kind=int32)::trow,tcol
- integer(kind=int32)::i,un
  type(ptrnode),pointer::cursor
  type(ptrnode),target::replacecursor
 
@@ -223,7 +222,6 @@ module function totalnumberofelements_ptrnode(pnode) result(nel)
  class(ptrnode),intent(in),target::pnode
  integer(kind=int64)::nel
 
- integer(kind=int32)::i
  type(ptrnode),pointer::cursor
 
  nel=0
@@ -305,8 +303,7 @@ module subroutine printsquare_ll(sparse,output)
  class(llsparse),intent(inout)::sparse
  integer(kind=int32),intent(in),optional::output
 
- integer(kind=int32)::i,j,un
- real(kind=wp)::val
+ integer(kind=int32)::un
  real(kind=wp),allocatable::tmp(:)
 
  un=sparse%unlog

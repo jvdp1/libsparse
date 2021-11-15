@@ -427,7 +427,6 @@ module subroutine printsquare_coo(sparse,output)
  integer(kind=int32),intent(in),optional::output
 
  integer(kind=int32)::i,j,un
- real(kind=wp)::val
  real(kind=wp),allocatable::tmp(:)
 
  un=sparse%unlog
@@ -537,7 +536,7 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
  integer(kind=int32),intent(in),optional::unlog
  logical,intent(in),optional::lupper
 
- integer(kind=int32)::i,j,k,un
+ integer(kind=int32)::i,j,k
  integer(kind=int64)::i8,nel
  logical::lincludediag,lupperstorage
 

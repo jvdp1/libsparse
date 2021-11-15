@@ -24,7 +24,7 @@ $(TESTPROGS):
 	./$(@:TEST=)
 
 clean:
-	$(RM) $(PROGS) $(OBJS) $(CLEAN_FILES) *.o* *.mod *.a testdrive.f90
+	$(RM) $(PROGS) $(OBJS) $(CLEAN_FILES) *.o* *.*mod *.a testdrive.f90
 
 $(LIBTEST): $(OBJTEST)
 	ar rcs $@ $^
