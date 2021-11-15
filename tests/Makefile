@@ -5,11 +5,11 @@ OBJTEST = testdrive.o
 
 NAME = sparse
 
-CPPFLAGS += -I../src/lib/ -I.
+CPPFLAGS += -I../src/ -I.
 
 OBJS = modtest_common.o modtest_coo.o modtest_crs.o
 
-LIB = $(patsubst %, ../src/lib/lib%.a, $(NAME))
+LIB = $(patsubst %, ../src/lib%.a, $(NAME))
 
 PROGS = $(PROGS_SRC:.f90=)
 TESTPROGS = $(PROGS:=TEST)

@@ -63,7 +63,7 @@ export FYPPFLAGS
 .PHONY: all clean test
 
 all:
-	$(MAKE) --directory=src/lib $(MAKEFLAGS)
+	$(MAKE) --directory=src $(MAKEFLAGS)
 	$(MAKE) --directory=tests
 
 example:
@@ -75,6 +75,6 @@ test:
 	@echo "All tests passed."
 
 clean:
-	$(MAKE) clean --directory=src/lib $(MAKEFLAGS)
+	$(MAKE) clean --directory=src $(MAKEFLAGS)
 	$(MAKE) clean --directory=src/test $(MAKEFLAGS)
 	$(MAKE) clean --directory=tests
