@@ -79,6 +79,7 @@ subroutine test_constructor(error)
  coo = coosparse(nrow)
  call check(error, coo%getdim(1), nrow, more = 'getdim(1)')
  call check(error, coo%getdim(2), nrow, more = 'getdim(2)')
+ call check(error, coo%getdim(3) < 0, more = 'getdim(3)')
  call check(error, coo%issquare(), nrow.eq.nrow, 'isquare')
  if (allocated(error)) return
 

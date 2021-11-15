@@ -77,7 +77,7 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
 end subroutine
 
 !**GET ELEMENTS
-module function getdim_gen(sparse,dim1) result(dimget)
+pure module function getdim_gen(sparse,dim1) result(dimget)
  class(gen_sparse),intent(in)::sparse
  integer(kind=int32),intent(in)::dim1
  integer(kind=int32)::dimget
@@ -89,7 +89,7 @@ module function getdim_gen(sparse,dim1) result(dimget)
    dimget=sparse%dim2
   case default
    dimget=-1
-   write(sparse%unlog,'(a)')' Warning: a sparse matrix has only 2 dimensions!'
+!   write(sparse%unlog,'(a)')' Warning: a sparse matrix has only 2 dimensions!'
  end select
 
 end function

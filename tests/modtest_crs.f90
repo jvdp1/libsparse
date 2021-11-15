@@ -109,6 +109,7 @@ subroutine test_constructor(error)
  crs = crssparse(nrow, nel)
  call check(error, crs%getdim(1), nrow, more = 'getdim(1)')
  call check(error, crs%getdim(2), nrow, more = 'getdim(2)')
+ call check(error, crs%getdim(3) < 0, more = 'getdim(3)')
  call check(error, crs%issquare(), nrow.eq.nrow, 'isquare')
  if (allocated(error)) return
 
@@ -1715,7 +1716,7 @@ subroutine getija_crs(crs, iat, jat, at, mat)
 
 end subroutine
 
-function permf(nrow) result(perm)
+pure function permf(nrow) result(perm)
  integer, intent(in) :: nrow
  integer :: perm(nrow)
 

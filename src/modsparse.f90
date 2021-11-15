@@ -146,7 +146,7 @@ module modsparse
    real(kind=wp),intent(inout),optional::tol
   end subroutine
   !**GET ELEMENTS
-  module function getdim_gen(sparse,dim1) result(dimget)
+  pure module function getdim_gen(sparse,dim1) result(dimget)
    class(gen_sparse),intent(in)::sparse
    integer(kind=int32),intent(in)::dim1
    integer(kind=int32)::dimget
