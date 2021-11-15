@@ -10,12 +10,36 @@ VERBOSE=0
 FC = ifort
 #FC = gfortran
 
+#ifort
+ifeq ($(FC), ifort)
 #FFLAGS = -g -Wall -std=f2008
-FFLAGS=-O3 -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5
+FFLAGS=-O3 -fpp -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5
 FFLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
 
 FLIBS += -liomp5 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core 
-FLIBS += -lpthread -ldl
+FLIBS += -lpthread -lm -ldl
+
+ifeq ($(DEBUGENABLE), 1)
+FFLAGS += -g -check all -traceback -stand f18
+endif
+
+endif
+
+
+#gfortan
+ifeq ($(FC), gfortran)
+FFLAGS=-O3 -cpp -fopenmp -fall-intrinsics
+FFLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
+
+FLIBS += -Wl,--start-group ${MKLROOT}/lib/intel64/libmkl_gf_lp64.a ${MKLROOT}/lib/intel64/libmkl_gnu_thread.a ${MKLROOT}/lib/intel64/libmkl_core.a -Wl,--end-group -lgomp
+FLIBS += -lpthread -lm -ldl
+
+ifeq ($(DEBUGENABLE), 1)
+FFLAGS += -g -Wall -fcheck=all -fbacktrace -std=f2008
+endif
+
+endif
+
 
 ifeq ($(METISENABLE), 1)
  LIBMETISROOT=~/metis-5.1.0
@@ -26,9 +50,6 @@ else
  METIS = 0
 endif
 
-ifeq ($(DEBUGENABLE), 1)
-FFLAGS += -g -check all -traceback -stand f18
-endif
 
 ifeq ($(DPENABLE),0)
  DP=0
@@ -49,7 +70,7 @@ else
  SPAINV=0
 endif
 
-FFLAGS += -fpp -D_DP=$(DP) -D_METIS=$(METIS) -D_PARDISO=$(PARDISO) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE)
+FFLAGS += -D_DP=$(DP) -D_METIS=$(METIS) -D_PARDISO=$(PARDISO) -D_SPAINV=$(SPAINV) -D_VERBOSE=$(VERBOSE)
 
 FYPPFLAGS =
 
