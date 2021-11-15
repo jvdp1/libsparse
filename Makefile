@@ -64,7 +64,6 @@ export FYPPFLAGS
 
 all:
 	$(MAKE) --directory=src $(MAKEFLAGS)
-	$(MAKE) --directory=examples $(MAKEFLAGS)
 	$(MAKE) --directory=tests
 
 examples:
