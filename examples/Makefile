@@ -1,6 +1,6 @@
-FFLAGS+=-I../lib
+FFLAGS+=-I../src
 
-LIB = ../lib/libsparse.a
+LIB = ../src/libsparse.a
 
 EXEC=
 

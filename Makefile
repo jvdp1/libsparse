@@ -60,14 +60,18 @@ export FFLAGS
 export FLIBS
 export FYPPFLAGS
 
-.PHONY: all clean test
+.PHONY: all clean examples lib test
 
 all:
-	$(MAKE) --directory=src/lib $(MAKEFLAGS)
+	$(MAKE) --directory=src $(MAKEFLAGS)
+	$(MAKE) --directory=examples $(MAKEFLAGS)
 	$(MAKE) --directory=tests
 
-example:
-	$(MAKE) --directory=src/test $(MAKEFLAGS)
+examples:
+	$(MAKE) --directory=examples $(MAKEFLAGS)
+
+lib:
+	$(MAKE) --directory=src $(MAKEFLAGS)
 
 test:
 	$(MAKE) --directory=tests test
@@ -75,6 +79,6 @@ test:
 	@echo "All tests passed."
 
 clean:
-	$(MAKE) clean --directory=src/lib $(MAKEFLAGS)
-	$(MAKE) clean --directory=src/test $(MAKEFLAGS)
+	$(MAKE) clean --directory=src $(MAKEFLAGS)
+	$(MAKE) clean --directory=examples $(MAKEFLAGS)
 	$(MAKE) clean --directory=tests
