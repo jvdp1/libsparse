@@ -20,6 +20,7 @@ module modsparse
  !$ use omp_lib
  implicit none
  private
+ public::gen_sparse
  public::llsparse,coosparse,crssparse
  public::assignment(=)
 

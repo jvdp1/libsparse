@@ -2,6 +2,7 @@ program test_sparse
   use, intrinsic :: iso_fortran_env, only : error_unit, output_unit
   use testdrive, only : run_testsuite, new_testsuite, testsuite_type
   use modtest_coo, only : collect_coo
+  use modtest_crs, only : collect_crs
   implicit none
   integer :: stat, is
   type(testsuite_type), allocatable :: testsuites(:)
@@ -11,6 +12,7 @@ program test_sparse
 
   testsuites = [ &
     new_testsuite("modtest_coo", collect_coo) &
+    , new_testsuite("modtest_crs", collect_crs) &
     ]
 
   do is = 1, size(testsuites)

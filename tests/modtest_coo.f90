@@ -1,9 +1,13 @@
 module modtest_coo
- use, intrinsic :: iso_fortran_env, only: int64, real64, output_unit, wp => real64
+#if (_DP==0)
+ use, intrinsic :: iso_fortran_env, only: int64, output_unit, wp => real32
+#else
+ use, intrinsic :: iso_fortran_env, only: int64, output_unit, wp => real64
+#endif
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse
  use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
-                       , matcheck, printmat
+                       , getmat, matcheck, printmat
  implicit none
  private
 
@@ -139,9 +143,9 @@ subroutine test_add(error)
  call check(error, size(at), size(pack(a, lvalid)), more = 'size(at)')
  if (allocated(error)) return
 
- call check(error, all(iat == pack(ia, lvalid)), 'ia')
- call check(error, all(jat == pack(ja, lvalid)), 'ja')
- call check(error, all(at == pack(a, lvalid)), 'a')
+ call check(error, all(iat == pack(ia, lvalid)), 'coo_ia')
+ call check(error, all(jat == pack(ja, lvalid)), 'coo_ja')
+ call check(error, all(at == pack(a, lvalid)), 'coo_a')
  if (allocated(error)) return
 
  if(verbose)call printmat(mat)
@@ -890,24 +894,5 @@ subroutine test_scale(error)
  call check(error, all(getmat(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
 
 end subroutine
-
-!INTERNAL
-function getmat(coo) result(mat)
- type(coosparse), intent(inout) :: coo
-
- real(wp) :: mat(coo%getdim(1), coo%getdim(2))
-
- integer :: i, j
- real(wp) :: val
-
- mat = -1
-
- do i = 1, coo%getdim(1)
-  do j = 1, coo%getdim(2)
-   mat(i, j) = coo%get(i, j)
-  enddo
- enddo
-
-end function
 
 end module modtest_coo
