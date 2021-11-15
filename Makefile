@@ -27,7 +27,7 @@ else
 endif
 
 ifeq ($(DEBUGENABLE), 1)
-FFLAGS += -g -check all -traceback -stand f08
+FFLAGS += -g -check all -traceback -stand f18
 endif
 
 ifeq ($(DPENABLE),0)
