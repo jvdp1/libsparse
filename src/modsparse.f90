@@ -728,7 +728,6 @@ module modsparse
   end subroutine
   module subroutine destroy_ll(sparse)
    class(llsparse),intent(inout)::sparse
-   integer(kind=int32)::i
   end subroutine
   !**DIAGONAL ELEMENTS
   !EQUALITIES
