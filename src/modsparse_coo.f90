@@ -596,7 +596,7 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
    if((i.ge.startdim1.and.i.le.enddim1).and.(j.ge.startdim2.and.j.le.enddim2))then
     call subsparse%add(i-startdim1+1,j-startdim2+1,sparse%a(i8))
    endif
-   if(i.ne.k)then
+   if(i.ne.k)then !issue: k is not initialized
     if((j.ge.startdim1.and.j.le.enddim1).and.(i.ge.startdim2.and.i.le.enddim2))then
      call subsparse%add(j-startdim1+1,i-startdim2+1,sparse%a(i8))
     endif

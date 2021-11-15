@@ -447,8 +447,8 @@ C
                   DO 310 k = n,1,-1
                       IF (nounit) THEN
 !                          temp = one/a(k,k)
-                          atmp=0.d0
-                          if(a(k,k).gt.tol)atmp=1.d0/a(k,k)
+                          atmp=0.e+0
+                          if(a(k,k).gt.tol)atmp=1.e+0/a(k,k)
                           temp = one*atmp
                           DO 270 i = 1,m
                               b(i,k) = temp*b(i,k)

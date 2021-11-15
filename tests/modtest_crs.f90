@@ -1716,7 +1716,7 @@ subroutine getija_crs(crs, iat, jat, at, mat)
 
 end subroutine
 
-function permf(nrow) result(perm)
+pure function permf(nrow) result(perm)
  integer, intent(in) :: nrow
  integer :: perm(nrow)
 

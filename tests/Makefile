@@ -29,6 +29,9 @@ clean:
 $(LIBTEST): $(OBJTEST)
 	ar rcs $@ $^
 
+testdrive.o: testdrive.f90
+	$(FC) $(FFLAGS) $(CPPFLAGS) -c $<
+
 %.o: %.f90 $(LIBTEST)
 	$(FC) $(FFLAGS) $(CPPFLAGS) -c $<
 
@@ -41,4 +44,3 @@ testdrive.f90: ../test-drive/src/testdrive.f90
 test_coo.o: modtest_coo.o
 modtest_coo.o: modtest_common.o
 modtest_crs.o: modtest_common.o
-testdrive.o: testdrive.f90
