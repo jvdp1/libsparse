@@ -66,7 +66,6 @@ function getmat(sparse) result(mat)
  real(wp) :: mat(sparse%getdim(1), sparse%getdim(2))
 
  integer :: i, j
- real(wp) :: val
 
  mat = -1
 

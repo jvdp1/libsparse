@@ -27,7 +27,7 @@ else
 endif
 
 ifeq ($(DEBUGENABLE), 1)
-FFLAGS += -g -check all -traceback -stand f08
+FFLAGS += -g -check all -traceback -stand f18
 endif
 
 ifeq ($(DPENABLE),0)
@@ -64,7 +64,6 @@ export FYPPFLAGS
 
 all:
 	$(MAKE) --directory=src $(MAKEFLAGS)
-	$(MAKE) --directory=examples $(MAKEFLAGS)
 	$(MAKE) --directory=tests
 
 examples:

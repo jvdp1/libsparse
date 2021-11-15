@@ -109,11 +109,11 @@ module subroutine add_crs(sparse,row,col,val,error)
  !add a value only to an existing one
  class(crssparse),intent(inout)::sparse
  integer(kind=int32),intent(in)::row,col
+ !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
  integer(kind=int32),intent(out),optional::error
  real(kind=wp),intent(in)::val
 
  integer(kind=int32)::i
- integer(kind=int32)::ierror    !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
 
  if(present(error))error=0
 
@@ -687,7 +687,6 @@ module subroutine printsquare_crs(sparse,output)
  integer(kind=int32),intent(in),optional::output
 
  integer(kind=int32)::i,j,un
- real(kind=wp)::val
  real(kind=wp),allocatable::tmp(:)
 
  un=sparse%unlog
@@ -740,11 +739,11 @@ module subroutine set_crs(sparse,row,col,val,error)
  !add a value only to an existing one
  class(crssparse),intent(inout)::sparse
  integer(kind=int32),intent(in)::row,col
+ !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
  integer(kind=int32),intent(out),optional::error
  real(kind=wp),intent(in)::val
 
  integer(kind=int32)::i
- integer(kind=int32)::ierror    !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
 
  if(present(error))error=0
 
@@ -778,10 +777,9 @@ module subroutine solve_crs_vector(sparse,x,y)
  real(kind=wp),intent(inout),contiguous::y(:)
 
  !Pardiso variables
- integer(kind=int32)::error,phase
+ integer(kind=int32)::error
  integer(kind=int32)::nrhs
 
- integer(kind=int32)::i
  !$ real(kind=real64)::t1
 
  if(.not.sparse%issquare())then
@@ -885,10 +883,9 @@ module subroutine solve_crs_array(sparse,x,y)
  real(kind=wp),intent(inout),contiguous::y(:,:)
 
  !Pardiso variables
- integer(kind=int32)::error,phase
+ integer(kind=int32)::error
  integer(kind=int32)::nrhs
 
- integer(kind=int32)::i
  !$ real(kind=real64)::t1
 
  if(.not.sparse%issquare())then
@@ -1148,7 +1145,7 @@ module subroutine sort_crs(sparse)
  ! sort vectors ja and a by increasing order
  class(crssparse),intent(inout)::sparse
 
- integer(kind=int32)::dir,endd,i,j,k,n,start,stkpnt
+ integer(kind=int32)::endd,i,j,k,n,start,stkpnt
  integer(kind=int32)::d1,d2,d3,dmnmx,tmp
  integer(kind=int32)::stack(2,32)
  integer(kind=int32),allocatable::d(:)

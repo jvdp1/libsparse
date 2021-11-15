@@ -678,7 +678,6 @@ subroutine test_ichol(error)
 
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
- real(wp) :: vect(nrow)
  real(wp) :: mat(nrow, nrow)
  real(wp) :: matchol(nrow, nrow)
  real(wp) :: mat_l(nrow, nrow)
@@ -748,8 +747,6 @@ subroutine test_ichol_failed(error)
 
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
- real(wp) :: vect(nrow)
- real(wp) :: mat(nrow, nrow)
  real(wp) :: matchol(nrow, nrow)
  real(wp) :: mat_l(nrow, nrow)
  type(coosparse) :: coo
@@ -1154,7 +1151,6 @@ subroutine test_multbymat_sym(error)
  real(wp), parameter :: x(ncol, nrhs) = 1._wp
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
- integer :: i
  real(wp) :: y(nrow, nrhs), ycheck(nrow, nrhs)
  type(coosparse) :: coo
  type(crssparse) :: crs
@@ -1190,7 +1186,6 @@ subroutine test_multbymat_sym1(error)
  real(wp), parameter :: x(ncol, nrhs) = 1._wp
  logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
 
- integer :: i
  real(wp) :: y(nrow, nrhs), ycheck(nrow, nrhs)
  type(coosparse) :: coo
  type(crssparse) :: crs
@@ -1228,7 +1223,7 @@ subroutine test_multbymat_gen(error, col, trans, upper)
  real(wp), parameter :: alpha = 0.3_wp
  real(wp), parameter :: val = 10000._wp
 
- integer :: i, ncol
+ integer :: ncol
  real(wp), allocatable :: x(:,:), y(:,:), ycheck(:,:)
  logical :: lvalid(size(ia))
  type(coosparse) :: coo

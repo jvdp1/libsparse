@@ -37,10 +37,10 @@ module modspainv
               xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )
-   integer,intent(in)::neqns
+   integer::neqns
    integer::maxsub,flag,maxlnz
-   integer,intent(in)::xadj(*),adjncy(*)
-   integer,intent(in)::perm(*),invp(*)
+   integer::xadj(*),adjncy(*)
+   integer::perm(*),invp(*)
    integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
   end subroutine
  end interface
@@ -117,7 +117,7 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  !Convert to ija
  !$ t1=omp_get_wtime()
- call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a)
  !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'CHOL FACT.')
@@ -175,7 +175,9 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
  real(kind=wp),allocatable,intent(out)::xspars(:),diag(:)
   
+#if (_VERBOSE >2)
  integer(kind=int32)::i
+#endif
  integer(kind=int32)::nnode
  integer(kind=int32)::maxnode
  integer(kind=int32)::maxsub,flag,maxlnz
@@ -333,7 +335,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32),intent(out),optional::rank
  real(kind=wp),intent(inout)::xspars(:),diag(:)
 
- integer(kind=int32)::i,j,k,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
+ integer(kind=int32)::i,j,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
 #if (_VERBOSE>0)
  integer(kind=int32)::ninit
 #endif
@@ -549,9 +551,9 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
   real(kind=wp),intent(inout) ::xspars(:),diag(:)
 
-  integer(kind=int32)::irow,ksub,i,j,k,m,jcol,jrow, jnode, icol2, icol1, ii,jj, mm, n21, iopt
+  integer(kind=int32)::irow,ksub,i,k,m,jcol,jrow, jnode, icol2, icol1, ii,jj, mm, n21, iopt
   integer(kind=int32),allocatable::kvec(:),jvec(:)
-  real(kind=wp)::tt,xx
+  real(kind=wp)::xx
   real(kind=wp),dimension(:,:),allocatable:: ttt, s21, s22, f21
   real(kind=wp),dimension(:),allocatable:: rr, qx
 
@@ -735,9 +737,7 @@ subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,
  real(kind=wp),intent(in)::a(:)
  real(kind=wp),intent(out),allocatable::xspars(:),diag(:)
 
- integer(kind=int32)::irow,iirow,icol,i,j,k,kk
- integer(kind=int32),allocatable::tmp(:)
- real(kind=wp),allocatable::rtmp(:)
+ integer(kind=int32)::irow,iirow,icol,i,j,k
 
  allocate(xspars(maxlnz),diag(neqns))
  xspars=0._wp
@@ -882,12 +882,11 @@ subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(inout)::ia(:)
  integer(kind=int32),intent(inout),allocatable::ja(:)
- integer(kind=int32),intent(in)::perm(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
  real(kind=wp),intent(inout),allocatable::a(:)
 

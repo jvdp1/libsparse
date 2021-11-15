@@ -126,8 +126,6 @@ end subroutine
 module subroutine print_dim_gen(sparse)
  class(gen_sparse),intent(in)::sparse
 
- integer(kind=int64)::nel
-
  write(sparse%unlog,'(/" Type of the matrix           : ",a)')trim(sparse%namemat)
  write(sparse%unlog,'( "  Output unit                 : ",i0)')sparse%unlog
  write(sparse%unlog,'( "  Dimension of the matrix     : ",i0," x ",i0)')sparse%dim1,sparse%dim2
@@ -174,7 +172,6 @@ module subroutine printsquaretofile_gen(sparse,namefile)
  character(len=*),intent(in)::namefile
 
  integer(kind=int32)::un
- logical::linternal
 
  open(newunit=un,file=namefile,status='replace',action='write')
  call sparse%printsquare(output=un)
