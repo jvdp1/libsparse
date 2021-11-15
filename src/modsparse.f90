@@ -241,7 +241,8 @@ module modsparse
   procedure,public::destroy=>destroy_coo
   procedure::diag_vect_coo
   procedure::diag_mat_coo
-  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag() 
+  !! OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
   generic,public::diag=>diag_vect_coo,diag_mat_coo
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_coo
@@ -386,7 +387,8 @@ module modsparse
 !  module procedure load_coo
 ! end interface
 
- !> @brief Constructor; e.g., mat=coosparse(dim1,[dim2],[#elements],[upper_storage],[output_unit]) OR mat=coosparse('file',[output_unit])
+ !> @brief Constructor; e.g., mat=coosparse(dim1,[dim2],[#elements],[upper_storage],[output_unit])
+ !! OR mat=coosparse('file',[output_unit])
  interface coosparse
   module procedure constructor_coo,load_coo
  end interface
@@ -414,7 +416,8 @@ module modsparse
   procedure,public::destroy=>destroy_crs
   procedure::diag_vect_crs
   procedure::diag_mat_crs
-  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()  OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()
+  !! OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
   generic,public::diag=>diag_vect_crs,diag_mat_crs
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
@@ -656,7 +659,8 @@ module modsparse
 !  module procedure load_crs
 ! end interface
 
- !> @brief Constructor; e.g., mat=crsparse(dim1,#elements,[dim2],[upper_storage],[output_unit]) OR mat=crssparse('file',[output_unit])
+ !> @brief Constructor; e.g., mat=crsparse(dim1,#elements,[dim2],[upper_storage],[output_unit])
+ !! OR mat=crssparse('file',[output_unit])
  interface crssparse
   module procedure constructor_crs,load_crs
  end interface
