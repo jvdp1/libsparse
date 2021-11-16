@@ -82,15 +82,14 @@ export FYPPFLAGS
 
 .PHONY: all clean examples lib test
 
-all:
-	$(MAKE) --directory=src $(MAKEFLAGS)
+all: lib
 	$(MAKE) --directory=test
 
 examples:
 	$(MAKE) --directory=examples $(MAKEFLAGS)
 
 lib:
-	$(MAKE) --directory=src $(MAKEFLAGS)
+	$(MAKE) --directory=src -j $(MAKEFLAGS)
 
 test:
 	$(MAKE) --directory=test test
