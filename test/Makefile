@@ -30,7 +30,7 @@ clean:
 $(LIBTEST): $(OBJTEST)
 	ar rcs $@ $^
 
-testdrive.o: $(PATHTESST)/testdrive.f90
+testdrive.o: $(PATHTESST)/testdrive.F90
 	$(FC) $(FFLAGS) $(CPPFLAGS) -c $<
 
 %.o: %.f90 $(LIBTEST)

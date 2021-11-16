@@ -29,10 +29,21 @@ libsparse.a: $(OBJ)
 %.o:	%.f
 	$(FC) -c  $(FFLAGS) $(DEBUG) $<
 
+
+#dependencies
+modsparse_coo.o: modsparse.o modhash.o
+modsparse_crs.o: modsparse.o $(OBJSPAINV) $(OBJPARDISO) $(OBJMETIS)
+modspainv.o: modcommon.o
+modsparse.o: $(OBJPARDISO)
+modsparse_gen.o: modsparse.o
+modsparse_ll.o: modsparse.o
+modsparse_metisgraph.o: modsparse.o
+
+
+
+
 clean:
 	rm -fv *.o *.optrpt *.a *.mod *.smod
 	
 cleanlib:
 	rm -fv *.a
-
-
