@@ -17,15 +17,55 @@ The library is written following an object-oriented approach.
 
 
 ## Compilation  
-The library relies on different libraries, such as BLAS/LAPACK libraries, PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5] (http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
 
-For compilation, go in the directory *libsparse/src/lib* and type *make* for the default options. By default, it will not be compiled against METIS 5. To compile with METIS 5, *make METISENABLE=1*  
+To build the `libsparse` you need (at least):
 
+ * at least a Fortran 2008 compliant compiler (GCC Fortran 11 and Intel Fortran
+   classic compilers have been tested successfully);
+ * Intel MKL library;
+ * Make or fpm.
 
-Compilation with debug options (`-g -check all -traceback`) is possible by adding the argument `DEBUGENABLE=1`.  
+The library relies on different libraries, such as BLAS/LAPACK libraries (currently Intel MKL library), and optionally on PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
+
+### Building with Make
+
+To compile with GCC Fortran compiler `gfortran`:
+
+```shell
+make FC=gfortran
+```
+
+or to compile with Intel Fortran classic compiler `ifort`
+```shell
+make FC=ifort
+```
+
+By default, it will not be compiled against METIS 5. To compile against METIS 5:
+
+```shel
+make FC=ifort METISENABLE=1
+```
+
+Compilation with debug options is possible by adding the argument `DEBUGENABLE=1`.  
 
 Compilation for single precision is possible by adding the argument `DPENABLE=0`.  
 
+### Building with fpm
+
+To compile with GCC Fortran compiler `gfortran`:
+
+```shell
+fpm @build_gfortran
+fpm @test_gfortran
+```
+
+or to compile with Intel Fortran classic compiler `ifort`
+```shell
+fpm @build_ifort
+fpm @test_ifort
+```
+Note that the file `fpm.toml` must be modified for supporting the compilation with
+`ifort`.
 
 ## Methods  
 

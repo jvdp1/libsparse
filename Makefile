@@ -1,18 +1,17 @@
 #Makefile
 
-DEBUGENABLE=1
+DEBUGENABLE=0
 DPENABLE=1
-METISENABLE=1
+METISENABLE=0
 PARDISOENABLE=1
 SPAINVENABLE=1
 VERBOSE=0
 
-FC = ifort
-#FC = gfortran
+FC = gfortran
+#FC = ifort
 
 #ifort
 ifeq ($(FC), ifort)
-#FFLAGS = -g -Wall -std=f2008
 FFLAGS=-O3 -fpp -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5
 FFLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
 
@@ -85,7 +84,7 @@ export FYPPFLAGS
 
 all:
 	$(MAKE) --directory=src $(MAKEFLAGS)
-	$(MAKE) --directory=tests
+	$(MAKE) --directory=test
 
 examples:
 	$(MAKE) --directory=examples $(MAKEFLAGS)
@@ -94,11 +93,11 @@ lib:
 	$(MAKE) --directory=src $(MAKEFLAGS)
 
 test:
-	$(MAKE) --directory=tests test
+	$(MAKE) --directory=test test
 	@echo
 	@echo "All tests passed."
 
 clean:
 	$(MAKE) clean --directory=src $(MAKEFLAGS)
 	$(MAKE) clean --directory=examples $(MAKEFLAGS)
-	$(MAKE) clean --directory=tests
+	$(MAKE) clean --directory=test

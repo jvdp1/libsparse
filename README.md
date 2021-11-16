@@ -18,10 +18,18 @@ The library is written following an object-oriented approach. It has been tested
 
 
 ## Compilation  
-The library relies on different libraries, such as BLAS/LAPACK libraries, PARDISO (at this stage, Intel MKL PARDISO), and [METIS 5] (http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
+To build the `libsparse` you need (at least):
+
+ * at least a Fortran 2008 compliant compiler (GCC Fortran 11 and Intel Fortran
+   classic compilers have been tested successfully);
+ * Intel MKL library;
+ * Make or fpm.
+
+The library relies on different libraries, such as BLAS/LAPACK libraries (currently on Intel MKL library), and optionally on PARDISO (at this stage, Intel MKL PARDISO), and on [METIS 5](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
+The library can be built with the compilers `gfortran` and `ifort`
 
 
-See the brief [documentation] (documentation.md) for more details regarding the compilation.  
+See the brief [documentation](doc/documentation.md) for more details regarding the compilation.  
 
 
 ## Documentation  
@@ -63,7 +71,3 @@ This library was inspired by several sources:
  * Check for symmetric matrix  
 
  * Allow the option spainv + single precision
- 
- * Check for validity of the matrix in pardiso  
-
-
