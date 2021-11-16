@@ -1,5 +1,6 @@
 PROGS_SRC = test_sparse.f90
 
+PATHTESST = ../test-drive/src
 LIBTEST = libtestrive.a
 OBJTEST = testdrive.o
 
@@ -24,12 +25,12 @@ $(TESTPROGS):
 	./$(@:TEST=)
 
 clean:
-	$(RM) $(PROGS) $(OBJS) $(CLEAN_FILES) *.o* *.*mod *.a testdrive.f90
+	$(RM) $(PROGS) $(OBJS) $(CLEAN_FILES) *.o* *.*mod *.a
 
 $(LIBTEST): $(OBJTEST)
 	ar rcs $@ $^
 
-testdrive.o: testdrive.f90
+testdrive.o: $(PATHTESST)/testdrive.f90
 	$(FC) $(FFLAGS) $(CPPFLAGS) -c $<
 
 %.o: %.f90 $(LIBTEST)
@@ -37,9 +38,6 @@ testdrive.o: testdrive.f90
 
 $(PROGS): %: $(OBJS) $(LIBTEST) $(LIB)  %.o
 	$(FC) $(FFLAGS) $(CPPFLAGS) -o $@ $^ $(FLIBS)
-
-testdrive.f90: ../test-drive/src/testdrive.f90
-	cp ../test-drive/src/testdrive.f90 .
 
 test_coo.o: modtest_coo.o
 modtest_coo.o: modtest_common.o
