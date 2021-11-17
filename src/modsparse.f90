@@ -1064,14 +1064,14 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
     endif
    enddo
   enddo
-  do i=startdim2,enddim2
-   do j=sparse%ia(i),sparse%ia(i+1)-1
-    k=sparse%ja(j)
-    if(i.ne.k.and.k.ge.startdim1.and.k.le.enddim1)then
-     nel=nel+1
-    endif
-   enddo
-  enddo
+!  do i=startdim2,enddim2
+!   do j=sparse%ia(i),sparse%ia(i+1)-1
+!    k=sparse%ja(j)
+!    if(i.ne.k.and.k.ge.startdim1.and.k.le.enddim1)then
+!     nel=nel+1
+!    endif
+!   enddo
+!  enddo
  elseif(.not.sparse%lupperstorage.and.lupperstorage)then
   ! full -> upper
   do i=startdim1,enddim1
@@ -1124,11 +1124,11 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
     if(k.ge.startdim2.and.k.le.enddim2)then
      call subcoo%add(i-startdim1+1,k-startdim2+1,sparse%a(j))
     endif
-    if(i.ne.k)then
-     if((k.ge.startdim1.and.k.le.enddim1).and.(i.ge.startdim2.and.i.le.enddim2))then
-      call subcoo%add(k-startdim1+1,i-startdim2+1,sparse%a(j))
-     endif
-    endif
+!    if(i.ne.k)then
+!     if((k.ge.startdim1.and.k.le.enddim1).and.(i.ge.startdim2.and.i.le.enddim2))then
+!      call subcoo%add(k-startdim1+1,i-startdim2+1,sparse%a(j))
+!     endif
+!    endif
    enddo
   enddo
   subsparse=subcoo
