@@ -62,6 +62,12 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo nonzero", test_nonzero) &
     , new_unittest("coo nonzero_sym", test_nonzero_sym) &
     , new_unittest("coo scale", test_scale) &
+    , new_unittest("coo submatrix_off_full_full", test_submatrix_off_full_full) &
+    , new_unittest("coo submatrix_off_full_upper", test_submatrix_off_full_upper) &
+    , new_unittest("coo submatrix_off_upper_full", test_submatrix_off_upper_full) &
+    , new_unittest("coo submatrix_full_full", test_submatrix_full_full) &
+    , new_unittest("coo submatrix_full_upper", test_submatrix_full_upper) &
+    , new_unittest("coo submatrix_upper_full", test_submatrix_upper_full) &
     ]
 
   !to check: diag_mat
@@ -892,6 +898,233 @@ subroutine test_scale(error)
  call coo%scale(scalefact)
 
  call check(error, all(getmat(coo) == scalefact * matcheck(nrow, ncol, ia, ja, a, lvalid)), 'scale')
+
+end subroutine
+
+!SUBMATRIX
+subroutine test_submatrix_off_full_full(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = 5
+ integer, parameter :: rowstart = 1, rowend = 3, colstart = 4, colend = 5
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp), allocatable :: matsub(:,:)
+ type(coosparse) :: coo
+ type(coosparse) :: coosub
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
+
+
+ coosub = coo%submatrix(rowstart, rowend, colstart, colend)
+
+ call check(error, coosub%getdim(1), rowend - rowstart + 1, 'submatrix_off_dim1')
+ if(allocated(error))return
+
+ call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_off_dim2')
+ if(allocated(error))return
+
+ call check(error, all(getmat(coosub) == mat(rowstart:rowend, colstart:colend)) &
+            , 'submatrix_off_full_full')
+
+end subroutine
+
+subroutine test_submatrix_off_full_upper(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i, j
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = 5
+ integer, parameter :: rowstart = 1, rowend = 3, colstart = 4, colend = 5
+ integer, parameter :: subrow = rowend - rowstart + 1
+ integer, parameter :: subcol = colend - colstart + 1
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+ logical, parameter :: lsubval(subrow, subcol) = reshape(merge(.true., .false.&
+                        , [((i, j=1, subrow), i = 1, subcol)] .ge.&
+                          [((j, j=1, subrow), i = 1, subcol)])&
+                        , [subrow, subcol])
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp), allocatable :: matsub(:,:)
+ type(coosparse) :: coo
+ type(coosparse) :: coosub
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+
+ coosub = coo%submatrix(rowstart, rowend, colstart, colend, lupper = .true.)
+
+ call check(error, coosub%getdim(1), rowend - rowstart + 1, 'submatrix_off_dim1')
+ if(allocated(error))return
+
+ call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_off_dim2')
+ if(allocated(error))return
+
+ call check(error, all(pack(getmat(coosub), lsubval) == pack(&
+            mat(rowstart:rowend, colstart:colend), lsubval)) &
+            , 'submatrix_off_full_upper')
+ if(allocated(error))return
+
+ call check(error, all(pack(getmat(coosub), .not.lsubval) ==  0._wp) &
+            , 'submatrix_off_full_upper_0')
+
+end subroutine
+
+subroutine test_submatrix_off_upper_full(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = 5
+ integer, parameter :: rowstart = 1, rowend = 3, colstart = 4, colend = 5
+ integer, parameter :: subrow = rowend - rowstart + 1
+ integer, parameter :: subcol = colend - colstart + 1
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp), allocatable :: matsub(:,:)
+ type(coosparse) :: coo
+ type(coosparse) :: coosub
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+
+ coosub = coo%submatrix(rowstart, rowend, colstart, colend, lupper = .false.)
+
+ call check(error, coosub%getdim(1), rowend - rowstart + 1, 'submatrix_off_dim1')
+ if(allocated(error))return
+
+ call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_off_dim2')
+ if(allocated(error))return
+
+ call check(error, all(getmat(coosub) == &
+            mat(rowstart:rowend, colstart:colend)) &
+            , 'submatrix_off_upper_full')
+ if(allocated(error))return
+
+end subroutine
+
+subroutine test_submatrix_full_full(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = 5
+ integer, parameter :: rowstart = 1, rowend = 4, colstart = 3, colend = 5
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp), allocatable :: matsub(:,:)
+ type(coosparse) :: coo
+ type(coosparse) :: coosub
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2),  ia, ja, a, iat, jat, at, mat)
+
+
+ coosub = coo%submatrix(rowstart, rowend, colstart, colend)
+
+ call check(error, coosub%getdim(1), rowend - rowstart + 1, 'submatrix_dim1')
+ if(allocated(error))return
+
+ call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_dim2')
+ if(allocated(error))return
+
+ call check(error, all(getmat(coosub) == mat(rowstart:rowend, colstart:colend)) &
+            , 'submatrix_full_full')
+
+end subroutine
+
+subroutine test_submatrix_full_upper(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i, j
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = 5
+ integer, parameter :: rowstart = 1, rowend = 4, colstart = 3, colend = 5
+ integer, parameter :: subrow = rowend - rowstart + 1
+ integer, parameter :: subcol = colend - colstart + 1
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+ logical, parameter :: lsubval(subrow, subcol) = reshape(merge(.true., .false.&
+                        , [((i, j=1, subrow), i = 1, subcol)] .ge.&
+                          [((j, j=1, subrow), i = 1, subcol)])&
+                        , [subrow, subcol])
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp), allocatable :: matsub(:,:)
+ type(coosparse) :: coo
+ type(coosparse) :: coosub
+
+ coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+
+ coosub = coo%submatrix(rowstart, rowend, colstart, colend, lupper = .true.)
+
+ call check(error, coosub%getdim(1), rowend - rowstart + 1, 'submatrix_dim1')
+ if(allocated(error))return
+
+ call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_dim2')
+ if(allocated(error))return
+
+ call check(error, all(pack(getmat(coosub), lsubval) == pack(&
+            mat(rowstart:rowend, colstart:colend), lsubval)) &
+            , 'submatrix_full_upper')
+ if(allocated(error))return
+
+ call check(error, all(pack(getmat(coosub), .not.lsubval) ==  0._wp) &
+            , 'submatrix_full_upper_0')
+
+end subroutine
+
+subroutine test_submatrix_upper_full(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = 5
+ integer, parameter :: rowstart = 1, rowend = 4, colstart = 3, colend = 5
+ integer, parameter :: subrow = rowend - rowstart + 1
+ integer, parameter :: subcol = colend - colstart + 1
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ real(wp), allocatable :: matsub(:,:)
+ type(coosparse) :: coo
+ type(coosparse) :: coosub
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+
+ coosub = coo%submatrix(rowstart, rowend, colstart, colend, lupper = .false.)
+
+ call check(error, coosub%getdim(1), rowend - rowstart + 1, 'submatrix_dim1')
+ if(allocated(error))return
+
+ call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_dim2')
+ if(allocated(error))return
+
+ call check(error, all(getmat(coosub) == mat(rowstart:rowend, colstart:colend)) &
+            , 'submatrix_upper_full')
 
 end subroutine
 
