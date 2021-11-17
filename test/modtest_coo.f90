@@ -913,7 +913,6 @@ subroutine test_submatrix_off_full_full(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
- real(wp), allocatable :: matsub(:,:)
  type(coosparse) :: coo
  type(coosparse) :: coosub
 
@@ -954,7 +953,6 @@ subroutine test_submatrix_off_full_upper(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
- real(wp), allocatable :: matsub(:,:)
  type(coosparse) :: coo
  type(coosparse) :: coosub
 
@@ -993,7 +991,6 @@ subroutine test_submatrix_off_upper_full(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
- real(wp), allocatable :: matsub(:,:)
  type(coosparse) :: coo
  type(coosparse) :: coosub
 
@@ -1027,7 +1024,6 @@ subroutine test_submatrix_full_full(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
- real(wp), allocatable :: matsub(:,:)
  type(coosparse) :: coo
  type(coosparse) :: coosub
 
@@ -1068,7 +1064,6 @@ subroutine test_submatrix_full_upper(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
- real(wp), allocatable :: matsub(:,:)
  type(coosparse) :: coo
  type(coosparse) :: coosub
 
@@ -1107,7 +1102,6 @@ subroutine test_submatrix_upper_full(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: mat(nrow, ncol)
- real(wp), allocatable :: matsub(:,:)
  type(coosparse) :: coo
  type(coosparse) :: coosub
 
