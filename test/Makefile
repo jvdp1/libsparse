@@ -39,6 +39,7 @@ testdrive.o: $(PATHTESST)/testdrive.F90
 $(PROGS): %: $(OBJS) $(LIBTEST) $(LIB)  %.o
 	$(FC) $(FFLAGS) $(CPPFLAGS) -o $@ $^ $(FLIBS)
 
-test_coo.o: modtest_coo.o
-modtest_coo.o: modtest_common.o
-modtest_crs.o: modtest_common.o
+modtest_common.o: $(LIB)
+modtest_coo.o: modtest_common.o $(LIB) testdrive.o
+modtest_crs.o: modtest_common.o $(LIB) testdrive.o
+test_coo.o: modtest_coo.o modtest_crs.o testdrive.o
