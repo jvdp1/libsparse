@@ -32,6 +32,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol add", test_ncol_add) &
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
+    , new_unittest("crs cg", test_cg) &
 #if (_SPAINV==1)
     , new_unittest("crs chol", test_chol) &
 #endif
@@ -341,6 +342,49 @@ subroutine test_ncol_add_lupper(error)
  if (allocated(error)) return
 
  if(verbose)call printmat(mat)
+
+end subroutine
+
+!CG
+subroutine test_cg(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: maxiter
+ real(wp) :: tol
+ real(wp) :: xmat(nrow, ncol)
+ real(wp) :: mat_l(nrow, ncol)
+ real(wp) :: y(ncol)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+ call coo%add(2, 2, 202._wp) !to set the matrix SPD
+
+ crs = coo
+
+ xmat = 0
+ do i = 1, ncol
+  tol = 1.e-6
+  maxiter = nrow
+  y = 0
+  y(i) = 1
+  call crs%cg(xmat(:,i), y, maxiter, tol)
+ enddo
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(getmat(crs) <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(matmul(getmat(crs), xmat) - mat_l) < tol_wp), 'crs cg')
 
 end subroutine
 
