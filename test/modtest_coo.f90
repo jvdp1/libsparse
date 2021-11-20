@@ -6,8 +6,8 @@ module modtest_coo
 #endif
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse
- use modtest_common, only: tol_wp, verbose, ia, ja, a, addval => addval_coo&
-                       , getmat, matcheck, printmat
+ use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd&
+                       , addval => addval_coo, getmat, matcheck, printmat
  implicit none
  private
 
@@ -30,6 +30,7 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo ncol add", test_ncol_add) &
     , new_unittest("coo ncol add nel", test_ncol_add_nel) &
     , new_unittest("coo ncol add lupper", test_ncol_add_lupper) &
+    , new_unittest("coo cg", test_cg) &
     , new_unittest("coo diag vect", test_diag_vect) &
     , new_unittest("coo diag vect lupper", test_diag_vect_lupper) &
     , new_unittest("coo ncol diag vect", test_ncol_diag_vect) &
@@ -305,6 +306,46 @@ subroutine test_ncol_add_lupper(error)
  if (allocated(error)) return
 
  if(verbose)call printmat(mat)
+
+end subroutine
+
+!CG
+subroutine test_cg(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: maxiter
+ real(wp) :: tol
+ real(wp) :: xmat(nrow, ncol)
+ real(wp) :: mat_l(nrow, ncol)
+ real(wp) :: y(ncol)
+ type(coosparse) :: coo
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+ call coo%add(2, 2, 202._wp) !to set the matrix SPD
+
+ xmat = 0
+ do i = 1, ncol
+  tol = 1.e-6
+  maxiter = nrow
+  y = 0
+  y(i) = 1
+  call coo%cg(xmat(:,i), y, maxiter, tol)
+ enddo
+
+ !mat_l: expected result 
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(getmat(coo) <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(matmul(getmat(coo), xmat) - mat_l) < tol_wp), 'coo cg')
 
 end subroutine
 

@@ -47,7 +47,9 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
  endif
 
  maxiter_ = min(1000,size(x)-1)
- if(present(maxiter)) maxiter_ = min(maxiter,size(x)-1)
+ if(present(maxiter))then
+  if(maxiter.gt.0)maxiter_ = min(maxiter,size(x)-1)
+ endif
 
  tol_ = tolerance
  if(present(tol))tol_=tol
