@@ -74,43 +74,44 @@ Below the term *mat* refers to one of the three available sparse objects (i.e., 
 To __construct__ (__initiate__) a sparse matrix, the constructor of the same name as the object, must be used, e.g.:  
 
 ````   
-integer::dim1=100     !number of rows     
-type(coosparse)::mat  
-  
-mat=coosparse(dim1)  
+integer :: dim1         !number of rows     
+type(coosparse) :: mat  
+
+dim1 = 100
+mat = coosparse(dim1)  
 ````  
 
 Other options are possible for the constructor (see details in the module pages). For sparse matrices with upper storage (default: fulled storage), it must be mentioned as:  
 
 ````  
-mat=coosparse(dim1,lupper=.true.)  
+mat = coosparse(dim1,lupper=.true.)  
 ````  
 
-This option can also be used to __load__ a matrix from a stream file.  
+This option can also be used to __load__ a matrix from a binary stream file.  
 
 
 To __add__ a value *val* at the position (*row*,*col*) of a sparse matrix, the method *add* must be used, e.g.:  
 
 ````   
-call mat%add(row,col,val)  
+call mat%add(row, col, val)  
 ````  
 
 To __convert__  a sparse matrix from a format to another format, the assignment = can be used. E.g., to convert from COO to CSR:  
 
 ````   
-type(coosparse)::coomat  
-type(crssparse)::crsmat  
+type(coosparse) :: coomat  
+type(crssparse) :: crsmat  
   
-csrmat=coomat  
+csrmat = coomat  
 ````  
 
 To __copy__ a sparse matrix, the assignment = can be used. E.g.,:  
 
 ````   
-type(crssparse)::crsmat  
-type(crssparse)::crsmatcopy  
+type(crssparse) :: crsmat  
+type(crssparse) :: crsmatcopy  
   
-csrmatcopy=crsmat  
+csrmatcopy = crsmat  
 ````  
 
 To __deallocate__  a sparse matrix, the method *destroy* can be used, e.g.:  
@@ -122,13 +123,13 @@ call mat%destroy()
 To extract the __diagonal elements__ of a sparse matrix into a array, the method *diag* must be used:  
 
 ````  
-array=mat%diag()  
+array = mat%diag()  
 ````  
 
 To extract the __diagonal elements__ and __off-diagonals__ of a sparse matrix into a array, the method *diag* must be used:  
 
 ````  
-extractedmat=mat%diag(x)  
+extractedmat = mat%diag(x)  
 ````  
 
 
@@ -137,20 +138,20 @@ where *x* is the number of off-diagonals (next to the diagonal) that must be ext
 To __get a value *val*__ at the position (*row*,*col*) of a sparse matrix, the method *get* must be used, e.g.:  
 
 ````   
-val=mat%get(row,col)  
+val = mat%get(row, col)  
 ````  
 
 To __get one of the dimensions__ of a sparse matrix, the method *getdim* must be used:  
 
 ````   
-val=mat%getdim(x)  
+val = mat%getdim(x)  
 ````  
 where *x* is 1 (=*number of rows*) or 2 (=*number of columns*).  
 
 To __get a permutation vector__ from the METIS 5 fill-reducing ordering approach, the method *getordering* can be used:  
 
 ````  
-permarray=mat%getordering()  
+permarray = mat%getordering()  
 ````  
 
 Options for METIS 5 can be changed through optional arguments of this method.  
@@ -159,7 +160,7 @@ Options for METIS 5 can be changed through optional arguments of this method.
 To __create__ a CRS matrix from __existing arrays__, the method *external* must be used:  
 
 ````  
-call crsmat%external(ia,ja,a)  
+call crsmat%external(ia, ja, a)  
 ````  
 
 where the arrays *ia*, *ja*, and *a* must have the same size as the ones of the sparse matrix *crsmat*.  
@@ -167,7 +168,7 @@ where the arrays *ia*, *ja*, and *a* must have the same size as the ones of the 
 To __multiply__ a sparse matrix by a vector as, *y = alpha \* mat(trans) \* v + val \* y* , the method *multbyv* must be used:  
 
 ````  
-call mat%multbyv(alpha,trans,v,val,y)  
+call mat%multbyv(alpha, trans, v, val, y)  
 ````  
 where *alpha* and *val* are double-precision real values, *v* and *y* are vectors, and *trans* (= 'n' or 't') relates to the transposition of the matrix.   
 The method *multbyv* is based on the MKL Sparse BLAS library.  
@@ -175,7 +176,7 @@ The method *multbyv* is based on the MKL Sparse BLAS library.
 To get the number of __non-zero elements__ of a sparse matrix, the method *nonzero* must be used, e.g.:  
 
 ````  
-nonzeros=mat%nonzero()  
+nonzeros = mat%nonzero()  
 ````  
 
 
@@ -203,7 +204,7 @@ call mat%save('file.stream')
 To __set an entry__ to a specified value (even __0__), the method *set* can be used:  
 
 ````  
-call mat%set(row,col,val)  
+call mat%set(row, col, val)  
 ````  
 
 To __set a permutation vector__,the method *setpermutation* can be used:  
@@ -236,7 +237,7 @@ call crsmat%sort()
 To check if the sparse matrix is sorted (columns within rows), the method __issorted__ must be used:  
 
 ````  
-sorted=mat%issorted()  
+sorted = mat%issorted()  
 ````  
 
 where the variable __sorted__ is a logical.  
@@ -245,7 +246,7 @@ where the variable __sorted__ is a logical.
 To check if the sparse matrix is a *square* matrix, the method __issquare__ must be used:  
 
 ````  
-square=mat%issquare()  
+square = mat%issquare()  
 ````  
 
 where the variable __square__ is a logical.  
@@ -254,8 +255,8 @@ where the variable __square__ is a logical.
 To extract a __submatrix__ from a sparse matrix, the method *submatrix* must be used, e.g.:  
 
 ````  
-submatrix=mat%submatrix(startrow,endrow,startrow,endrow,lupper=log)  
+submatrix = mat%submatrix(startrow, endrow, startrow, endrow, lupper = log)  
 ````  
 
-where *log* is a logical to extract the full matrix (lupper=.false.) or the upper triangular matrix (lupper=.true.).  
+where *log* is a logical to extract the full matrix (`lupper = .false.`) or the upper triangular matrix (`lupper = .true.`).  
 
