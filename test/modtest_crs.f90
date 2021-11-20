@@ -22,7 +22,7 @@ subroutine collect_crs(testsuite)
   !> Collection of tests
   type(unittest_type), allocatable, intent(out) :: testsuite(:)
 
-  !how to test: getordering, print, printsquare, save, sort, submatrix
+  !how to test: getordering, print, printsquare, save, sort
 
   testsuite = [ &
     new_unittest("crs constructor", test_constructor) &

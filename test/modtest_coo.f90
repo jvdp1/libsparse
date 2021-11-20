@@ -70,8 +70,6 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo submatrix_upper_full", test_submatrix_upper_full) &
     ]
 
-  !to check: diag_mat
-
 end subroutine collect_coo
 
 !CONSTRUCTOR + GETDIM + ISSQUARE
