@@ -1,0 +1,13 @@
+include 'mkl_pardiso.f90'
+module modsparse_mkl
+ use mkl_pardiso
+      include 'mkl_blas.fi'
+      include 'mkl_trans.fi'
+      include 'mkl_spblas.fi'
+      include 'mkl_lapack.fi'
+      include 'mkl_dss.fi'
+      include 'mkl_rci.fi'
+      include 'mkl_vml.fi'
+      include 'mkl_service.fi'
+      include 'mkl_solvers_ee.fi'
+end module

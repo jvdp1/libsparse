@@ -1,4 +1,8 @@
 submodule (modsparse) modsparse_crs
+ use modsparse_mkl, only: pardisoinit, pardiso &
+                          , mkl_scsrmv, mkl_dcsrmv &
+                          , mkl_scsrmm, mkl_dcsrmm &
+                          , mkl_scsrtrsv, mkl_dcsrtrsv
 #if (_SPAINV==1)
  use modspainv
 #endif

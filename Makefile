@@ -19,7 +19,7 @@ FLIBS += -liomp5 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_in
 FLIBS += -lpthread -lm -ldl
 
 ifeq ($(DEBUGENABLE), 1)
-FFLAGS += -g -check all -traceback -stand f18
+FFLAGS += -g -check all -traceback -warn all -stand f18
 endif
 
 endif

@@ -8,8 +8,10 @@
 module modspainv
 #if (_DP==0)
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
+ use modsparse_mkl, only: spotrf, spotri, strsm, ssymm, sgemm
 #else
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
+ use modsparse_mkl, only: dpotrf, dpotri, dtrsm, dsymm, dgemm
 #endif
  use modcommon
  !$ use omp_lib
