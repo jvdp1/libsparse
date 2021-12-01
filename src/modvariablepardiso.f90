@@ -3,6 +3,7 @@
 !> @todo Not happy with the phase variable and how it is handled in modsparse
 
 module modvariablepardiso
+ use modsparse_mkl, only: mkl_pardiso_handle
 #if (_DP==0)
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
 #else
@@ -14,9 +15,9 @@ module modvariablepardiso
  public::checkpardiso
  public::pardiso_variable
 
- type::pardiso_pt
-  integer(kind=8)::pt
- end type
+! type::pardiso_pt
+!  integer(kind=8)::pt
+! end type
 
  type::pardiso_variable
   !Default Pardiso variables
@@ -29,7 +30,7 @@ module modvariablepardiso
   integer(kind=int32)::phase
   integer(kind=int32)::solver
   integer(kind=int32),allocatable::iparm(:)
-  type(pardiso_pt),allocatable::pt(:)
+  type(mkl_pardiso_handle),allocatable::pt(:)
   contains
   final::reset_pardiso_variable
  end type
@@ -73,7 +74,7 @@ function constructor_pardiso_variable(maxfct,mnum,mtype,solver,msglvl) result(th
 
  allocate(this%pt(64))
  do i=1,64
-  this%pt(i)%pt=0
+  this%pt(i)%dummy=0
  enddo
  
 end function

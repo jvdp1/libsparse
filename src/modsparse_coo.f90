@@ -536,7 +536,7 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
  integer(kind=int32),intent(in),optional::unlog
  logical,intent(in),optional::lupper
 
- integer(kind=int32)::i,j,k
+ integer(kind=int32)::i,j
  integer(kind=int64)::i8,nel
  logical::lincludediag,lupperstorage
 
