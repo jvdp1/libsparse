@@ -73,12 +73,14 @@ FFLAGS += -D_DP=$(DP) -D_METIS=$(METIS) -D_PARDISO=$(PARDISO) -D_SPAINV=$(SPAINV
 
 FYPPFLAGS =
 
-MAKEFLAGS = METISENABLE=$(METISENABLE) PARDISOENABLE=$(PARDISOENABLE) SPAINVENABLE=$(SPAINVENABLE)
-
 export FC
 export FFLAGS
 export FLIBS
 export FYPPFLAGS
+
+export METISENABLE
+export PARDISOENABLE
+export SPAINVENABLE
 
 .PHONY: all clean examples lib test
 
@@ -86,10 +88,10 @@ all: lib
 	$(MAKE) --directory=test
 
 examples:
-	$(MAKE) --directory=examples $(MAKEFLAGS)
+	$(MAKE) --directory=examples
 
 lib:
-	$(MAKE) --directory=src -j $(MAKEFLAGS)
+	$(MAKE) --directory=src -j
 
 test:
 	$(MAKE) --directory=test test
@@ -97,6 +99,6 @@ test:
 	@echo "All tests passed."
 
 clean:
-	$(MAKE) clean --directory=src $(MAKEFLAGS)
-	$(MAKE) clean --directory=examples $(MAKEFLAGS)
+	$(MAKE) clean --directory=src
+	$(MAKE) clean --directory=examples
 	$(MAKE) clean --directory=test
