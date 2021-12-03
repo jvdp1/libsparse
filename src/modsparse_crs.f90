@@ -655,6 +655,8 @@ module subroutine reset_pardiso_memory_crs(sparse)
 
  end associate
 
+ if(allocated(sparse%pardisovar%pt))deallocate(sparse%pardisovar%pt)
+
 end subroutine
 #endif
 
