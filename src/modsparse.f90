@@ -1718,7 +1718,7 @@ subroutine extractcrs_fromcoo_int32(sparse, dim1, dim2, ia, ja, a, perm)
  allocate(ja(nel), source = 0)
  allocate(a(nel), source = 0._wp)
 
- if(allocated(sparse%perm))allocate(perm, source = sparse%perm)
+ if(allocated(sparse%perm).and.present(perm))allocate(perm, source = int(sparse%perm, int64))
 
  !determine the number of non-zero off-diagonal elements per row
  ia(2:sparse%dim1+1) = rowpos
@@ -1829,7 +1829,7 @@ subroutine extractcrs_fromcoo_int64(sparse, dim1, dim2, ia, ja, a, perm)
  allocate(ja(nel), source = 0_int64)
  allocate(a(nel), source = 0._wp)
 
- if(allocated(sparse%perm))allocate(perm, source = int(sparse%perm, int64))
+ if(allocated(sparse%perm).and.present(perm))allocate(perm, source = int(sparse%perm, int64))
 
  !determine the number of non-zero off-diagonal elements per row
  ia(2:sparse%dim1+1) = rowpos
