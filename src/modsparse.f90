@@ -23,6 +23,7 @@ module modsparse
  public::gen_sparse
  public::llsparse,coosparse,crssparse
  public::assignment(=)
+ public::extractcrs
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
@@ -861,6 +862,21 @@ module modsparse
                   ,convertfromcrstocoo,convertfromcrstoll
  end interface
 
+ interface
+  module subroutine sort_crs_ija_int32(dim1, ia, ja, a)
+   ! sort vectors ja and a by increasing order
+   implicit none
+   integer(kind=int32), intent(in) :: dim1
+   integer(kind=int32), intent(in) :: ia(:)
+   integer(kind=int32), intent(inout) :: ja(:)
+   real(kind=wp), intent(inout) :: a(:)
+  end subroutine
+ end interface
+
+ interface extractcrs
+  module procedure extractcrs_fromcoo_int32
+ end interface
+
 contains
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!COO!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
@@ -1639,4 +1655,116 @@ subroutine convertfromcrstometisgraph(metis,sparse)
  enddo
 
 end subroutine
+
+!EXTRACT DATA FROM SPARSE ARRAYS
+subroutine extractcrs_fromcoo_int32(sparse, dim1, dim2, ia, ja, a, perm)
+ type(coosparse),intent(in)::sparse
+ integer(kind=int32) :: dim1, dim2
+ integer(kind=int32), allocatable :: ia(:)
+ integer(kind=int32), allocatable :: ja(:)
+ real(kind=wp), allocatable :: a(:)
+ integer(kind=int32), allocatable, optional :: perm(:)
+
+ integer(kind=int32)::i,nel,row,col
+ integer(kind=int32),allocatable::rowpos(:)
+ integer(kind=int64)::i8
+ logical::lsquare
+
+ if(sparse%nonzero().ge.huge(ia)/2)then
+  write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
+  error stop
+ endif
+
+ !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
+
+ !Number of elements=number of rows+number off-diagonal elements
+ !from sparse
+ lsquare=sparse%issquare()
+
+ allocate(rowpos(sparse%dim1))
+ rowpos=0
+
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.row.ne.sparse%ij(2,i8))then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.sparse%ij(2,i8).ne.sparse%dim2)then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ endif
+
+ nel=sparse%dim1+sum(rowpos)
+
+ dim1 = sparse%dim1
+ dim2 = sparse%dim2
+ allocate(ia(sparse%dim1+1), source = 0)
+ ia(sparse%dim1+1) = -nel
+ allocate(ja(nel), source = 0)
+ allocate(a(nel), source = 0._wp)
+
+ if(allocated(sparse%perm))allocate(perm, source = sparse%perm)
+
+ !determine the number of non-zero off-diagonal elements per row
+ ia(2:sparse%dim1+1) = rowpos
+
+ !accumulate the number of elements and add diagonal elements
+ ia(1) = 1
+ if(lsquare)then
+  do i=1,sparse%dim1
+   ia(i+1) = ia(i+1) + 1 + ia(i)
+   ja(ia(i)) = i   !set diagonal element for the case it would not be present
+  enddo
+ else
+  do i=1,sparse%dim1
+   ia(i+1) = ia(i+1) + 1 + ia(i)
+   ja(ia(i)) = sparse%dim2   !set last element for the case it would not be present
+  enddo
+ endif
+
+ !add the non-zero elements to crs
+ !allocate(rowpos(dim1))
+ rowpos = ia(1:sparse%dim1)
+ if(lsquare)then
+  do i8 = 1_int64, sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.row)then
+     a(ia(row)) = sparse%a(i8)
+    else
+     rowpos(row) = rowpos(row)+1
+     ja(rowpos(row)) = col
+     a(rowpos(row)) = sparse%a(i8)
+    endif
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.sparse%dim2)then
+     a(ia(row)) = sparse%a(i8)
+    else
+     rowpos(row) = rowpos(row)+1
+     ja(rowpos(row)) = col
+     a(rowpos(row)) = sparse%a(i8)
+    endif
+   endif
+  enddo
+ endif
+
+ deallocate(rowpos)
+
+ call sort_crs_ija_int32(dim1, ia, ja, a)
+
+end subroutine
+
 end module
