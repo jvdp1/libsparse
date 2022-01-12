@@ -1163,13 +1163,34 @@ module subroutine sort_crs(sparse)
   return
  endif
 
- do k=1,sparse%dim1
-  n=sparse%ia(k+1)-sparse%ia(k)
+ call sort_crs_ija(sparse%dim1, sparse%ia, sparse%ja, sparse%a)
+
+ call sparse%setsorted(.true.)
+
+end subroutine
+
+module subroutine sort_crs_ija(dim1, ia, ja, a)
+ ! sort vectors ja and a by increasing order
+ integer(kind=int32), intent(in) :: dim1
+ integer(kind=int32), intent(in) :: ia(:)
+ integer(kind=int32), intent(inout) :: ja(:)
+ real(kind=wp), intent(inout) :: a(:)
+
+ integer(kind=int32)::endd,i,j,k,n,start,stkpnt
+ integer(kind=int32)::d1,d2,d3,dmnmx,tmp
+ integer(kind=int32)::stack(2,32)
+ integer(kind=int32),allocatable::d(:)
+ integer(kind=int32),parameter::select=20
+ real(kind=wp)::umnmx,tmpu
+ real(kind=wp),allocatable::u(:)
+
+ do k = 1, dim1
+  n = ia(k+1) - ia(k)
   if(n.gt.1)then
    allocate(d(n),u(n))
    !copy of the vector to be sorted
-   d=sparse%ja(sparse%ia(k):sparse%ia(k+1)-1)
-   u=sparse%a(sparse%ia(k):sparse%ia(k+1)-1)
+   d=ja(ia(k):ia(k+1)-1)
+   u=a(ia(k):ia(k+1)-1)
    !sort the vectors
    !from dlasrt.f !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !Quick return if possible
@@ -1255,17 +1276,13 @@ module subroutine sort_crs(sparse)
    IF( stkpnt > 0 ) GO TO 10
    !end from dlasrt.f !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    !copy back the sorted vectors
-   sparse%ja(sparse%ia(k):sparse%ia(k+1)-1)=d
-   sparse%a(sparse%ia(k):sparse%ia(k+1)-1)=u
+   ja(ia(k):ia(k+1)-1)=d
+   a(ia(k):ia(k+1)-1)=u
    deallocate(d,u)
   endif
  enddo
 
- call sparse%setsorted(.true.)
-
 end subroutine
-
-
 
 
 end submodule
