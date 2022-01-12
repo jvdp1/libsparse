@@ -1169,7 +1169,7 @@ module subroutine sort_crs(sparse)
 
 end subroutine
 
-subroutine sort_crs_ija_int32(dim1, ia, ja, a)
+module subroutine sort_crs_ija_int32(dim1, ia, ja, a)
  ! sort vectors ja and a by increasing order
  integer(kind=int32), intent(in) :: dim1
  integer(kind=int32), intent(in) :: ia(:)
@@ -1284,7 +1284,7 @@ subroutine sort_crs_ija_int32(dim1, ia, ja, a)
 
 end subroutine
 
-subroutine sort_crs_ija_int64(dim1, ia, ja, a)
+module subroutine sort_crs_ija_int64(dim1, ia, ja, a)
  ! sort vectors ja and a by increasing order
  integer(kind=int64), intent(in) :: dim1
  integer(kind=int64), intent(in) :: ia(:)
