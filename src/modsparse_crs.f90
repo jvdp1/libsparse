@@ -1154,14 +1154,6 @@ module subroutine sort_crs(sparse)
  ! sort vectors ja and a by increasing order
  class(crssparse),intent(inout)::sparse
 
- integer(kind=int32)::endd,i,j,k,n,start,stkpnt
- integer(kind=int32)::d1,d2,d3,dmnmx,tmp
- integer(kind=int32)::stack(2,32)
- integer(kind=int32),allocatable::d(:)
- integer(kind=int32),parameter::select=20
- real(kind=wp)::umnmx,tmpu
- real(kind=wp),allocatable::u(:)
-
  if(sparse%issorted())then
   return
  endif
