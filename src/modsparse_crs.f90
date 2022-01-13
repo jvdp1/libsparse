@@ -812,9 +812,12 @@ module subroutine solve_crs_vector(sparse,x,y)
 
   !initialize iparm
   call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)
+!  block
+!  integer::i
 !  do i=1,64
 !   write(sparse%unlog,*)'iparm',i,sparse%pardisovar%iparm(i)
 !  enddo
+!  end block
 
   !Ordering and factorization
   sparse%pardisovar%phase=12
