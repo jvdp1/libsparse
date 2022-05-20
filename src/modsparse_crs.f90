@@ -215,8 +215,7 @@ module subroutine rowptr_crs(sparse,ia)
   integer(kind=int32),intent(inout)::ia(:)
  
   if(size(ia).ne.size(sparse%ia))then
-   write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different
-size!'
+   write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
    stop
   endif
  
@@ -229,8 +228,7 @@ module subroutine colval_crs(sparse,ja)
   integer(kind=int32),intent(inout)::ja(:)
  
   if(size(ja).ne.size(sparse%ja))then
-   write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different
-size!'
+   write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different size!'
    stop
   endif
  
@@ -243,8 +241,7 @@ module subroutine nzval_crs(sparse,a)
   real(kind=wp),intent(inout)::a(:)
  
   if(size(a).ne.size(sparse%a))then
-   write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different
-size!'
+   write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different size!'
    stop
   endif
  
