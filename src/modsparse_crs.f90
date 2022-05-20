@@ -209,6 +209,49 @@ module subroutine external_crs(sparse,ia,ja,a)
 
 end subroutine
 
+!**rowptr_crs
+module subroutine rowptr_crs(sparse,ia)
+  class(crssparse),intent(in)::sparse
+  integer(kind=int32),intent(inout)::ia(:)
+ 
+  if(size(ia).ne.size(sparse%ia))then
+   write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different
+size!'
+   stop
+  endif
+ 
+  ia=sparse%ia
+end subroutine
+ 
+!**colval_crs
+module subroutine colval_crs(sparse,ja)
+  class(crssparse),intent(in)::sparse
+  integer(kind=int32),intent(inout)::ja(:)
+ 
+  if(size(ja).ne.size(sparse%ja))then
+   write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different
+size!'
+   stop
+  endif
+ 
+  ja=sparse%ja
+end subroutine
+ 
+!**nzval_crs
+module subroutine nzval_crs(sparse,a)
+  class(crssparse),intent(in)::sparse
+  real(kind=wp),intent(inout)::a(:)
+ 
+  if(size(a).ne.size(sparse%a))then
+   write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different
+size!'
+   stop
+  endif
+ 
+  a=sparse%a
+end subroutine
+ 
+
 !**MULTIPLICATIONS
 module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
  !Computes y=val*y+alpha*sparse(tranposition)*x
