@@ -430,11 +430,11 @@ module modsparse
   !> @brief Initializes the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs
   !> @brief Get function for the internal vector ia of row pointers
-  procedure,public::rowptr=>rowptr_crs
+  procedure,public::get_rowptr=>get_rowptr_crs
   !> @brief Get function for the internal vector ja of column values
-  procedure,public::colval=>colval_crs
+  procedure,public::get_colval=>get_colval_crs
   !> @brief Get function for the internal vector a of non-zero values
-  procedure,public::nzval=>nzval_crs
+  procedure,public::get_nzval=>get_nzval_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs

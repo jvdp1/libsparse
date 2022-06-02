@@ -210,7 +210,7 @@ module subroutine external_crs(sparse,ia,ja,a)
 end subroutine
 
 !**rowptr_crs
-module subroutine rowptr_crs(sparse,ia)
+module subroutine get_rowptr_crs(sparse,ia)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),intent(inout)::ia(:)
  
@@ -223,7 +223,7 @@ module subroutine rowptr_crs(sparse,ia)
 end subroutine
  
 !**colval_crs
-module subroutine colval_crs(sparse,ja)
+module subroutine get_colval_crs(sparse,ja)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),intent(inout)::ja(:)
  
@@ -236,7 +236,7 @@ module subroutine colval_crs(sparse,ja)
 end subroutine
  
 !**nzval_crs
-module subroutine nzval_crs(sparse,a)
+module subroutine get_nzval_crs(sparse,a)
   class(crssparse),intent(in)::sparse
   real(kind=wp),intent(inout)::a(:)
  
