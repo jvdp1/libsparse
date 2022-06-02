@@ -828,11 +828,12 @@ module subroutine solve_crs_vector(sparse,x,y,msglvl)
  integer(kind=int32)::nrhs
  integer(kind=int32)::msglvl_opt
 
+ !$ real(kind=real64)::t1
+
  ! default value if not present
  msglvl_opt=1
  if(present(msglvl)) msglvl_opt=msglvl
 
- !$ real(kind=real64)::t1
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
@@ -940,11 +941,12 @@ module subroutine solve_crs_array(sparse,x,y,msglvl)
  integer(kind=int32)::nrhs
  integer(kind=int32)::msglvl_opt
 
+ !$ real(kind=real64)::t1
+
  ! default value if not present
  msglvl_opt=1
  if(present(msglvl)) msglvl_opt=msglvl
 
- !$ real(kind=real64)::t1
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
