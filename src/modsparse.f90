@@ -642,17 +642,19 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**SOLVE
-  module subroutine solve_crs_vector(sparse,x,y)
+  module subroutine solve_crs_vector(sparse,x,y,msglvl)
    !sparse*x=y
    class(crssparse),intent(inout)::sparse
    real(kind=wp),intent(out),contiguous::x(:)
    real(kind=wp),intent(inout),contiguous::y(:)
+   integer(kind=int32),intent(in),optional::msglvl
   end subroutine
-  module subroutine solve_crs_array(sparse,x,y)
+  module subroutine solve_crs_array(sparse,x,y,msglvl)
    !sparse*x=y
    class(crssparse),intent(inout)::sparse
    real(kind=wp),intent(out),contiguous::x(:,:)
    real(kind=wp),intent(inout),contiguous::y(:,:)
+   integer(kind=int32),intent(in),optional::msglvl
   end subroutine
   !**SOLVE WITH A TRIANGULAR FACTOR
   module subroutine isolve_crs(sparse,x,y)

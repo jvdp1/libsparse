@@ -816,15 +816,21 @@ end subroutine
 
 !**SOLVE
 #if (_PARDISO==1)
-module subroutine solve_crs_vector(sparse,x,y)
+module subroutine solve_crs_vector(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:)
  real(kind=wp),intent(inout),contiguous::y(:)
+ integer(kind=int32),intent(in),optional::msglvl
 
  !Pardiso variables
  integer(kind=int32)::error
  integer(kind=int32)::nrhs
+ integer(kind=int32)::msglvl_opt
+
+ ! default value if not present
+ msglvl_opt=1
+ if(present(msglvl)) msglvl_opt=msglvl
 
  !$ real(kind=real64)::t1
 
@@ -848,7 +854,7 @@ module subroutine solve_crs_vector(sparse,x,y)
   !Preparation of Cholesky of A with Pardiso
   !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
   !to avoid ifort 2021.4.0 bug
-  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=msglvl_opt)   !mtype=11
 
   !initialize iparm
   call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)
@@ -922,15 +928,21 @@ module subroutine solve_crs_vector(sparse,x,y)
 
 end subroutine
 
-module subroutine solve_crs_array(sparse,x,y)
+module subroutine solve_crs_array(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:,:)
  real(kind=wp),intent(inout),contiguous::y(:,:)
+ integer(kind=int32),intent(in),optional::msglvl
 
  !Pardiso variables
  integer(kind=int32)::error
  integer(kind=int32)::nrhs
+ integer(kind=int32)::msglvl_opt
+
+ ! default value if not present
+ msglvl_opt=1
+ if(present(msglvl)) msglvl_opt=msglvl
 
  !$ real(kind=real64)::t1
 
@@ -958,7 +970,7 @@ module subroutine solve_crs_array(sparse,x,y)
   !Preparation of Cholesky of A with Pardiso
   !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
   !to avoid ifort 2021.4.0 bug
-  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=msglvl_opt)   !mtype=11
 
   !initialize iparm
   call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)
