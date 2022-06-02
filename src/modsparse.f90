@@ -535,17 +535,17 @@ module modsparse
    real(kind=wp),intent(in)::a(:)
   end subroutine
   !**ROWPTR
-  module subroutine rowptr_crs(sparse,ia)
+  module subroutine get_rowptr_crs(sparse,ia)
     class(crssparse),intent(in)::sparse
     integer(kind=int32),intent(inout)::ia(:)
   end subroutine
   !**COLVAL
-  module subroutine colval_crs(sparse,ja)
+  module subroutine get_colval_crs(sparse,ja)
     class(crssparse),intent(in)::sparse
     integer(kind=int32),intent(inout)::ja(:)
    end subroutine
   !**NZVAL
-  module subroutine nzval_crs(sparse,a)
+  module subroutine get_nzval_crs(sparse,a)
     class(crssparse),intent(in)::sparse
     real(kind=wp),intent(inout)::a(:)
   end subroutine  
