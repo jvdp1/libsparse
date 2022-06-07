@@ -212,40 +212,31 @@ end subroutine
 !**rowptr_crs
 module subroutine get_rowptr_crs(sparse,ia)
   class(crssparse),intent(in)::sparse
-  integer(kind=int32),intent(inout)::ia(:)
+  integer(kind=int32),allocatable,intent(out)::ia(:)
  
-  if(size(ia).ne.size(sparse%ia))then
-   write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
-   stop
-  endif
- 
+  allocate(ia(size(sparse%ia))) 
   ia=sparse%ia
+
 end subroutine
  
 !**colval_crs
 module subroutine get_colval_crs(sparse,ja)
   class(crssparse),intent(in)::sparse
-  integer(kind=int32),intent(inout)::ja(:)
+  integer(kind=int32),allocatable,intent(out)::ja(:)
  
-  if(size(ja).ne.size(sparse%ja))then
-   write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different size!'
-   stop
-  endif
- 
+  allocate(ja(size(sparse%ja))) 
   ja=sparse%ja
+
 end subroutine
  
 !**nzval_crs
 module subroutine get_nzval_crs(sparse,a)
   class(crssparse),intent(in)::sparse
-  real(kind=wp),intent(inout)::a(:)
- 
-  if(size(a).ne.size(sparse%a))then
-   write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different size!'
-   stop
-  endif
- 
+  real(kind=wp),allocatable,intent(out)::a(:)
+  
+  allocate(a(size(sparse%a))) 
   a=sparse%a
+
 end subroutine
  
 
