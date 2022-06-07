@@ -32,6 +32,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol add", test_ncol_add) &
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
+    , new_unittest("crs test external", test_external) &
     , new_unittest("crs cg", test_cg) &
 #if (_SPAINV==1)
     , new_unittest("crs chol", test_chol) &
@@ -350,6 +351,44 @@ subroutine test_ncol_add_lupper(error)
  if(verbose)call printmat(mat)
 
 end subroutine
+
+subroutine test_external(error)
+  type(error_type), allocatable, intent(out) :: error
+ 
+  integer, parameter :: nrow = 5
+  integer, parameter :: ncol = 4
+  logical, parameter :: lvalid(size(ia)) =  ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+ 
+  integer, allocatable :: iat(:), jat(:), ia1(:), ja1(:), ia2(:), ja2(:)
+  real(wp), allocatable :: at(:), a1(:), a2(:)
+  real(wp) :: mat(nrow, ncol)
+  integer :: nz
+  type(coosparse) :: coo
+  type(crssparse) :: crs1, crs2
+ 
+  coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+  crs1 = coo
+  nz = crs1%nonzero()
+  
+  call crs1%get_rowptr(iat)
+  call crs1%get_colval(jat)
+  call crs1%get_nzval(at)
+
+  crs2 = crssparse(nrow, nz, n = ncol)
+  call crs2%external(iat, jat, at)
+
+  call getija_crs(crs1, ia1, ja1, a1, mat)
+  call getija_crs(crs2, ia2, ja2, a2, mat)
+
+  call check(error, all(ia1 == ia2), 'ia')
+  call check(error, all(ja1 == ja2), 'ja')
+  call check(error, all(a1 == a2), 'a')
+  if (allocated(error)) return
+ 
+  if(verbose)call printmat(mat)
+ 
+ end subroutine
 
 !CG
 subroutine test_cg(error)
