@@ -209,6 +209,37 @@ module subroutine external_crs(sparse,ia,ja,a)
 
 end subroutine
 
+!**rowptr_crs
+module subroutine get_rowptr_crs(sparse,ia)
+  class(crssparse),intent(in)::sparse
+  integer(kind=int32),allocatable,intent(out)::ia(:)
+ 
+  allocate(ia(size(sparse%ia))) 
+  ia=sparse%ia
+
+end subroutine
+ 
+!**colval_crs
+module subroutine get_colval_crs(sparse,ja)
+  class(crssparse),intent(in)::sparse
+  integer(kind=int32),allocatable,intent(out)::ja(:)
+ 
+  allocate(ja(size(sparse%ja))) 
+  ja=sparse%ja
+
+end subroutine
+ 
+!**nzval_crs
+module subroutine get_nzval_crs(sparse,a)
+  class(crssparse),intent(in)::sparse
+  real(kind=wp),allocatable,intent(out)::a(:)
+  
+  allocate(a(size(sparse%a))) 
+  a=sparse%a
+
+end subroutine
+ 
+
 !**MULTIPLICATIONS
 module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
  !Computes y=val*y+alpha*sparse(tranposition)*x
@@ -776,17 +807,24 @@ end subroutine
 
 !**SOLVE
 #if (_PARDISO==1)
-module subroutine solve_crs_vector(sparse,x,y)
+module subroutine solve_crs_vector(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:)
  real(kind=wp),intent(inout),contiguous::y(:)
+ integer(kind=int32),intent(in),optional::msglvl
 
  !Pardiso variables
  integer(kind=int32)::error
  integer(kind=int32)::nrhs
+ integer(kind=int32)::msglvl_opt
 
  !$ real(kind=real64)::t1
+
+ ! default value if not present
+ msglvl_opt=1
+ if(present(msglvl)) msglvl_opt=msglvl
+
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
@@ -808,7 +846,7 @@ module subroutine solve_crs_vector(sparse,x,y)
   !Preparation of Cholesky of A with Pardiso
   !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
   !to avoid ifort 2021.4.0 bug
-  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=msglvl_opt)   !mtype=11
 
   !initialize iparm
   call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)
@@ -882,17 +920,24 @@ module subroutine solve_crs_vector(sparse,x,y)
 
 end subroutine
 
-module subroutine solve_crs_array(sparse,x,y)
+module subroutine solve_crs_array(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:,:)
  real(kind=wp),intent(inout),contiguous::y(:,:)
+ integer(kind=int32),intent(in),optional::msglvl
 
  !Pardiso variables
  integer(kind=int32)::error
  integer(kind=int32)::nrhs
+ integer(kind=int32)::msglvl_opt
 
  !$ real(kind=real64)::t1
+
+ ! default value if not present
+ msglvl_opt=1
+ if(present(msglvl)) msglvl_opt=msglvl
+
 
  if(.not.sparse%issquare())then
   write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
@@ -918,7 +963,7 @@ module subroutine solve_crs_array(sparse,x,y)
   !Preparation of Cholesky of A with Pardiso
   !parvar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
   !to avoid ifort 2021.4.0 bug
-  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=1)   !mtype=11
+  sparse%pardisovar=pardiso_variable(maxfct=1,mnum=1,mtype=-2,solver=0,msglvl=msglvl_opt)   !mtype=11
 
   !initialize iparm
   call pardisoinit(sparse%pardisovar%pt,sparse%pardisovar%mtype,sparse%pardisovar%iparm)

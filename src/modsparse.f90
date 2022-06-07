@@ -429,6 +429,12 @@ module modsparse
   procedure,public::getmem=>getmem_crs
   !> @brief Initializes the vectors ia,ja,and a from external vectors
   procedure,public::external=>external_crs
+  !> @brief Get function for the internal vector ia of row pointers
+  procedure,public::get_rowptr=>get_rowptr_crs
+  !> @brief Get function for the internal vector ja of column values
+  procedure,public::get_colval=>get_colval_crs
+  !> @brief Get function for the internal vector a of non-zero values
+  procedure,public::get_nzval=>get_nzval_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
@@ -528,6 +534,21 @@ module modsparse
    integer(kind=int32),intent(in)::ia(:),ja(:)
    real(kind=wp),intent(in)::a(:)
   end subroutine
+  !**ROWPTR
+  module subroutine get_rowptr_crs(sparse,ia)
+    class(crssparse),intent(in)::sparse
+    integer(kind=int32),allocatable,intent(out)::ia(:)
+  end subroutine
+  !**COLVAL
+  module subroutine get_colval_crs(sparse,ja)
+    class(crssparse),intent(in)::sparse
+    integer(kind=int32),allocatable,intent(out)::ja(:)
+   end subroutine
+  !**NZVAL
+  module subroutine get_nzval_crs(sparse,a)
+    class(crssparse),intent(in)::sparse
+    real(kind=wp),allocatable,intent(out)::a(:)
+  end subroutine  
   !**MULTIPLICATIONS
   module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
    !Computes y=val*y+alpha*sparse(tranposition)*x
@@ -621,17 +642,19 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**SOLVE
-  module subroutine solve_crs_vector(sparse,x,y)
+  module subroutine solve_crs_vector(sparse,x,y,msglvl)
    !sparse*x=y
    class(crssparse),intent(inout)::sparse
    real(kind=wp),intent(out),contiguous::x(:)
    real(kind=wp),intent(inout),contiguous::y(:)
+   integer(kind=int32),intent(in),optional::msglvl
   end subroutine
-  module subroutine solve_crs_array(sparse,x,y)
+  module subroutine solve_crs_array(sparse,x,y,msglvl)
    !sparse*x=y
    class(crssparse),intent(inout)::sparse
    real(kind=wp),intent(out),contiguous::x(:,:)
    real(kind=wp),intent(inout),contiguous::y(:,:)
+   integer(kind=int32),intent(in),optional::msglvl
   end subroutine
   !**SOLVE WITH A TRIANGULAR FACTOR
   module subroutine isolve_crs(sparse,x,y)
