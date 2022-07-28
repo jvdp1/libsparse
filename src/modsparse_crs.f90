@@ -256,7 +256,6 @@ module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
   call setseed(1)
  endif
 
-! x = sqrt(w)
  do i = 1, ngibbs
 #if(_DP==0)
   call mkl_scsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
