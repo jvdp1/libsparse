@@ -33,6 +33,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
     , new_unittest("crs test external", test_external) &
+    , new_unittest("crs test harville", test_harville) &
     , new_unittest("crs cg", test_cg) &
 #if (_SPAINV==1)
     , new_unittest("crs chol", test_chol) &
@@ -753,6 +754,33 @@ subroutine test_ncol_get_lupper(error)
  crs = coo
 
  call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+
+end subroutine
+
+!HARVILLE
+subroutine test_harville(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+
+ real(wp), parameter :: diaginvsol(nrow) = [ real(wp):: 1.007295172270438E-002, 0.5_wp, 3.345347748825206E-003&
+               , 2.546510312665334E-003, 1.987905182703515E-003, 1.664886113502529E-003]
+
+ real(wp), allocatable :: diaginv(:)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2], [aspsd, 2._wp])
+
+ crs = coo
+
+ call crs%harville(100, 10, diaginv)
+
+ call check(error, all(abs(int(diaginv*10**7)/10._wp**7 - int(diaginvsol*10**7)/10._wp**7) < tol_wp), 'harville')
+ return
 
 end subroutine
 

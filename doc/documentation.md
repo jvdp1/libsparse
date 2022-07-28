@@ -157,6 +157,13 @@ permarray = mat%getordering()
 Options for METIS 5 can be changed through optional arguments of this method.  
 
 
+To __approximate the diagonal elements of the inverse__ of a sparse matrix using
+Harville (1999):
+
+````
+call crsmat%harville(ngibbs, nburn, diaginv)
+````
+
 To __create__ a CRS matrix from __existing arrays__, the method *external* must be used:  
 
 ````  

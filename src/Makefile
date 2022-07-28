@@ -16,6 +16,7 @@ endif
 all: libsparse.a
 
 OBJ = modcommon.o \
+      modrandom.o \
       $(OBJPARDISO) $(OBJMETIS) $(OBJSPAINV) \
       modsparse_mkl.o modhash.o modsparse.o modsparse_gen.o modsparse_coo.o \
       modsparse_crs.o modsparse_ll.o modsparse_metisgraph.o
