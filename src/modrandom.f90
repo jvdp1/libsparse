@@ -1,8 +1,8 @@
 module modrandom
 #if (_DP==0)
- use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real32
+ use, intrinsic:: iso_fortran_env, only: wp=>real32
 #else
- use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
+ use, intrinsic:: iso_fortran_env, only: wp=>real64
 #endif
  implicit none (type, external)
  private
