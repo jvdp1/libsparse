@@ -435,6 +435,8 @@ module modsparse
   procedure,public::get_colval=>get_colval_crs
   !> @brief Get function for the internal vector a of non-zero values
   procedure,public::get_nzval=>get_nzval_crs
+  !> @brief Get diagonal elements of an approximate inverse using Harville (1999)
+  procedure,public::harville=>harville_crs
 #if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
@@ -533,6 +535,13 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in)::ia(:),ja(:)
    real(kind=wp),intent(in)::a(:)
+  end subroutine
+  !**HARVILLE
+  module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
+   class(crssparse), intent(inout)::sparse
+   integer, intent(in) :: ngibbs, nburn
+   real(wp), intent(out), allocatable :: diaginv(:)
+   integer, intent(in), optional :: seed
   end subroutine
   !**ROWPTR
   module subroutine get_rowptr_crs(sparse,ia)

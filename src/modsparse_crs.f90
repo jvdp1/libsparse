@@ -1,8 +1,10 @@
 submodule (modsparse) modsparse_crs
+ use modrandom, only: setseed, snorm=>rand_stdnormal
  use modsparse_mkl, only: pardisoinit, pardiso &
                           , mkl_scsrmv, mkl_dcsrmv &
                           , mkl_scsrmm, mkl_dcsrmm &
-                          , mkl_scsrtrsv, mkl_dcsrtrsv
+                          , mkl_scsrtrsv, mkl_dcsrtrsv &
+                          , mkl_scsrsymv, mkl_dcsrsymv
 #if (_SPAINV==1)
  use modspainv
 #endif
@@ -206,6 +208,82 @@ module subroutine external_crs(sparse,ia,ja,a)
  sparse%ia=ia
  sparse%ja=ja
  sparse%a=a
+
+end subroutine
+
+!**HARVILLE
+module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
+ ! Approximate the diagonal elements of the inverse of the sparse matrix
+ ! following Harville (1999)
+ !
+ !Possibility to implement multiple chains by extenting x to a matrix x(n,m)
+ !where m is the number of independent chains.
+ class(crssparse), intent(inout)::sparse
+ integer, intent(in) :: ngibbs, nburn
+ real(wp), intent(out), allocatable :: diaginv(:)
+ integer, intent(in), optional :: seed
+
+ integer :: n, i, j, k
+ real(wp) :: d
+ real(wp), allocatable :: a(:)
+ real(wp), allocatable :: w(:), xt(:), dinv(:) ,x(:)
+
+ if(.not.sparse%lsymmetric.or..not.sparse%lupperstorage) return
+
+ call sparse%sort()
+
+ n = size(sparse%ia) - 1
+
+ allocate(a, source = sparse%a)
+ allocate(w(n), source = 0._wp)
+
+ do i = 1, n
+  if (a(sparse%ia(i)).ne.0._wp) then
+   w(i) = 1 / a(sparse%ia(i))
+   a(sparse%ia(i)) = 0
+  else
+   w(i) = 0
+  endif
+ enddo
+
+ allocate(xt(n), source = 0._wp)
+ allocate(dinv(n), source = 0._wp)
+ allocate(x(n), source = 0._wp)
+
+ if(present(seed))then
+  call setseed(seed)
+ else
+  call setseed(1)
+ endif
+
+! x = sqrt(w)
+ do i = 1, ngibbs
+#if(_DP==0)
+  call mkl_scsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
+#else
+  call mkl_dcsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
+#endif
+  x = -1 * x
+  do j=1,n
+   x(j) = w(j) * x(j)
+   if (i.gt.nburn) dinv(j) = dinv(j) + x(j)**2
+   x(j) = x(j) + sqrt(w(j)) * snorm()
+   d = x(j) - xt(j)
+   do k = sparse%ia(j)+1, sparse%ia(j+1)-1
+    x(sparse%ja(k)) = x(sparse%ja(k)) - a(k) * d
+   enddo
+  enddo
+  xt = x
+  x  = 0
+ enddo
+ deallocate(a)
+ deallocate(x)
+ deallocate(xt)
+
+ allocate(diaginv(n), source = 0._wp)
+ do j = 1, n
+  diaginv(j) = w(j) + dinv(j)/(ngibbs-nburn)
+ enddo
 
 end subroutine
 
