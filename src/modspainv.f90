@@ -177,9 +177,9 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
  real(kind=wp),allocatable,intent(out)::xspars(:),diag(:)
   
-#if (_VERBOSE >2)
+!#if (_VERBOSE >2)
  integer(kind=int32)::i
-#endif
+!#endif
  integer(kind=int32)::nnode
  integer(kind=int32)::maxnode
  integer(kind=int32)::maxsub,flag,maxlnz
@@ -206,6 +206,11 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !super following Karin Meyer
  allocate(inode(neqns+1))  !to allow diagonal matrices (for which the number of super-nodes is equal to the number of equations
  call super_nodes(mssn,neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
+! In case of zero rows/colums for spainv
+! print*,'aaa ',nnode, ' bbb ',inode
+! nnode=neqns
+! inode = [(i, i=neqns, 0, -1)]
+! print*,'aaa ',nnode, ' bbb ',inode
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
@@ -366,8 +371,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   call progress(icol2,neqns)
 
   !pick out diagonal block
-  allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
-  if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+  allocate( ttt(icol1:icol2,icol1:icol2))
   ttt=0._wp
   !jvec=0
   n=0
@@ -693,6 +697,13 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          call dgemm( 'T', 'N', mm, mm, n21, 1._wp, f21, n21, s21, n21, 1._wp,ttt, mm )
 #endif
      else
+         if(mm.eq.1)then
+           if(ttt(icol1,icol1).gt.0._wp)then
+            call dpotri( 'L',  mm, ttt, mm, ii )
+           else
+             ttt=0._wp
+           endif
+         else
 #if(_DP==0)
          call spotri( 'L',  mm, ttt, mm, ii )
 #else
@@ -702,6 +713,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
              write(*,*) 'Routine DPOTRI returned error code', ii
              stop
          end if
+         endif
      end if
 
 !    save current block  

@@ -11,7 +11,7 @@ module modtest_common
 
  real(wp), parameter, public :: tol_wp = epsilon(1._wp) * 10**4
 
- logical, parameter, public :: verbose = .false.
+ logical, parameter, public :: verbose = .true.
  
  integer, parameter, public :: ia(16) = [1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6]
  integer, parameter, public :: ja(16) = [1, 3, 4, 5, 6, 6, 5, 1, 3, 4, 4, 6, 1, 2, 5, 6]
@@ -24,6 +24,11 @@ module modtest_common
  integer, parameter, public :: jaspsdf(*) = [1, 2, 3, 4, 5, 6, 2, 4, 5, 6, 3, 4, 5, 6, 4, 5, 6]
  real(wp), parameter, public :: aspsdf(*) = [real(wp):: 6, 3, 3, 2, 2, 2, 3, 1, 1, 1, 3, 1, 1, 1&
                                            , 2, 2, 2]
+
+! integer, parameter, public :: iaspsdf(*) = [1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 5, 6]
+! integer, parameter, public :: jaspsdf(*) = [1, 2, 3, 4, 5, 6, 2, 3, 5, 3, 4, 5, 6, 4, 5, 6, 5, 6]
+! real(wp), parameter, public :: aspsdf(*) = [real(wp):: 2, 1, 2, 1, 1, 1, 3, 3, 1, 6, 3, 2, 2, 3&
+!                                             , 1, 1, 2, 2]
 
 contains
 subroutine addval_coo(coo, nrow, ncol, ia, ja, a, iat, jat, at, mat)
@@ -107,7 +112,7 @@ subroutine printmat(mat)
  write(output_unit, '(a)')repeat('*',size(mat, 1))
 
  do i = 1, size(mat, 1)
-  write(output_unit, '(*(g0.5,1x))')mat(i,:)
+  write(output_unit, '(*(f10.5,1x))')mat(i,:)
  enddo
 
  write(output_unit, '(a)')repeat('*',size(mat, 1))
