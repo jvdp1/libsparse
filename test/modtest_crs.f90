@@ -7,7 +7,8 @@ module modtest_crs
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse, crssparse, assignment(=)
  use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd, addval => addval_coo&
-                       , getmat, matcheck, printmat
+                       , getmat, matcheck, printmat&
+                       , iaspsdf, jaspsdf, aspsdf
  implicit none
  private
 
@@ -92,6 +93,7 @@ subroutine collect_crs(testsuite)
 #if (_SPAINV==1)
     , new_unittest("crs solveldlt", test_solveldlt) &
     , new_unittest("crs spainv", test_spainv) &
+    , new_unittest("crs spainv_spsd", test_spainv_spsd) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
 #endif
     , new_unittest("crs submatrix_off_full_full", test_submatrix_off_full_full) &
@@ -1748,6 +1750,58 @@ subroutine test_spainv(error)
  call getija_crs(crs, iat, jat, at, mat_l)
 
  call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_permf')
+
+end subroutine
+
+
+subroutine test_spainv_spsd(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), iaspsdf, jaspsdf, aspsdf)
+
+! !Cholesky
+! crschol= coo
+! call crschol%setpermutation(perm)
+! call crschol%chol()
+! 
+! do i = 1, nrow
+!  vect = 0
+!  vect(i) = 1
+!  call crschol%isolve(matinv(:,i), vect) !matinv reference
+! enddo
+!
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+
+ call printmat(mat)
+
+ call crs%setpermutation(perm)
+ call crs%spainv()
+! 
+! deallocate(iat, jat, at)
+! call getija_crs(crs, iat, jat, at, mat_l)
+!
+! call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
+! if(allocated(error))return
 
 end subroutine
 
