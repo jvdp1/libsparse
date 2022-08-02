@@ -1833,7 +1833,6 @@ subroutine test_spainv_1(error)
 
 end subroutine
 
-
 subroutine test_spainv_spsd(error)
  type(error_type), allocatable, intent(out) :: error
 
@@ -1856,17 +1855,21 @@ subroutine test_spainv_spsd(error)
 
  call addval(coo, coo%getdim(1), coo%getdim(2), iaspsdf, jaspsdf, aspsdf)
 
-! !Cholesky
-! crschol= coo
-! call crschol%setpermutation(perm)
-! call crschol%chol()
-! 
-! do i = 1, nrow
-!  vect = 0
-!  vect(i) = 1
-!  call crschol%isolve(matinv(:,i), vect) !matinv reference
-! enddo
-!
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(perm)
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
  !SPAINV
  crs = coo
 
@@ -1881,12 +1884,8 @@ subroutine test_spainv_spsd(error)
  call getija_crs(crs, iat, jat, at, mat_l)
  if(verbose)call printmat(mat_l)
 
-! 
-! deallocate(iat, jat, at)
-! call getija_crs(crs, iat, jat, at, mat_l)
-!
-! call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
-! if(allocated(error))return
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
+ if(allocated(error))return
 
 end subroutine
 

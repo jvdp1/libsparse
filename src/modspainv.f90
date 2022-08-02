@@ -398,7 +398,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   lpos=.true.
   irow=mm
   if(irow.eq.1)then
-   if(ttt(icol1,icol1).gt.0._wp)then
+   if(ttt(icol1,icol1).gt.tol)then
     ttt=sqrt(ttt)
    else
     lpos=.false.
@@ -562,6 +562,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   real(kind=wp)::xx
   real(kind=wp),dimension(:,:),allocatable:: ttt, s21, s22, f21
   real(kind=wp),dimension(:),allocatable:: rr, qx
+  logical :: lpos
 
   write(output_unit,'(/" Sparse inversion...")')
 
@@ -621,12 +622,25 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
             end do
          end do
 !        ... post-multiply with inverse Chol factor -> solve
+         lpos = .not.(mm.eq.1.and.ttt(icol1,icol1).le.tol)
+
+         if(lpos)then
 #if(_DP==0)
          call strsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
+         else
+         call sgrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
 #else
          call dtrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
+         else
+         call dgtrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
 #endif
+         endif
+
+
 !        ... invert Cholesky factor
+         if(mm.eq.1.and.ttt(icol1,icol1).le.tol)then
+             ttt=0._wp
+         else
 #if(_DP==0)
          call spotri( 'L',  mm, ttt, mm, ii )
 #else
@@ -636,6 +650,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
              write(*,*) 'Routine DPOTRI returned error code', ii
              stop
          end if
+         endif
 !        ... pre-multiply by already inverted submatrix
          iopt = 2
 44       if( iopt == 1 ) then
@@ -698,7 +713,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 #endif
      else
          if(mm.eq.1)then
-           if(ttt(icol1,icol1).gt.0._wp)then
+           if(ttt(icol1,icol1).gt.tol)then
             call dpotri( 'L',  mm, ttt, mm, ii )
            else
              ttt=0._wp
