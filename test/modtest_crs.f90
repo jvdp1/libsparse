@@ -1887,6 +1887,38 @@ subroutine test_spainv_spsd(error)
  call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd')
  if(allocated(error))return
 
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(permf(nrow))
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(permf(nrow))
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd_permf')
+ if(allocated(error))return
+
 end subroutine
 
 subroutine test_spainv_failed(error)
