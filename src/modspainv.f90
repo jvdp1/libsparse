@@ -340,7 +340,7 @@ end subroutine
 subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(inout)::nnode
- integer(kind=int32),intent(inout)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(inout)::inode(:)
  integer(kind=int32),intent(out),optional::rank
  real(kind=wp),intent(inout)::xspars(:),diag(:)
