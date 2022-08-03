@@ -179,7 +179,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
   
 #if (_VERBOSE >2)
  integer(kind=int32)::i
-!#endif
+#endif
  integer(kind=int32)::nnode
  integer(kind=int32)::maxnode
  integer(kind=int32)::maxsub,flag,maxlnz
