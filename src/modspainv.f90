@@ -308,6 +308,7 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  ! establish boundaries between diaggonal blocks 100% full
  ilast = neqns
  nnode = 0
+ inode = 0
  minnode=2**30
  maxnode=0
  do i = neqns-1, 1, -1
@@ -337,8 +338,10 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
 end subroutine 
 
 subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
- integer(kind=int32),intent(in)::neqns,nnode
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
+ integer(kind=int32),intent(in)::neqns
+ integer(kind=int32),intent(inout)::nnode
+ integer(kind=int32),intent(inout)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(inout)::inode(:)
  integer(kind=int32),intent(out),optional::rank
  real(kind=wp),intent(inout)::xspars(:),diag(:)
 
@@ -347,15 +350,21 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32)::ninit
 #endif
  integer(kind=int32)::orank
+ integer(kind=int32) :: nnode_
+ integer(kind=int32), allocatable :: inode_(:)
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
 ! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
  logical::lpos
+ logical :: ldpotrf
 
  write(output_unit,'(/" Cholesky factorization...")')
 
  allocate(jvec(neqns),kvec(neqns),stat=ii)
  if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+
+ nnode_ = nnode
+ allocate(inode_, source = inode)
 
  jvec=0 !it must be re-initialized to 0 only if it is modified, i.e, when n.gt.0
 #if (_VERBOSE>0)
@@ -363,9 +372,20 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
  orank=0
 
- do jnode = nnode, 1, -1
-  icol1 = inode(jnode+1) + 1
-  icol2 = inode(jnode)
+ jnode = nnode_ + 1
+ ldpotrf = .true.
+
+ do !jnode = nnode, 1, -1
+  if(.not.ldpotrf)then
+   call split_inode(inode_, nnode_, jnode)
+   ldpotrf = .true.
+   jnode = jnode + 1
+  endif
+
+  jnode = jnode - 1
+  if(jnode < 1)exit
+  icol1 = inode_(jnode+1) + 1
+  icol2 = inode_(jnode)
   mm = icol2 - icol1 +1
 
   call progress(icol2,neqns)
@@ -413,7 +433,10 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
    if(ii.ne.0)then
     write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
-    error stop
+    ldpotrf = .false.
+    deallocate(ttt)
+    cycle
+!    error stop
    endif
   endif
   orank=orank+irow
@@ -544,6 +567,10 @@ end block
 
  deallocate(jvec,kvec)
  
+
+ inode = inode_
+ nnode = nnode_
+
  if(present(rank))rank=orank
 
 #if (_VERBOSE>0)
@@ -756,7 +783,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
   deallocate(jvec,kvec)
 
-end subroutine 
+end subroutine
 
 subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  integer(kind=int32),intent(in)::neqns,maxlnz
@@ -958,6 +985,25 @@ subroutine writetime(unlog,time,a)
  !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Matrix inversion',':',time(5),' s'
  !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Conversion to CRS',':',time(6),' s'
  !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Total time',':',sum(time),' s'
+
+end subroutine
+
+pure subroutine split_inode(inode, nnode, jnode)
+ integer(kind=int32), intent(inout) :: inode(:)
+ integer(kind=int32), intent(inout) :: nnode
+ integer(kind=int32), intent(inout) :: jnode
+
+ integer :: i, n
+
+ n = inode(jnode) - inode(jnode+1) - 1
+
+ inode(n+jnode+1:n+nnode+1) = inode(jnode+1:nnode+1)
+
+ inode(jnode+1:n+jnode) = [ (i, i = inode(jnode)-1, inode(jnode)-n, -1)]
+
+ nnode = nnode + n
+
+ jnode = jnode + n
 
 end subroutine
 
