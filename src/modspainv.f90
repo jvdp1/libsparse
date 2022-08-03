@@ -435,6 +435,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
     write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
     ldpotrf = .false.
     deallocate(ttt)
+    jvec = 0
     cycle
 !    error stop
    endif
@@ -673,8 +674,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          call dpotri( 'L',  mm, ttt, mm, ii )
 #endif
          if( ii /= 0 ) then
-             write(*,*) 'Routine DPOTRI returned error code', ii
-             stop
+             write(*,'(a,i0)') 'Routine DPOTRI returned error code ', ii
+             error stop
          end if
          endif
 !        ... pre-multiply by already inverted submatrix
@@ -751,8 +752,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          call dpotri( 'L',  mm, ttt, mm, ii )
 #endif
          if( ii /= 0 ) then
-             write(*,*) 'Routine DPOTRI returned error code', ii
-             stop
+             write(*,'(a,i0)') 'Routine DPOTRI returned error code ', ii
+             error stop
          end if
          endif
      end if
