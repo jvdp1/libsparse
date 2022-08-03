@@ -8,7 +8,8 @@ module modtest_crs
  use modsparse, only: coosparse, crssparse, assignment(=)
  use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd, addval => addval_coo&
                        , getmat, matcheck, printmat&
-                       , iaspsdf, jaspsdf, aspsdf
+                       , iaspsdf, jaspsdf, aspsdf&
+                       , iaspsdf1, jaspsdf1, aspsdf1
  implicit none
  private
 
@@ -1874,8 +1875,7 @@ subroutine test_spainv_spsd(error)
  crs = coo
 
  call getija_crs(crs, iat, jat, at, mat)
-
- call printmat(mat)
+ if(verbose)call printmat(mat)
 
  call crs%setpermutation(perm)
  call crs%spainv()
@@ -1884,7 +1884,7 @@ subroutine test_spainv_spsd(error)
  call getija_crs(crs, iat, jat, at, mat_l)
  if(verbose)call printmat(mat_l)
 
- call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd')
  if(allocated(error))return
 
 end subroutine
