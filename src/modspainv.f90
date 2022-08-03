@@ -773,7 +773,18 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
    deallocate( ttt )
    if(n21.gt.0)then
     deallocate(s21,f21)
-    jvec=0
+    !jvec=0
+    do irow=icol1,icol2
+     ksub = xnzsub(irow)
+     do i = xlnz(irow), xlnz(irow+1)-1
+      jcol=ixsub(ksub)
+      ksub=ksub+1
+      if(jcol<=icol2)then
+      else 
+       jvec(jcol) = 0
+      end if
+     end do
+    end do
    endif
 
   enddo ! jnode
