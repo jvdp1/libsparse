@@ -206,11 +206,6 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !super following Karin Meyer
  allocate(inode(neqns+1))  !to allow diagonal matrices (for which the number of super-nodes is equal to the number of equations
  call super_nodes(mssn,neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
-! In case of zero rows/colums for spainv
-! print*,'aaa ',nnode, ' bbb ',inode
-! nnode=neqns
-! inode = [(i, i=neqns, 0, -1)]
-! print*,'aaa ',nnode, ' bbb ',inode
  !$ time(3)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
