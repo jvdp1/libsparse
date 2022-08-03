@@ -732,10 +732,10 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 #endif
      else
          if(mm.eq.1)then
-           if(ttt(icol1,icol1).gt.tol)then
-            call dpotri( 'L',  mm, ttt, mm, ii )
+           if(ttt(icol1,icol1).le.tol)then
+            ttt=0._wp
            else
-             ttt=0._wp
+            call dpotri( 'L',  mm, ttt, mm, ii )
            endif
          else
 #if(_DP==0)
