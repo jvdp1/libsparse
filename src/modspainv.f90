@@ -607,8 +607,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
    call progress(icol2,neqns)
      
      !pick out diagonal block
-     allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
-     if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+     allocate( ttt(icol1:icol2,icol1:icol2))
      ttt=0._wp
      !jvec=0
      n21=0
@@ -632,10 +631,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
      !pick out lead columns (condensed)
      if( n21 > 0 ) then
-         allocate( s21(n21, icol1:icol2), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
-         allocate( f21(n21, icol1:icol2), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+         allocate( s21(n21, icol1:icol2))
+         allocate( f21(n21, icol1:icol2))
          s21 = 0._wp
          f21 = 0._wp
          do irow = icol1, icol2
