@@ -97,6 +97,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
     , new_unittest("crs spainv_1", test_spainv_1) &
     , new_unittest("crs spainv_spsd", test_spainv_spsd) &
+    , new_unittest("crs spainv_spsd_1", test_spainv_spsd_1) &
 #endif
     , new_unittest("crs submatrix_off_full_full", test_submatrix_off_full_full) &
     , new_unittest("crs submatrix_off_full_upper", test_submatrix_off_full_upper) &
@@ -1917,6 +1918,93 @@ subroutine test_spainv_spsd(error)
  if(verbose)call printmat(mat_l)
 
  call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd_permf')
+ if(allocated(error))return
+
+end subroutine
+
+subroutine test_spainv_spsd_1(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), iaspsdf1, jaspsdf1, aspsdf1)
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(perm)
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(perm)
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd1')
+ if(allocated(error))return
+
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(permf(nrow))
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(permf(nrow))
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd1_permf')
  if(allocated(error))return
 
 end subroutine
