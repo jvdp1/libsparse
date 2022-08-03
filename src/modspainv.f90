@@ -177,7 +177,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
  real(kind=wp),allocatable,intent(out)::xspars(:),diag(:)
   
-!#if (_VERBOSE >2)
+#if (_VERBOSE >2)
  integer(kind=int32)::i
 !#endif
  integer(kind=int32)::nnode
