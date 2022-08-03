@@ -11,7 +11,7 @@ module modtest_common
 
  real(wp), parameter, public :: tol_wp = epsilon(1._wp) * 10**4
 
- logical, parameter, public :: verbose = .true.
+ logical, parameter, public :: verbose = .false.
  
  integer, parameter, public :: ia(16) = [1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 6]
  integer, parameter, public :: ja(16) = [1, 3, 4, 5, 6, 6, 5, 1, 3, 4, 4, 6, 1, 2, 5, 6]
