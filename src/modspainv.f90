@@ -657,7 +657,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
 
 !        ... invert Cholesky factor
-         if(mm.eq.1.and.ttt(icol1,icol1).le.tol)then
+         if(.not.lpos)then
              ttt=0._wp
          else
 #if(_DP==0)
