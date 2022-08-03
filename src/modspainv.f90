@@ -567,7 +567,6 @@ end block
 
  deallocate(jvec,kvec)
  
-
  inode = inode_
  nnode = nnode_
 
