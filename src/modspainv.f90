@@ -13,7 +13,7 @@ module modspainv
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
  use modsparse_mkl, only: dpotrf, dpotri, dtrsm, dsymm, dgemm
 #endif
- use modcommon
+ use modcommon, only: progress
  !$ use omp_lib
  implicit none
  private
@@ -355,8 +355,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 
  write(output_unit,'(/" Cholesky factorization...")')
 
- allocate(jvec(neqns),kvec(neqns),stat=ii)
- if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+ allocate(jvec(neqns),kvec(neqns))
 
  nnode_ = nnode
  allocate(inode_, source = inode)
@@ -440,8 +439,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   !adjust block below diagonal
   if(n.gt.0)then
          !... pick out rows
-         allocate( s21(n, icol1:icol2), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+         allocate( s21(n, icol1:icol2))
          s21 = 0._wp
          do irow = icol1, icol2
             ksub = xnzsub(irow)
@@ -467,8 +465,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
    endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
-         allocate( s22(n,n), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+         allocate( s22(n,n))
 #if(_DP==0)
          call ssyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
 #else
@@ -588,8 +585,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
   write(output_unit,'(/" Sparse inversion...")')
 
-  allocate( jvec(neqns), kvec(neqns),stat = ii )
-  if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+  allocate( jvec(neqns), kvec(neqns))
  
   jvec=0  !placed here and at the end of the loop to avoid to re-initialize it at each iteration and when n21=0
 
@@ -673,8 +669,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 !        ... pre-multiply by already inverted submatrix
          iopt = 2
 44       if( iopt == 1 ) then
-            allocate( rr(icol1:icol2), qx(icol1:icol2), stat = ii )
-            if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+            allocate( rr(icol1:icol2), qx(icol1:icol2))
             f21 = 0._wp
             do k = 1, n21
                jrow = kvec(k)
