@@ -2,7 +2,11 @@
 
 !> @todo Still raw and not very efficient
 
-!Based on Karin Meyer 's code !(didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran)
+!Based on Karin Meyer 's code (didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran).
+!The content of Karin Meyer 's wiki is licensed under CC Attribution-Sahre Alike 4.0 International.
+!
+!Support of sparse inverse of SPSD matrices by implementing the S. D. Kachman modifications (https://www.ars.usda.gov/ARSUserFiles/80420530/MTDFREML/MTDFMan.pdf ; Chapter 6)
+
 !Rewritten for my purposes
 
 module modspainv
@@ -13,7 +17,7 @@ module modspainv
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
  use modsparse_mkl, only: dpotrf, dpotri, dtrsm, dsymm, dgemm
 #endif
- use modcommon
+ use modcommon, only: progress
  !$ use omp_lib
  implicit none
  private
@@ -303,6 +307,7 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  ! establish boundaries between diaggonal blocks 100% full
  ilast = neqns
  nnode = 0
+ inode = 0
  minnode=2**30
  maxnode=0
  do i = neqns-1, 1, -1
@@ -332,8 +337,10 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
 end subroutine 
 
 subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
- integer(kind=int32),intent(in)::neqns,nnode
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
+ integer(kind=int32),intent(in)::neqns
+ integer(kind=int32),intent(inout)::nnode
+ integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(inout)::inode(:)
  integer(kind=int32),intent(out),optional::rank
  real(kind=wp),intent(inout)::xspars(:),diag(:)
 
@@ -342,15 +349,20 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  integer(kind=int32)::ninit
 #endif
  integer(kind=int32)::orank
+ integer(kind=int32) :: nnode_
+ integer(kind=int32), allocatable :: inode_(:)
  integer(kind=int32),allocatable::jvec(:),kvec(:)
  real(kind=wp),allocatable::ttt(:,:),s21(:,:),s22(:,:)
 ! real(kind=wp),allocatable::ttt1(:,:)   !aaaa
  logical::lpos
+ logical :: ldpotrf
 
  write(output_unit,'(/" Cholesky factorization...")')
 
- allocate(jvec(neqns),kvec(neqns),stat=ii)
- if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+ allocate(jvec(neqns),kvec(neqns))
+
+ nnode_ = nnode
+ allocate(inode_, source = inode)
 
  jvec=0 !it must be re-initialized to 0 only if it is modified, i.e, when n.gt.0
 #if (_VERBOSE>0)
@@ -358,16 +370,26 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
  orank=0
 
- do jnode = nnode, 1, -1
-  icol1 = inode(jnode+1) + 1
-  icol2 = inode(jnode)
+ jnode = nnode_ + 1
+ ldpotrf = .true.
+
+ do !jnode = nnode, 1, -1
+  if(.not.ldpotrf)then
+   call split_inode(inode_, nnode_, jnode)
+   ldpotrf = .true.
+   jnode = jnode + 1
+  endif
+
+  jnode = jnode - 1
+  if(jnode < 1)exit
+  icol1 = inode_(jnode+1) + 1
+  icol2 = inode_(jnode)
   mm = icol2 - icol1 +1
 
   call progress(icol2,neqns)
 
   !pick out diagonal block
-  allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
-  if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+  allocate( ttt(icol1:icol2,icol1:icol2))
   ttt=0._wp
   !jvec=0
   n=0
@@ -394,7 +416,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   lpos=.true.
   irow=mm
   if(irow.eq.1)then
-   if(ttt(icol1,icol1).gt.0._wp)then
+   if(ttt(icol1,icol1).gt.tol)then
     ttt=sqrt(ttt)
    else
     lpos=.false.
@@ -409,7 +431,11 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
    if(ii.ne.0)then
     write(*,'(a,i0,a)')'Routine DPOTRF returned error code: ',ii,' (matrix is not positive definite)'
-    error stop
+    ldpotrf = .false.
+    deallocate(ttt)
+    jvec = 0
+    cycle
+!    error stop
    endif
   endif
   orank=orank+irow
@@ -417,8 +443,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   !adjust block below diagonal
   if(n.gt.0)then
          !... pick out rows
-         allocate( s21(n, icol1:icol2), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+         allocate( s21(n, icol1:icol2))
          s21 = 0._wp
          do irow = icol1, icol2
             ksub = xnzsub(irow)
@@ -444,8 +469,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
 #endif
    endif
          !adjust remaining triangle to right: A22 := A22 - L21 L21'
-         allocate( s22(n,n), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+         allocate( s22(n,n))
 #if(_DP==0)
          call ssyrk( 'L', 'N', n, mm, 1._wp, s21, n, 0._wp, s22, n )
 #else
@@ -540,6 +564,9 @@ end block
 
  deallocate(jvec,kvec)
  
+ inode = inode_
+ nnode = nnode_
+
  if(present(rank))rank=orank
 
 #if (_VERBOSE>0)
@@ -558,11 +585,11 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
   real(kind=wp)::xx
   real(kind=wp),dimension(:,:),allocatable:: ttt, s21, s22, f21
   real(kind=wp),dimension(:),allocatable:: rr, qx
+  logical :: lpos
 
   write(output_unit,'(/" Sparse inversion...")')
 
-  allocate( jvec(neqns), kvec(neqns),stat = ii )
-  if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+  allocate( jvec(neqns), kvec(neqns))
  
   jvec=0  !placed here and at the end of the loop to avoid to re-initialize it at each iteration and when n21=0
 
@@ -575,8 +602,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
    call progress(icol2,neqns)
      
      !pick out diagonal block
-     allocate( ttt(icol1:icol2,icol1:icol2), stat = ii )
-     if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+     allocate( ttt(icol1:icol2,icol1:icol2))
      ttt=0._wp
      !jvec=0
      n21=0
@@ -600,10 +626,8 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
      !pick out lead columns (condensed)
      if( n21 > 0 ) then
-         allocate( s21(n21, icol1:icol2), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
-         allocate( f21(n21, icol1:icol2), stat = ii )
-         if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+         allocate( s21(n21, icol1:icol2))
+         allocate( f21(n21, icol1:icol2))
          s21 = 0._wp
          f21 = 0._wp
          do irow = icol1, icol2
@@ -617,26 +641,38 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
             end do
          end do
 !        ... post-multiply with inverse Chol factor -> solve
+         lpos = .not.(mm.eq.1.and.ttt(icol1,icol1).le.tol)
+
+         if(lpos)then
 #if(_DP==0)
          call strsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
+         else
+         call sgrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
 #else
          call dtrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
+         else
+         call dgtrsm( 'R', 'L', 'N', 'N', n21, mm, 1._wp, ttt, mm, s21, n21 )
 #endif
+         endif
+
 !        ... invert Cholesky factor
+         if(.not.lpos)then
+             ttt=0._wp
+         else
 #if(_DP==0)
          call spotri( 'L',  mm, ttt, mm, ii )
 #else
          call dpotri( 'L',  mm, ttt, mm, ii )
 #endif
          if( ii /= 0 ) then
-             write(*,*) 'Routine DPOTRI returned error code', ii
-             stop
+             write(*,'(a,i0)') 'Routine DPOTRI returned error code ', ii
+             error stop
          end if
+         endif
 !        ... pre-multiply by already inverted submatrix
          iopt = 2
 44       if( iopt == 1 ) then
-            allocate( rr(icol1:icol2), qx(icol1:icol2), stat = ii )
-            if(ii.ne.0)call alloc_err(__LINE__,__FILE__)
+            allocate( rr(icol1:icol2), qx(icol1:icol2))
             f21 = 0._wp
             do k = 1, n21
                jrow = kvec(k)
@@ -693,15 +729,23 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          call dgemm( 'T', 'N', mm, mm, n21, 1._wp, f21, n21, s21, n21, 1._wp,ttt, mm )
 #endif
      else
+         if(mm.eq.1)then
+           if(ttt(icol1,icol1).le.tol)then
+            ttt=0._wp
+           else
+            call dpotri( 'L',  mm, ttt, mm, ii )
+           endif
+         else
 #if(_DP==0)
          call spotri( 'L',  mm, ttt, mm, ii )
 #else
          call dpotri( 'L',  mm, ttt, mm, ii )
 #endif
          if( ii /= 0 ) then
-             write(*,*) 'Routine DPOTRI returned error code', ii
-             stop
+             write(*,'(a,i0)') 'Routine DPOTRI returned error code ', ii
+             error stop
          end if
+         endif
      end if
 
 !    save current block  
@@ -729,7 +773,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
   deallocate(jvec,kvec)
 
-end subroutine 
+end subroutine
 
 subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  integer(kind=int32),intent(in)::neqns,maxlnz
@@ -931,6 +975,25 @@ subroutine writetime(unlog,time,a)
  !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Matrix inversion',':',time(5),' s'
  !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Conversion to CRS',':',time(6),' s'
  !$ write(unlog,'(2x,a,t31,a,t33,f0.5,a)')'Total time',':',sum(time),' s'
+
+end subroutine
+
+pure subroutine split_inode(inode, nnode, jnode)
+ integer(kind=int32), intent(inout) :: inode(:)
+ integer(kind=int32), intent(inout) :: nnode
+ integer(kind=int32), intent(inout) :: jnode
+
+ integer(kind=int32) :: i, n
+
+ n = inode(jnode) - inode(jnode+1) - 1
+
+ inode(n+jnode+1:n+nnode+1) = inode(jnode+1:nnode+1)
+
+ inode(jnode+1:n+jnode) = [ (i, i = inode(jnode)-1, inode(jnode)-n, -1)]
+
+ nnode = nnode + n
+
+ jnode = jnode + n
 
 end subroutine
 

@@ -7,7 +7,9 @@ module modtest_crs
  use testdrive, only: new_unittest, unittest_type, error_type, check
  use modsparse, only: coosparse, crssparse, assignment(=)
  use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd, addval => addval_coo&
-                       , getmat, matcheck, printmat
+                       , getmat, matcheck, printmat&
+                       , iaspsdf, jaspsdf, aspsdf&
+                       , iaspsdf1, jaspsdf1, aspsdf1
  implicit none
  private
 
@@ -93,6 +95,9 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs solveldlt", test_solveldlt) &
     , new_unittest("crs spainv", test_spainv) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
+    , new_unittest("crs spainv_1", test_spainv_1) &
+    , new_unittest("crs spainv_spsd", test_spainv_spsd) &
+    , new_unittest("crs spainv_spsd_1", test_spainv_spsd_1) &
 #endif
     , new_unittest("crs submatrix_off_full_full", test_submatrix_off_full_full) &
     , new_unittest("crs submatrix_off_full_upper", test_submatrix_off_full_upper) &
@@ -462,6 +467,7 @@ subroutine test_chol(error)
  crs = coo
 
  call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  !Complete Cholesky decomposition
  call crs%setpermutation(perm)
@@ -821,6 +827,7 @@ subroutine test_ichol(error)
 
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  call crs%setpermutation(perm)
  call crs%ichol()
@@ -865,6 +872,7 @@ subroutine test_ichol_failed(error)
 
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
  real(wp) :: matchol(nrow, nrow)
  real(wp) :: mat_l(nrow, nrow)
  type(coosparse) :: coo
@@ -885,6 +893,10 @@ subroutine test_ichol_failed(error)
 
  !ICHOL
  crs = coo
+
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  call crs%setpermutation(perm)
  call crs%ichol()
@@ -922,6 +934,7 @@ subroutine test_isolve(error)
  crs = coo
 
  call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  !Cholesky
  call crs%setpermutation(perm)
@@ -981,6 +994,7 @@ subroutine test_ldlt(error)
  crs = coo
 
  call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  !LDLt
  call crs%setpermutation(perm)
@@ -1660,6 +1674,7 @@ subroutine test_solveldlt(error)
  crs = coo
 
  call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  !LDLt
  call crs%setpermutation(perm)
@@ -1728,12 +1743,14 @@ subroutine test_spainv(error)
  crs = coo
 
  call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
 
  call crs%setpermutation(perm)
  call crs%spainv()
  
  deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
 
  call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv')
  if(allocated(error))return
@@ -1751,6 +1768,247 @@ subroutine test_spainv(error)
 
 end subroutine
 
+subroutine test_spainv_1(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ !Cholesky
+ crschol= coo
+
+ call getija_crs(crschol, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crschol%setpermutation(perm)
+ call crschol%chol()
+ 
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%isolve(matinv(:,i), vect) !matinv reference
+ enddo
+
+ !SPAINV
+ crs = coo
+
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(perm)
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_1')
+ if(allocated(error))return
+
+ !SPAINV
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_1_permf')
+
+end subroutine
+
+subroutine test_spainv_spsd(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), iaspsdf, jaspsdf, aspsdf)
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(perm)
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(perm)
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd')
+ if(allocated(error))return
+
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(permf(nrow))
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(permf(nrow))
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd_permf')
+ if(allocated(error))return
+
+end subroutine
+
+subroutine test_spainv_spsd_1(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: matinv(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+ type(crssparse) :: crschol
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), iaspsdf1, jaspsdf1, aspsdf1)
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(perm)
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(perm)
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd1')
+ if(allocated(error))return
+
+
+ !Cholesky
+ crschol= coo
+ call crschol%setpermutation(permf(nrow))
+ 
+ !SOLVE
+ call crschol%getldlt()
+
+ do i = 1, nrow
+  vect = 0
+  vect(i) = 1
+  call crschol%solveldlt(matinv(:,i), vect)
+ enddo
+
+ if(verbose)call printmat(matinv)
+
+ !SPAINV
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ call crs%setpermutation(permf(nrow))
+ call crs%spainv()
+ 
+ deallocate(iat, jat, at)
+ call getija_crs(crs, iat, jat, at, mat_l)
+ if(verbose)call printmat(mat_l)
+
+ call check(error, all(abs(pack(mat_l, mat.ne.0) - pack(matinv, mat.ne.0)) < tol_wp), 'spainv_spsd1_permf')
+ if(allocated(error))return
+
+end subroutine
+
 subroutine test_spainv_failed(error)
  type(error_type), allocatable, intent(out) :: error
 
@@ -1761,6 +2019,7 @@ subroutine test_spainv_failed(error)
  integer, allocatable :: iat(:), jat(:)
  real(wp), allocatable :: at(:)
  real(wp) :: vect(nrow)
+ real(wp) :: mat(nrow, nrow)
  real(wp) :: matinv(nrow, nrow)
  real(wp) :: mat_l(nrow, nrow)
  type(coosparse) :: coo
@@ -1786,9 +2045,13 @@ subroutine test_spainv_failed(error)
  !SPAINV
  crs = coo
 
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
  call crs%setpermutation(perm)
  call crs%spainv()
  
+ deallocate(iat, jat, at)
  call getija_crs(crs, iat, jat, at, mat_l)
 
  !this test should failed because matinv contains more non-zero elements than mat_l

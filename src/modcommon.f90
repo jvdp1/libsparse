@@ -8,29 +8,11 @@ module modcommon
 #endif
  implicit none
  private
- public::alloc_err,progress
+ public::progress
 
 contains
 
 !PUBLIC
-subroutine alloc_err(line,namefile)
- integer(kind=int32),optional::line
- character(len=*),optional::namefile
-
- integer(kind=int32)::i
- character(len=30)::nfile
-
- i=-9
- if(present(line))i=line
-
- nfile='unknown'
- if(present(namefile))nfile=namefile
- 
- write(*,'(a,i0,3a)')' ERROR (',i,',',namefile,'): failed allocation'
- error stop
-
-end subroutine 
-
 subroutine progress(i,n,un)
  integer(kind=int32),intent(in)::i,n
  integer(kind=int32),intent(in),optional::un
