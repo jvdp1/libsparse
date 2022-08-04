@@ -983,7 +983,7 @@ pure subroutine split_inode(inode, nnode, jnode)
  integer(kind=int32), intent(inout) :: nnode
  integer(kind=int32), intent(inout) :: jnode
 
- integer :: i, n
+ integer(kind=int32) :: i, n
 
  n = inode(jnode) - inode(jnode+1) - 1
 
