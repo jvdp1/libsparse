@@ -655,7 +655,6 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 #endif
          endif
 
-
 !        ... invert Cholesky factor
          if(.not.lpos)then
              ttt=0._wp
