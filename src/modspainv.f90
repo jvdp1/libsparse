@@ -2,7 +2,11 @@
 
 !> @todo Still raw and not very efficient
 
-!Based on Karin Meyer 's code !(didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran)
+!Based on Karin Meyer 's code (didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran).
+!The content of Karin Meyer 's wiki is licensed under CC Attribution-Sahre Alike 4.0 International.
+!
+!Support of sparse inverse of SPSD matrices by implementing the S. D. Kachman modifications (https://www.ars.usda.gov/ARSUserFiles/80420530/MTDFREML/MTDFMan.pdf ; Chapter 6)
+
 !Rewritten for my purposes
 
 module modspainv
