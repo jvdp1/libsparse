@@ -1,11 +1,11 @@
 module modtest_coo
 #if (_DP==0)
- use, intrinsic :: iso_fortran_env, only: int64, output_unit, wp => real32
+ use, intrinsic :: iso_fortran_env, only: int32, int64, output_unit, wp => real32
 #else
- use, intrinsic :: iso_fortran_env, only: int64, output_unit, wp => real64
+ use, intrinsic :: iso_fortran_env, only: int32, int64, output_unit, wp => real64
 #endif
  use testdrive, only: new_unittest, unittest_type, error_type, check
- use modsparse, only: coosparse
+ use modsparse, only: coosparse, extractcrs
  use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd&
                        , addval => addval_coo, getmat, matcheck, printmat
  implicit none
@@ -35,6 +35,8 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo diag vect lupper", test_diag_vect_lupper) &
     , new_unittest("coo ncol diag vect", test_ncol_diag_vect) &
     , new_unittest("coo ncol diag vect lupper", test_ncol_diag_vect_lupper) &
+    , new_unittest("coo extract lupper_sym", test_extract_lupper_sym) &
+    , new_unittest("coo extract lupper_sym_int64", test_extract_lupper_sym_int64) &
     , new_unittest("coo get", test_get) &
     , new_unittest("coo get nel", test_get_nel) &
     , new_unittest("coo get lupper", test_get_lupper) &
@@ -461,6 +463,85 @@ subroutine test_ncol_diag_vect_lupper(error)
  if (allocated(error)) return
 
  call check(error, all(diag == diagcheck), 'diag')
+
+end subroutine
+
+!EXTRACT
+subroutine test_extract_lupper_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
+
+ type(coosparse) :: coo
+ integer(kind=int32) :: dim1, dim2
+ integer(kind=int32), allocatable :: iatmp(:), jatmp(:)
+ real(kind=wp), allocatable :: atmp(:)
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call extractcrs(coo, dim1, dim2, iatmp, jatmp, atmp)
+
+ call check(error, dim1 == nrow, 'extract lupper_sym, dim1')
+ if(allocated(error))return
+
+ call check(error, dim2 == ncol, 'extract lupper_sym, dim2')
+ if(allocated(error))return
+
+ call check(error, all(iatmp == [1, 5, 7, 9, 10 , 11]),  'extract lupper_sym, ia')
+ if(allocated(error))return
+
+ call check(error, all(jatmp == [1, 3, 4, 5, 2, 5, 3, 4, 4, 5])&
+             ,  'extract lupper_sym, ja')
+ if(allocated(error))return
+
+ call check(error, all(atmp == [11._wp, 13._wp, 14._wp, 15._wp, 0._wp&
+             , 25._wp, 33._wp, 34._wp, 44._wp, 55._wp]) &
+             ,  'extract lupper_sym, a')
+ if(allocated(error))return
+
+end subroutine
+
+subroutine test_extract_lupper_sym_int64(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia .le. ja
+
+ type(coosparse) :: coo
+ integer(kind=int64) :: dim1, dim2
+ integer(kind=int64), allocatable :: iatmp(:), jatmp(:)
+ real(kind=wp), allocatable :: atmp(:)
+
+ coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ call extractcrs(coo, dim1, dim2, iatmp, jatmp, atmp)
+
+ call check(error, dim1 == nrow, 'extract lupper_sym_int64, dim1')
+ if(allocated(error))return
+
+ call check(error, dim2 == ncol, 'extract lupper_sym_int64, dim2')
+ if(allocated(error))return
+
+ call check(error, all(iatmp == [integer(int64) :: 1, 5, 7, 9, 10 , 11]),  'extract lupper_sym_int64, ia')
+ if(allocated(error))return
+
+ call check(error, all(jatmp == [integer(int64) :: 1, 3, 4, 5, 2, 5, 3, 4, 4, 5])&
+             ,  'extract lupper_sym_int64, ja')
+ if(allocated(error))return
+
+ call check(error, all(atmp == [11._wp, 13._wp, 14._wp, 15._wp, 0._wp&
+             , 25._wp, 33._wp, 34._wp, 44._wp, 55._wp]) &
+             ,  'extract lupper_sym_int64, a')
+ if(allocated(error))return
 
 end subroutine
 
