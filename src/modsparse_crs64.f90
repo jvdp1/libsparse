@@ -1,5 +1,5 @@
-submodule (modsparse) modsparse_crs_64
- use modsparse_mkl, only: pardisoinit, pardiso_64
+submodule (modsparse) modsparse_crs64
+ use modsparse_mkl, only: pardisoinit, pardiso => pardiso_64
 
 #if (_PARDISO==1)
  use modvariablepardiso, only: checkpardiso => checkpardiso_64, pardiso_variable_64
@@ -11,8 +11,8 @@ submodule (modsparse) modsparse_crs_64
 contains
 
 !**CONSTRUCTOR
-module function constructor_crs_64(m,nel,n,lupper,unlog) result(sparse)
- type(crssparse_64)::sparse
+module function constructor_crs64(m,nel,n,lupper,unlog) result(sparse)
+ type(crssparse64)::sparse
  integer(kind=int32),intent(in)::m
  integer(kind=int64),intent(in)::nel
  integer(kind=int32),intent(in),optional::n,unlog
@@ -38,8 +38,8 @@ module function constructor_crs_64(m,nel,n,lupper,unlog) result(sparse)
 
 end function
 
-module subroutine constructor_sub_crs_64(sparse,m,nel,n,lupper,unlog)
- class(crssparse_64),intent(out)::sparse
+module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
+ class(crssparse64),intent(out)::sparse
  integer(kind=int32),intent(in)::m
  integer(kind=int64),intent(in)::nel
  integer(kind=int32),intent(in),optional::n,unlog
@@ -66,8 +66,8 @@ module subroutine constructor_sub_crs_64(sparse,m,nel,n,lupper,unlog)
 end subroutine
 
 !**DESTROY
-module subroutine destroy_crs_64(sparse)
- class(crssparse_64),intent(inout)::sparse
+module subroutine destroy_crs64(sparse)
+ class(crssparse64),intent(inout)::sparse
 
 #if(_PARDISO==1)
  call sparse%resetpardiso()
@@ -82,9 +82,9 @@ module subroutine destroy_crs_64(sparse)
 end subroutine
 
 !**ADD ELEMENTS
-module subroutine add_crs_64(sparse,row,col,val,error)
+module subroutine add_crs64(sparse,row,col,val,error)
  !add a value only to an existing one
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
  integer(kind=int32),intent(in)::row,col
  !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
  integer(kind=int32),intent(out),optional::error
@@ -116,8 +116,8 @@ module subroutine add_crs_64(sparse,row,col,val,error)
 end subroutine
 
 !**GET ELEMENTS
-module function get_crs_64(sparse,row,col) result(val)
- class(crssparse_64),intent(in)::sparse
+module function get_crs64(sparse,row,col) result(val)
+ class(crssparse64),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
 
@@ -144,8 +144,8 @@ module function get_crs_64(sparse,row,col) result(val)
 end function
 
 !** GET MEMORY
-module function getmem_crs_64(sparse) result(getmem)
- class(crssparse_64),intent(in)::sparse
+module function getmem_crs64(sparse) result(getmem)
+ class(crssparse64),intent(in)::sparse
  integer(kind=int64)::getmem
 
  getmem=sparse%getmem_gen()
@@ -158,9 +158,9 @@ module function getmem_crs_64(sparse) result(getmem)
 
 end function
 
-!**rowptr_crs_64
-module subroutine get_rowptr_crs_64(sparse,ia)
-  class(crssparse_64),intent(in)::sparse
+!**rowptr_crs64
+module subroutine get_rowptr_crs64(sparse,ia)
+  class(crssparse64),intent(in)::sparse
   integer(kind=int64),allocatable,intent(out)::ia(:)
  
   allocate(ia(size(sparse%ia, kind=int64))) 
@@ -168,9 +168,9 @@ module subroutine get_rowptr_crs_64(sparse,ia)
 
 end subroutine
  
-!**colval_crs_64
-module subroutine get_colval_crs_64(sparse,ja)
-  class(crssparse_64),intent(in)::sparse
+!**colval_crs64
+module subroutine get_colval_crs64(sparse,ja)
+  class(crssparse64),intent(in)::sparse
   integer(kind=int64),allocatable,intent(out)::ja(:)
  
   allocate(ja(size(sparse%ja, kind=int64))) 
@@ -178,9 +178,9 @@ module subroutine get_colval_crs_64(sparse,ja)
 
 end subroutine
  
-!**nzval_crs_64
-module subroutine get_nzval_crs_64(sparse,a)
-  class(crssparse_64),intent(in)::sparse
+!**nzval_crs64
+module subroutine get_nzval_crs64(sparse,a)
+  class(crssparse64),intent(in)::sparse
   real(kind=wp),allocatable,intent(out)::a(:)
   
   allocate(a(size(sparse%a, kind=int64))) 
@@ -189,30 +189,30 @@ module subroutine get_nzval_crs_64(sparse,a)
 end subroutine
 
 !**MULTIPLICATIONS
-module subroutine multgenv_csr_64(sparse,alpha,trans,x,val,y)
+module subroutine multgenv_csr64(sparse,alpha,trans,x,val,y)
  !Computes y=val*y+alpha*sparse(tranposition)*x
- class(crssparse_64),intent(in)::sparse
+ class(crssparse64),intent(in)::sparse
  real(kind=wp),intent(in)::val,alpha
  real(kind=wp),intent(in)::x(:)
  real(kind=wp),intent(out)::y(:)
  character(len=1),intent(in)::trans
 
- write(sparse%unlog,'(a)')' Error: mult not supported by crssparse_64'
+ write(sparse%unlog,'(a)')' Error: mult not supported by crssparse64'
  error stop
 
  y = x
 
 end subroutine
 
-module subroutine multgenm_csr_64(sparse,alpha,trans,x,val,y)
+module subroutine multgenm_csr64(sparse,alpha,trans,x,val,y)
  !Computes y=val*y+alpha*sparse(tranposition)*x
- class(crssparse_64),intent(in)::sparse
+ class(crssparse64),intent(in)::sparse
  real(kind=wp),intent(in)::val,alpha
  real(kind=wp),intent(in)::x(:,:)
  real(kind=wp),intent(out)::y(:,:)
  character(len=1),intent(in)::trans
 
- write(sparse%unlog,'(a)')' Error: mult not supported by crssparse_64'
+ write(sparse%unlog,'(a)')' Error: mult not supported by crssparse64'
  error stop
 
  y = x
@@ -220,8 +220,8 @@ module subroutine multgenm_csr_64(sparse,alpha,trans,x,val,y)
 end subroutine
 
 !**NUMBER OF ELEMENTS
-module function totalnumberofelements_crs_64(sparse) result(nel)
- class(crssparse_64),intent(in)::sparse
+module function totalnumberofelements_crs64(sparse) result(nel)
+ class(crssparse64),intent(in)::sparse
  integer(kind=int64)::nel
 
  nel=int(sparse%ia(sparse%dim1+1),int64)-1_int64
@@ -230,9 +230,9 @@ end function
 
 #if (_PARDISO==1)
 !**RESET PARDISO MEMORY
-module subroutine reset_pardiso_memory_crs_64(sparse)
+module subroutine reset_pardiso_memory_crs64(sparse)
  !sparse*x=y
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
 
  !Pardiso variables
  integer(kind=int64)::error,idummy(1)
@@ -256,7 +256,7 @@ module subroutine reset_pardiso_memory_crs_64(sparse)
 
  !Reset Pardiso memory
  parvar%phase=-1
- call pardiso_64(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
+ call pardiso(parvar%pt,parvar%maxfct,parvar%mnum,parvar%mtype,parvar%phase,&
               int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
               idummy,nrhs,parvar%iparm,parvar%msglvl,parvar%ddum,parvar%ddum,error)
  call checkpardiso(parvar%phase,error,sparse%unlog)
@@ -269,8 +269,8 @@ end subroutine
 #endif
 
 !**PRINT
-module subroutine print_crs_64(sparse,lint,output)
- class(crssparse_64),intent(in)::sparse
+module subroutine print_crs64(sparse,lint,output)
+ class(crssparse64),intent(in)::sparse
  integer(kind=int32),intent(in),optional::output
  logical,intent(in),optional::lint
 
@@ -297,8 +297,8 @@ module subroutine print_crs_64(sparse,lint,output)
 
 end subroutine
 
-module subroutine printsquare_crs_64(sparse,output)
- class(crssparse_64),intent(inout)::sparse
+module subroutine printsquare_crs64(sparse,output)
+ class(crssparse64),intent(inout)::sparse
  integer(kind=int32),intent(in),optional::output
 
  integer(kind=int32)::i,j,un
@@ -323,16 +323,16 @@ module subroutine printsquare_crs_64(sparse,output)
 end subroutine
 
 !**SCALE ALL ENTRIES
-module subroutine scale_crs_64(sparse,val)
- class(crssparse_64),intent(inout)::sparse
+module subroutine scale_crs64(sparse,val)
+ class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(in)::val
  sparse%a = sparse%a * val
 end subroutine
 
 !**SET ELEMENTS
-module subroutine set_crs_64(sparse,row,col,val,error)
+module subroutine set_crs64(sparse,row,col,val,error)
  !add a value only to an existing one
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
  integer(kind=int32),intent(in)::row,col
  !added: error=0;Not existing: error=-1;matrix not initialized: error=-10
  integer(kind=int32),intent(out),optional::error
@@ -365,9 +365,9 @@ end subroutine
 
 !**SOLVE
 #if (_PARDISO==1)
-module subroutine solve_crs_64_vector(sparse,x,y,msglvl)
+module subroutine solve_crs64_vector(sparse,x,y,msglvl)
  !sparse*x=y
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:)
  real(kind=wp),intent(inout),contiguous::y(:)
  integer(kind=int64),intent(in),optional::msglvl
@@ -429,17 +429,17 @@ module subroutine solve_crs_64_vector(sparse,x,y,msglvl)
   sparse%pardisovar%iparm(28)=0
 #endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
-  if(allocated(sparse%perm_64))then
+  if(allocated(sparse%perm64))then
    sparse%pardisovar%iparm(5)=1
    sparse%pardisovar%iparm(31)=0
    sparse%pardisovar%iparm(36)=0
-   call pardiso_64(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
                 sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
-                sparse%perm_64,nrhs,sparse%pardisovar%iparm,sparse%pardisovar%msglvl,&
+                sparse%perm64,nrhs,sparse%pardisovar%iparm,sparse%pardisovar%msglvl,&
                 sparse%pardisovar%ddum,sparse%pardisovar%ddum,error)
   else
-   call pardiso_64(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
                 sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
                 sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
@@ -463,7 +463,7 @@ module subroutine solve_crs_64_vector(sparse,x,y,msglvl)
 
  !Solving
  sparse%pardisovar%phase=33
- call pardiso_64(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+ call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
               sparse%pardisovar%mtype,sparse%pardisovar%phase,&
               int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
               sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
@@ -480,9 +480,9 @@ module subroutine solve_crs_64_vector(sparse,x,y,msglvl)
 
 end subroutine
 
-module subroutine solve_crs_64_array(sparse,x,y,msglvl)
+module subroutine solve_crs64_array(sparse,x,y,msglvl)
  !sparse*x=y
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:,:)
  real(kind=wp),intent(inout),contiguous::y(:,:)
  integer(kind=int64),intent(in),optional::msglvl
@@ -548,17 +548,17 @@ module subroutine solve_crs_64_array(sparse,x,y,msglvl)
   sparse%pardisovar%iparm(28)=0
 #endif
   write(sparse%unlog,'(a)')' Start ordering and factorization'
-  if(allocated(sparse%perm_64))then
+  if(allocated(sparse%perm64))then
    sparse%pardisovar%iparm(5)=1
    sparse%pardisovar%iparm(31)=0
    sparse%pardisovar%iparm(36)=0
-   call pardiso_64(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
                 sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
-                sparse%perm_64,nrhs,sparse%pardisovar%iparm,sparse%pardisovar%msglvl,&
+                sparse%perm64,nrhs,sparse%pardisovar%iparm,sparse%pardisovar%msglvl,&
                 sparse%pardisovar%ddum,sparse%pardisovar%ddum,error)
   else
-   call pardiso_64(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+   call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
                 sparse%pardisovar%mtype,sparse%pardisovar%phase,&
                 int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
                 sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
@@ -582,7 +582,7 @@ module subroutine solve_crs_64_array(sparse,x,y,msglvl)
 
  !Solving
  sparse%pardisovar%phase=33
- call pardiso_64(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
+ call pardiso(sparse%pardisovar%pt,sparse%pardisovar%maxfct,sparse%pardisovar%mnum,&
               sparse%pardisovar%mtype,sparse%pardisovar%phase,&
               int(sparse%getdim(1),int64),sparse%a,sparse%ia,sparse%ja,&
               sparse%pardisovar%idum,nrhs,sparse%pardisovar%iparm,&
@@ -599,9 +599,9 @@ module subroutine solve_crs_64_array(sparse,x,y,msglvl)
 
 end subroutine
 #else
-module subroutine solve_crs_64_vector(sparse,x,y)
+module subroutine solve_crs64_vector(sparse,x,y)
  !sparse*x=y
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:)
  real(kind=wp),intent(inout),contiguous::y(:)
 
@@ -610,9 +610,9 @@ module subroutine solve_crs_64_vector(sparse,x,y)
 
 end subroutine
 
-module subroutine solve_crs_64_array(sparse,x,y)
+module subroutine solve_crs64_array(sparse,x,y)
  !sparse*x=y
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:,:)
  real(kind=wp),intent(inout),contiguous::y(:,:)
 
@@ -623,9 +623,9 @@ end subroutine
 #endif
 
 !**SORT ARRAY
-module subroutine sort_crs_64(sparse)
+module subroutine sort_crs64(sparse)
  ! sort vectors ja and a by increasing order
- class(crssparse_64),intent(inout)::sparse
+ class(crssparse64),intent(inout)::sparse
 
  integer(kind=int32)::k
  integer(kind=int64)::endd,i,j,n,start,stkpnt
