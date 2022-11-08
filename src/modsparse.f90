@@ -1539,7 +1539,7 @@ function load_crs64(namefile,unlog)  result(sparse)
  open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
  read(un)dim1
  if(dim1.ne.typecrs64)then
-  write(*,'(a)')' ERROR: the proposed file is not a CRS file'
+  write(*,'(a)')' ERROR: the proposed file is not a CRS64 file'
   stop
  endif
  read(un)dim1            !int32

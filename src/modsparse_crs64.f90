@@ -18,7 +18,7 @@ module function constructor_crs64(m,nel,n,lupper,unlog) result(sparse)
  integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
 
- call sparse%initialize('CRS',m,m)
+ call sparse%initialize('CRS64',m,m)
 
  if(present(n))sparse%dim2=n
  if(present(lupper))sparse%lupperstorage=lupper
@@ -45,7 +45,7 @@ module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
  integer(kind=int32),intent(in),optional::n,unlog
  logical,intent(in),optional::lupper
 
- call sparse%initialize('CRS',m,m)
+ call sparse%initialize('CRS64',m,m)
 
  if(present(n))sparse%dim2=n
  if(present(lupper))sparse%lupperstorage=lupper
