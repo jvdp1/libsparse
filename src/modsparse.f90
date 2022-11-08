@@ -1454,9 +1454,11 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
  elseif(sparse%lupperstorage.and..not.lupperstorage)then
   ! upper -> full
   if(present(unlog))then
-   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage,unlog)
+   !subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage,unlog)
+   call subcoo%init(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage,unlog)
   else
-   subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage)
+   !subcoo=coosparse(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage)
+   call subcoo%init(enddim1-startdim1+1,enddim2-startdim2+1,int(nel,int64),lupperstorage)
   endif
   do i=1,sparse%dim1
    do j=sparse%ia(i),sparse%ia(i+1)-1

@@ -93,7 +93,7 @@ examples:
 lib:
 	$(MAKE) --directory=src -j
 
-test:
+test: all
 	$(MAKE) --directory=test test
 	@echo
 	@echo "All tests passed."
