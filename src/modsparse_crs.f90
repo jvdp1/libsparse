@@ -150,7 +150,8 @@ module function get_crs(sparse,row,col) result(val)
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
 
- integer(kind=int32)::i,trow,tcol
+ integer(kind=int32)::i
+ integer(kind=int32)::trow,tcol
 
  val=0.0_wp
 
@@ -315,7 +316,6 @@ module subroutine get_nzval_crs(sparse,a)
   a=sparse%a
 
 end subroutine
- 
 
 !**MULTIPLICATIONS
 module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
@@ -775,8 +775,9 @@ module subroutine print_crs(sparse,lint,output)
  logical,intent(in),optional::lint
 
  integer(kind=int32)::i
- integer(kind=int32)::un,j
- character(len=30)::frm='(2(i0,1x),g0)'
+ integer(kind=int32)::un
+ integer(kind=int32)::j
+ character(len=30),parameter::frm='(2(i0,1x),g0)'
  logical::linternal
 
  linternal=.true.
@@ -1273,7 +1274,8 @@ module subroutine sort_crs(sparse)
  ! sort vectors ja and a by increasing order
  class(crssparse),intent(inout)::sparse
 
- integer(kind=int32)::endd,i,j,k,n,start,stkpnt
+ integer(kind=int32)::k
+ integer(kind=int32)::endd,i,j,n,start,stkpnt
  integer(kind=int32)::d1,d2,d3,dmnmx,tmp
  integer(kind=int32)::stack(2,32)
  integer(kind=int32),allocatable::d(:)
@@ -1386,8 +1388,5 @@ module subroutine sort_crs(sparse)
  call sparse%setsorted(.true.)
 
 end subroutine
-
-
-
 
 end submodule
