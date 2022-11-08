@@ -1891,10 +1891,6 @@ subroutine convertfromcootocrs64(othersparse,sparse)
  integer(kind=int64)::i8
  logical::lsquare
 
- if(sparse%nonzero().ge.2_int64**31)then
-  write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
-  stop
- endif
 
  !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
 
