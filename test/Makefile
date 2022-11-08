@@ -43,4 +43,4 @@ modtest_common.o: $(LIB)
 modtest_coo.o: modtest_common.o $(LIB) testdrive.o
 modtest_crs.o: modtest_common.o $(LIB) testdrive.o
 modtest_random.o: $(LIB) testdrive.o
-test_coo.o: modtest_coo.o modtest_crs.o modtest_random.o testdrive.o
+test_sparse.o: modtest_coo.o modtest_crs.o modtest_random.o testdrive.o

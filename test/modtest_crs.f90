@@ -1189,15 +1189,19 @@ subroutine test_multbyv_gen(error, col, trans, upper)
 
  if(col == 'y')then
   if(upper == 'y')then
-   coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+   !coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+   call coo%init(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
   else
-   coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+   !coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+   call coo%init(nrow, n = ncol, unlog = sparse_unit)
   endif
  else
   if(upper == 'y')then
-   coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+   !coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+   call coo%init(nrow, lupper = .true., unlog = sparse_unit)
   else
-   coo = coosparse(nrow, unlog = sparse_unit)
+   !coo = coosparse(nrow, unlog = sparse_unit)
+   call coo%init(nrow, unlog = sparse_unit)
   endif
  endif
 
@@ -1375,15 +1379,19 @@ subroutine test_multbymat_gen(error, col, trans, upper)
 
  if(col == 'y')then
   if(upper == 'y')then
-   coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+   !coo = coosparse(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
+   call coo%init(nrow, n = ncol, lupper = .true., unlog = sparse_unit)
   else
-   coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+   !coo = coosparse(nrow, n = ncol, unlog = sparse_unit)
+   call coo%init(nrow, n = ncol, unlog = sparse_unit)
   endif
  else
   if(upper == 'y')then
-   coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+   !coo = coosparse(nrow, lupper = .true., unlog = sparse_unit)
+   call coo%init(nrow, lupper = .true., unlog = sparse_unit)
   else
-   coo = coosparse(nrow, unlog = sparse_unit)
+   !coo = coosparse(nrow, unlog = sparse_unit)
+   call coo%init(nrow, unlog = sparse_unit)
   endif
  endif
 
