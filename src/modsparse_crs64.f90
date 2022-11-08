@@ -318,6 +318,26 @@ module subroutine printsquare_crs64(sparse,output)
 
 end subroutine
 
+!**SAVE
+module subroutine save_crs64(sparse,namefile)
+ class(crssparse64),intent(in)::sparse
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int32)::un
+
+ open(newunit=un,file=namefile,action='write',status='replace',access='stream')!,buffered='yes')
+ write(un)typecrs64              !int32
+ write(un)sparse%dim1            !int32
+ write(un)sparse%dim2            !int32
+ write(un)sparse%nonzero()       !int64
+ write(un)sparse%lupperstorage   !logical
+ write(un)sparse%ia              !int64
+ write(un)sparse%ja              !int64
+ write(un)sparse%a               !wp
+ close(un)
+
+end subroutine
+
 !**SCALE ALL ENTRIES
 module subroutine scale_crs64(sparse,val)
  class(crssparse64),intent(inout)::sparse

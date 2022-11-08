@@ -26,6 +26,7 @@ module modsparse
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
+ integer(kind=int32),parameter::typecrs64=21
 
  real(kind=wp),parameter::tol=1.e-10_wp
 
@@ -776,8 +777,8 @@ module modsparse
   procedure,public::print=>print_crs64
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs64
-!  !> @brief Saves the matrix (internal format) to stream file
-!  procedure,public::save=>save_crs64
+  !> @brief Saves the matrix (internal format) to stream file
+  procedure,public::save=>save_crs64
   !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
   procedure,public::scale=>scale_crs64
 !  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
@@ -943,11 +944,11 @@ module modsparse
    class(crssparse64),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::output
   end subroutine
-!  !**SAVE
-!  module subroutine save_crs64(sparse,namefile)
-!   class(crssparse64),intent(in)::sparse
-!   character(len=*),intent(in)::namefile
-!  end subroutine
+  !**SAVE
+  module subroutine save_crs64(sparse,namefile)
+   class(crssparse64),intent(in)::sparse
+   character(len=*),intent(in)::namefile
+  end subroutine
   !**SCALE ALL ENTRIES
   module subroutine scale_crs64(sparse,val)
    class(crssparse64),intent(inout)::sparse
@@ -1000,7 +1001,7 @@ module modsparse
  !> @brief Constructor; e.g., mat=crssparse64(dim1,#elements,[dim2],[upper_storage],[output_unit])
  !! OR mat=crssparse64('file',[output_unit])
  interface crssparse64
-  module procedure constructor_crs64!,load_crs64
+  module procedure constructor_crs64,load_crs64
  end interface
 
 !!!!!!!!!!!!!!!!!!!!!!!LINKED LIST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
@@ -1525,6 +1526,41 @@ subroutine deallocate_rank1_crs(sparse)
 end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS64!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+!**LOAD
+function load_crs64(namefile,unlog)  result(sparse)
+ type(crssparse64)::sparse
+ integer(kind=int32),intent(in),optional::unlog
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int32)::un,dim1,dim2
+ integer(kind=int64)::nonzero
+ logical::lupperstorage
+
+ open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
+ read(un)dim1
+ if(dim1.ne.typecrs)then
+  write(*,'(a)')' ERROR: the proposed file is not a CRS file'
+  stop
+ endif
+ read(un)dim1            !int32
+ read(un)dim2            !int32
+ read(un)nonzero         !int64
+ read(un)lupperstorage   !logical
+
+ if(present(unlog))then
+  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage,unlog)
+ else
+  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage)
+ endif
+
+ read(un)sparse%ia              !int64
+ read(un)sparse%ja              !int64
+ read(un)sparse%a               !wp
+
+ close(un)
+
+end function
+
 
 !FINAL
 subroutine deallocate_scal_crs64(sparse)
