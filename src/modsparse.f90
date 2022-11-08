@@ -1538,7 +1538,7 @@ function load_crs64(namefile,unlog)  result(sparse)
 
  open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
  read(un)dim1
- if(dim1.ne.typecrs)then
+ if(dim1.ne.typecrs64)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS file'
   stop
  endif
@@ -1548,9 +1548,9 @@ function load_crs64(namefile,unlog)  result(sparse)
  read(un)lupperstorage   !logical
 
  if(present(unlog))then
-  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage,unlog)
+  sparse=crssparse64(dim1,nonzero,dim2,lupperstorage,unlog)
  else
-  sparse=crssparse(dim1,int(nonzero,int32),dim2,lupperstorage)
+  sparse=crssparse64(dim1,nonzero,dim2,lupperstorage)
  endif
 
  read(un)sparse%ia              !int64
