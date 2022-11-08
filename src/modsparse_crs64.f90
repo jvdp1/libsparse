@@ -220,6 +220,8 @@ module function totalnumberofelements_crs64(sparse) result(nel)
  class(crssparse64),intent(in)::sparse
  integer(kind=int64)::nel
 
+ nel=-1
+ if(allocated(sparse%ia))&
  nel=int(sparse%ia(sparse%dim1+1),int64)-1_int64
 
 end function

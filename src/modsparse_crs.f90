@@ -411,7 +411,8 @@ module function totalnumberofelements_crs(sparse) result(nel)
  class(crssparse),intent(in)::sparse
  integer(kind=int64)::nel
 
- nel=int(sparse%ia(sparse%dim1+1),int64)-1_int64
+ nel=-1
+ if(allocated(sparse%ia))nel=sparse%ia(sparse%dim1+1)-1_int64
 
 end function
 
