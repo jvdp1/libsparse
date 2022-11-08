@@ -3,6 +3,7 @@ program test_sparse
   use testdrive, only : run_testsuite, new_testsuite, testsuite_type
   use modtest_coo, only : collect_coo
   use modtest_crs, only : collect_crs
+  use modtest_crs64, only : collect_crs64
   use modtest_random, only : collect_random
   implicit none
   integer :: stat, is
@@ -14,6 +15,7 @@ program test_sparse
   testsuites = [ &
     new_testsuite("modtest_coo", collect_coo) &
     , new_testsuite("modtest_crs", collect_crs) &
+    , new_testsuite("modtest_crs64", collect_crs64) &
     , new_testsuite("modtest_random", collect_random) &
     ]
 

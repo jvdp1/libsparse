@@ -197,9 +197,7 @@ module subroutine multgenv_csr64(sparse,alpha,trans,x,val,y)
  real(kind=wp),intent(out)::y(:)
  character(len=1),intent(in)::trans
 
- write(sparse%unlog,'(a)')' Error: mult not supported by crssparse64'
- error stop
-
+ write(sparse%unlog,'(a)')' Warning: mult not supported by crssparse64! Array returned = x'
  y = x
 
 end subroutine
@@ -212,9 +210,7 @@ module subroutine multgenm_csr64(sparse,alpha,trans,x,val,y)
  real(kind=wp),intent(out)::y(:,:)
  character(len=1),intent(in)::trans
 
- write(sparse%unlog,'(a)')' Error: mult not supported by crssparse64'
- error stop
-
+ write(sparse%unlog,'(a)')' Warning: mult not supported by crssparse64! Array returned = x'
  y = x
 
 end subroutine

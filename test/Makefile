@@ -8,7 +8,7 @@ NAME = sparse
 
 CPPFLAGS += -I../src/ -I.
 
-OBJS = modtest_common.o modtest_coo.o modtest_crs.o modtest_random.o
+OBJS = modtest_common.o modtest_coo.o modtest_crs.o modtest_crs64.o modtest_random.o
 
 LIB = $(patsubst %, ../src/lib%.a, $(NAME))
 
@@ -42,5 +42,6 @@ $(PROGS): %: $(OBJS) $(LIBTEST) $(LIB)  %.o
 modtest_common.o: $(LIB)
 modtest_coo.o: modtest_common.o $(LIB) testdrive.o
 modtest_crs.o: modtest_common.o $(LIB) testdrive.o
+modtest_crs64.o: modtest_common.o $(LIB) testdrive.o
 modtest_random.o: $(LIB) testdrive.o
-test_coo.o: modtest_coo.o modtest_crs.o modtest_random.o testdrive.o
+test_sparse.o: modtest_coo.o modtest_crs.o modtest_crs64.o modtest_random.o testdrive.o
