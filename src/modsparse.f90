@@ -752,8 +752,8 @@ module modsparse
 !  !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
 !  procedure,public::ichol=>getichol_crs_64
 !#endif
-!  !> @brief Iniates crssparse_64
-!  procedure,public::init=>constructor_sub_crs_64
+  !> @brief Iniates crssparse_64
+  procedure,public::init=>constructor_sub_crs_64
 !  !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
 !  procedure,public::isolve=>isolve_crs_64
 !  !> @brief Solver using LDLt decomposition
@@ -806,13 +806,13 @@ module modsparse
    integer(kind=int32),intent(in),optional::n,unlog
    logical,intent(in),optional::lupper
   end function
-!  module subroutine constructor_sub_crs_64(sparse,m,nel,n,lupper,unlog)
-!   class(crssparse_64),intent(out)::sparse
-!   integer(kind=int32),intent(in)::m
-!   integer(kind=int64),intent(in)::nel
-!   integer(kind=int32),intent(in),optional::n,unlog
-!   logical,intent(in),optional::lupper
-!  end subroutine
+  module subroutine constructor_sub_crs_64(sparse,m,nel,n,lupper,unlog)
+   class(crssparse_64),intent(out)::sparse
+   integer(kind=int32),intent(in)::m
+   integer(kind=int64),intent(in)::nel
+   integer(kind=int32),intent(in),optional::n,unlog
+   logical,intent(in),optional::lupper
+  end subroutine
   !**DESTROY
   module subroutine destroy_crs_64(sparse)
    class(crssparse_64),intent(inout)::sparse
@@ -1195,8 +1195,10 @@ module modsparse
  interface assignment(=)
   module procedure convertfromlltocoo,convertfromlltocrs&
                   ,convertfromcootocrs,convertfromcootoll&
+                  ,convertfromcootocrs_64&
                   ,convertfromcrstometisgraph&
-                  ,convertfromcrstocoo,convertfromcrstoll
+                  ,convertfromcrstocoo,convertfromcrstoll&
+                  ,convertfromcrs64tocoo
  end interface
 
 contains
@@ -1878,6 +1880,113 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
 end subroutine
 
+subroutine convertfromcootocrs_64(othersparse,sparse)
+ type(crssparse_64),intent(out)::othersparse
+ type(coosparse),intent(in)::sparse
+
+ integer(kind=int64)::i,nel,row,col
+ integer(kind=int64),allocatable::rowpos(:)
+ integer(kind=int64)::i8
+ logical::lsquare
+
+ if(sparse%nonzero().ge.2_int64**31)then
+  write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
+  stop
+ endif
+
+ !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
+
+ !Number of elements=number of rows+number off-diagonal elements
+ !from sparse
+ lsquare=sparse%issquare()
+
+ allocate(rowpos(sparse%dim1))
+ rowpos=0
+
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.row.ne.sparse%ij(2,i8))then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.sparse%ij(2,i8).ne.sparse%dim2)then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ endif
+
+ nel=sparse%dim1+sum(rowpos)
+
+ !othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+ call othersparse%init(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+ if(allocated(sparse%perm_64))allocate(othersparse%perm_64,source=sparse%perm_64)
+
+ !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
+
+ !determine the number of non-zero off-diagonal elements per row
+ othersparse%ia(2:othersparse%dim1+1)=rowpos
+
+ !accumulate the number of elements and add diagonal elements
+ othersparse%ia(1)=1
+ if(lsquare)then
+  do i=1,sparse%dim1
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=i   !set diagonal element for the case it would not be present
+  enddo
+ else
+  do i=1,sparse%dim1
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=sparse%dim2   !set last element for the case it would not be present
+  enddo
+ endif
+
+ !add the non-zero elements to crs (othersparse)
+ !allocate(rowpos(othersparse%dim1))
+ rowpos=othersparse%ia(1:othersparse%dim1)
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.row)then
+     othersparse%a(othersparse%ia(row))=sparse%a(i8)
+    else
+     rowpos(row)=rowpos(row)+1
+     othersparse%ja(rowpos(row))=col
+     othersparse%a(rowpos(row))=sparse%a(i8)
+    endif
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.sparse%dim2)then
+     othersparse%a(othersparse%ia(row))=sparse%a(i8)
+    else
+     rowpos(row)=rowpos(row)+1
+     othersparse%ja(rowpos(row))=col
+     othersparse%a(rowpos(row))=sparse%a(i8)
+    endif
+   endif
+  enddo
+ endif
+
+ deallocate(rowpos)
+
+! call othersparse%print()
+
+end subroutine
+
 subroutine convertfromcootoll(othersparse,sparse)
  type(llsparse),intent(out)::othersparse
  type(coosparse),intent(in)::sparse
@@ -1917,6 +2026,30 @@ subroutine convertfromcrstocoo(othersparse,sparse)
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
    call othersparse%add(i,sparse%ja(j),sparse%a(j))
+  enddo
+ enddo
+
+! call othersparse%print()
+
+end subroutine
+
+subroutine convertfromcrs64tocoo(othersparse,sparse)
+ type(coosparse),intent(out)::othersparse
+ type(crssparse_64),intent(in)::sparse
+
+ integer(kind=int32)::i
+ integer(kind=int64)::j
+
+ othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+ if(allocated(sparse%perm_64))allocate(othersparse%perm_64,source=sparse%perm_64)
+
+ do i=1,sparse%dim1
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   call othersparse%add(i,int(sparse%ja(j),int32),sparse%a(j))
   enddo
  enddo
 
