@@ -15,17 +15,18 @@ module modsparse
 #endif
  use iso_c_binding,only:c_ptr,c_null_ptr
 #if (_PARDISO==1)
- use modvariablepardiso, only: pardiso_variable
+ use modvariablepardiso, only: pardiso_variable, pardiso_variable_64
 #endif
  !$ use omp_lib
  implicit none
  private
  public::gen_sparse
- public::llsparse,coosparse,crssparse
+ public::llsparse,coosparse,crssparse,crssparse64
  public::assignment(=)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
+ integer(kind=int32),parameter::typecrs64=21
 
  real(kind=wp),parameter::tol=1.e-10_wp
 
@@ -35,6 +36,7 @@ module modsparse
   integer(kind=int32)::unlog=output_unit
   integer(kind=int32)::dim1,dim2
   integer(kind=int32),allocatable::perm(:)  !Ap(i,:)=A(perm(i),:)
+  integer(kind=int64),allocatable::perm64(:)  !Ap(i,:)=A(perm(i),:)
   character(len=15)::namemat='UNKNOWN'
   logical::lsorted
   logical::lsymmetric
@@ -72,7 +74,9 @@ module modsparse
   !> @brief Sets the output unit to value; e.g., call mat%setouputunit(unlog)
   procedure,public::setoutputunit
   !> @brief Sets the permutation vector; e.g., call mat%setpermutation(array)
-  procedure,public::setpermutation
+  procedure :: setpermutation32
+  procedure :: setpermutation64
+  generic,public::setpermutation => setpermutation32, setpermutation64
   procedure::setsorted
   !> @brief Sets the assumption that the matrix is symmetric, if the matrix is square (there is no other check)
   procedure,public::setsymmetric
@@ -181,9 +185,13 @@ module modsparse
    integer(kind=int32)::unlog
   end subroutine
   !** SET PERMUTATION VECTOR
-  module subroutine setpermutation(sparse,array)
+  module subroutine setpermutation32(sparse,array)
    class(gen_sparse),intent(inout)::sparse
    integer(kind=int32)::array(:)
+  end subroutine
+  module subroutine setpermutation64(sparse,array)
+   class(gen_sparse),intent(inout)::sparse
+   integer(kind=int64)::array(:)
   end subroutine
   ! SET THE STATUS SORTED
   module subroutine setsorted(sparse,ll)
@@ -697,6 +705,305 @@ module modsparse
   module procedure constructor_crs,load_crs
  end interface
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS64!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+ !> @brief Object for Compressed Row Storage with Int64 indices
+ type,extends(gen_sparse)::crssparse64
+  private
+  integer(kind=int64),allocatable::ia(:)
+  integer(kind=int64),allocatable::ja(:)
+  real(kind=wp),allocatable::a(:)
+#if (_PARDISO==1)
+  logical::lpardisofirst
+  type(pardiso_variable_64)::pardisovar
+#endif
+  contains
+  private
+  !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
+  procedure,public::add=>add_crs64
+!#if (_SPAINV==1)
+!  !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
+!  procedure,public::chol=>getchol_crs64
+!#endif
+  !> @brief Deallocates the sparse matrix and sets to default values
+  procedure,public::destroy=>destroy_crs64
+!  procedure::diag_vect_crs64
+!  procedure::diag_mat_crs64
+!  !> @brief Gets the (upper) diagonal elements of a matrix; e.g., array=mat%diag()
+!  !! OR mat=mat%diag(10) (to extract the diagonal + 10 off-diagonals)
+!  generic,public::diag=>diag_vect_crs64,diag_mat_crs64
+  !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
+  procedure,public::get=>get_crs64
+!#if (_SPAINV==1)
+!  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
+!  procedure,public::getldlt=>getldlt_crs64
+!#endif
+  !> @brief Gets memory used
+  procedure,public::getmem=>getmem_crs64
+!  !> @brief Initializes the vectors ia,ja,and a from external vectors
+!  procedure,public::external=>external_crs64
+  !> @brief Get function for the internal vector ia of row pointers
+  procedure,public::get_rowptr=>get_rowptr_crs64
+  !> @brief Get function for the internal vector ja of column values
+  procedure,public::get_colval=>get_colval_crs64
+  !> @brief Get function for the internal vector a of non-zero values
+  procedure,public::get_nzval=>get_nzval_crs64
+!  !> @brief Get diagonal elements of an approximate inverse using Harville (1999)
+!  procedure,public::harville=>harville_crs64
+!#if (_SPAINV==1)
+!  !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
+!  procedure,public::ichol=>getichol_crs64
+!#endif
+  !> @brief Iniates crssparse64
+  procedure,public::init=>constructor_sub_crs64
+!  !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
+!  procedure,public::isolve=>isolve_crs64
+!  !> @brief Solver using LDLt decomposition
+!  procedure,public::solveldlt=>solveldlt_crs64
+  !> @brief Multiplication with a vector
+  procedure::multbyv=>multgenv_csr64
+  !> @brief Multiplication with a matrix
+  procedure::multbym=>multgenm_csr64
+  !> @brief Returns the number of non-zero elements
+  procedure,public::nonzero=>totalnumberofelements_crs64
+!#if (_METIS==1)
+!  !> @brief Returns the ordering array obtained from METIS
+!  procedure,public::getordering=>getordering_crs64
+!#endif
+!  !> @brief Releases Pardiso memory if possible
+#if (_PARDISO==1)
+  procedure,public::resetpardiso=>reset_pardiso_memory_crs64
+#endif
+  !> @brief Prints the sparse matrix to the output sparse\%unlog
+  procedure,public::print=>print_crs64
+  !> @brief Prints the sparse matrix in a rectangular/square format to the default output
+  procedure,public::printsquare=>printsquare_crs64
+  !> @brief Saves the matrix (internal format) to stream file
+  procedure,public::save=>save_crs64
+  !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
+  procedure,public::scale=>scale_crs64
+  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
+  procedure,public::set=>set_crs64
+  !> @brief MKL PARDISO solver
+  procedure,private::solve_crs64_vector
+  procedure,private::solve_crs64_array
+  generic,public::solve=>solve_crs64_vector,solve_crs64_array
+  !> @brief Sorts the elements in a ascending order within a row
+  procedure,public::sort=>sort_crs64
+!#if (_SPAINV==1)
+!  !> @brief Computes and replaces by the sparse inverse
+!  procedure,public::spainv=>getspainv_crs64
+!#endif
+!  !> @brief Gets a submatrix from a sparse matrix
+!  procedure,public::submatrix=>submatrix_crs64
+  final::deallocate_scal_crs64,deallocate_rank1_crs64
+ end type
+
+ interface
+  !**CONSTRUCTOR
+  module function constructor_crs64(m,nel,n,lupper,unlog) result(sparse)
+   type(crssparse64)::sparse
+   integer(kind=int32),intent(in)::m
+   integer(kind=int64),intent(in)::nel
+   integer(kind=int32),intent(in),optional::n,unlog
+   logical,intent(in),optional::lupper
+  end function
+  module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
+   class(crssparse64),intent(out)::sparse
+   integer(kind=int32),intent(in)::m
+   integer(kind=int64),intent(in)::nel
+   integer(kind=int32),intent(in),optional::n,unlog
+   logical,intent(in),optional::lupper
+  end subroutine
+  !**DESTROY
+  module subroutine destroy_crs64(sparse)
+   class(crssparse64),intent(inout)::sparse
+  end subroutine
+!  !**DIAGONAL ELEMENTS
+!  module function diag_vect_crs64(sparse) result(array)
+!   class(crssparse64),intent(inout)::sparse
+!   real(kind=wp),allocatable::array(:)
+!  end function
+  !**ADD ELEMENTS
+  module subroutine add_crs64(sparse,row,col,val,error)
+   !add a value only to an existing one
+   class(crssparse64),intent(inout)::sparse
+   integer(kind=int32),intent(in)::row,col
+   integer(kind=int32),intent(out),optional::error
+   real(kind=wp),intent(in)::val
+  end subroutine
+  !**GET ELEMENTS
+  module function get_crs64(sparse,row,col) result(val)
+   class(crssparse64),intent(in)::sparse
+   integer(kind=int32),intent(in)::row,col
+   real(kind=wp)::val
+  end function
+  !** GET MEMORY
+  module function getmem_crs64(sparse) result(getmem)
+   class(crssparse64),intent(in)::sparse
+   integer(kind=int64)::getmem
+  end function
+!  !**EXTERNAL
+!  module subroutine external_crs64(sparse,ia,ja,a)
+!   class(crssparse64),intent(inout)::sparse
+!   integer(kind=int32),intent(in)::ia(:),ja(:)
+!   real(kind=wp),intent(in)::a(:)
+!  end subroutine
+!  !**HARVILLE
+!  module subroutine harville_crs64(sparse, ngibbs, nburn, diaginv, seed)
+!   class(crssparse64), intent(inout)::sparse
+!   integer, intent(in) :: ngibbs, nburn
+!   real(wp), intent(out), allocatable :: diaginv(:)
+!   integer, intent(in), optional :: seed
+!  end subroutine
+  !**ROWPTR
+  module subroutine get_rowptr_crs64(sparse,ia)
+    class(crssparse64),intent(in)::sparse
+    integer(kind=int64),allocatable,intent(out)::ia(:)
+  end subroutine
+  !**COLVAL
+  module subroutine get_colval_crs64(sparse,ja)
+    class(crssparse64),intent(in)::sparse
+    integer(kind=int64),allocatable,intent(out)::ja(:)
+   end subroutine
+  !**NZVAL
+  module subroutine get_nzval_crs64(sparse,a)
+    class(crssparse64),intent(in)::sparse
+    real(kind=wp),allocatable,intent(out)::a(:)
+  end subroutine  
+  !**MULTIPLICATIONS
+  module subroutine multgenv_csr64(sparse,alpha,trans,x,val,y)
+   !Computes y=val*y+alpha*sparse(tranposition)*x
+   class(crssparse64),intent(in)::sparse
+   real(kind=wp),intent(in)::val,alpha
+   real(kind=wp),intent(in)::x(:)
+   real(kind=wp),intent(out)::y(:)
+   character(len=1),intent(in)::trans
+  end subroutine
+  module subroutine multgenm_csr64(sparse,alpha,trans,x,val,y)
+   !Computes y=val*y+alpha*sparse(tranposition)*x
+   class(crssparse64),intent(in)::sparse
+   real(kind=wp),intent(in)::val,alpha
+   real(kind=wp),intent(in)::x(:,:)
+   real(kind=wp),intent(out)::y(:,:)
+   character(len=1),intent(in)::trans
+  end subroutine
+  !**NUMBER OF ELEMENTS
+  module function totalnumberofelements_crs64(sparse) result(nel)
+   class(crssparse64),intent(in)::sparse
+   integer(kind=int64)::nel
+  end function
+!#if (_SPAINV==1)
+!  !**GET (COMPLETE) CHOLESKY FACTOR
+!  module subroutine getchol_crs64(sparse,minsizenode)
+!   class(crssparse64),intent(inout)::sparse
+!   integer(kind=int32),intent(in),optional::minsizenode
+!  end subroutine
+!  !**GET LDLt DECOMPOSITION
+!  module subroutine getldlt_crs64(sparse,minsizenode)
+!   class(crssparse64),intent(inout)::sparse
+!   integer(kind=int32),intent(in),optional::minsizenode
+!  end subroutine
+!#endif
+!#if (_METIS==1)
+!  !**GET ORDER
+!  module function getordering_crs64(sparse&
+!                            ,ctype,iptype,rtype,compress,ccorder&
+!                            ,pfactor,nseps,bglvl&
+!                            ) result(perm)
+!   class(crssparse64),intent(in)::sparse
+!   integer(kind=int32),intent(in),optional::ctype,iptype,rtype,compress,ccorder,pfactor,nseps,bglvl
+!   integer(kind=int32),allocatable::perm(:)
+!  end function
+!#endif
+!#if (_SPAINV==1)
+!  !**GET INCOMPLETE CHOLESKY FACTOR
+!  module subroutine getichol_crs64(sparse,minsizenode)
+!   class(crssparse64),intent(inout)::sparse
+!   integer(kind=int32),intent(in),optional::minsizenode
+!  end subroutine
+!  !**GET SPARSE INVERSE
+!  module subroutine getspainv_crs64(sparse,minsizenode)
+!   class(crssparse64),intent(inout)::sparse
+!   integer(kind=int32),intent(in),optional::minsizenode
+!  end subroutine
+!#endif
+#if (_PARDISO==1)
+  !**RESET PARDISO MEMORY
+  module subroutine reset_pardiso_memory_crs64(sparse)
+   !sparse*x=y
+   class(crssparse64),intent(inout)::sparse
+  end subroutine
+#endif
+  !**PRINT
+  module subroutine print_crs64(sparse,lint,output)
+   class(crssparse64),intent(in)::sparse
+   integer(kind=int32),intent(in),optional::output
+   logical,intent(in),optional::lint
+  end subroutine
+  module subroutine printsquare_crs64(sparse,output)
+   class(crssparse64),intent(inout)::sparse
+   integer(kind=int32),intent(in),optional::output
+  end subroutine
+  !**SAVE
+  module subroutine save_crs64(sparse,namefile)
+   class(crssparse64),intent(in)::sparse
+   character(len=*),intent(in)::namefile
+  end subroutine
+  !**SCALE ALL ENTRIES
+  module subroutine scale_crs64(sparse,val)
+   class(crssparse64),intent(inout)::sparse
+   real(kind=wp),intent(in)::val
+  end subroutine
+  !**SET ELEMENTS
+  module subroutine set_crs64(sparse,row,col,val,error)
+   !add a value only to an existing one
+   class(crssparse64),intent(inout)::sparse
+   integer(kind=int32),intent(in)::row,col
+   integer(kind=int32),intent(out),optional::error
+   real(kind=wp),intent(in)::val
+  end subroutine
+  !**SOLVE
+  module subroutine solve_crs64_vector(sparse,x,y,msglvl)
+   !sparse*x=y
+   class(crssparse64),intent(inout)::sparse
+   real(kind=wp),intent(out),contiguous::x(:)
+   real(kind=wp),intent(inout),contiguous::y(:)
+   integer(kind=int64),intent(in),optional::msglvl
+  end subroutine
+  module subroutine solve_crs64_array(sparse,x,y,msglvl)
+   !sparse*x=y
+   class(crssparse64),intent(inout)::sparse
+   real(kind=wp),intent(out),contiguous::x(:,:)
+   real(kind=wp),intent(inout),contiguous::y(:,:)
+   integer(kind=int64),intent(in),optional::msglvl
+  end subroutine
+!  !**SOLVE WITH A TRIANGULAR FACTOR
+!  module subroutine isolve_crs64(sparse,x,y)
+!   !sparse*x=y
+!   class(crssparse64),intent(in)::sparse
+!   real(kind=wp),intent(out)::x(:)
+!   real(kind=wp),intent(in)::y(:)
+!  end subroutine
+!  !**SOLVE WITH LDLt DECOMPOSITION
+!  module subroutine solveldlt_crs64(sparse,x,y)
+!   !sparse*x=y
+!   class(crssparse64),intent(in)::sparse
+!   real(kind=wp),intent(out)::x(:)
+!   real(kind=wp),intent(in)::y(:)
+!  end subroutine
+  !**SORT ARRAY
+  module subroutine sort_crs64(sparse)
+   ! sort vectors ja and a by increasing order
+   class(crssparse64),intent(inout)::sparse
+  end subroutine
+ end interface
+
+ !> @brief Constructor; e.g., mat=crssparse64(dim1,#elements,[dim2],[upper_storage],[output_unit])
+ !! OR mat=crssparse64('file',[output_unit])
+ interface crssparse64
+  module procedure constructor_crs64,load_crs64
+ end interface
+
 !!!!!!!!!!!!!!!!!!!!!!!LINKED LIST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  type::ptrnode
   type(node),pointer::p=>null()
@@ -889,8 +1196,10 @@ module modsparse
  interface assignment(=)
   module procedure convertfromlltocoo,convertfromlltocrs&
                   ,convertfromcootocrs,convertfromcootoll&
+                  ,convertfromcootocrs64&
                   ,convertfromcrstometisgraph&
-                  ,convertfromcrstocoo,convertfromcrstoll
+                  ,convertfromcrstocoo,convertfromcrstoll&
+                  ,convertfromcrs64tocoo
  end interface
 
 contains
@@ -1207,6 +1516,62 @@ end subroutine
 
 subroutine deallocate_rank1_crs(sparse)
  type(crssparse),intent(inout)::sparse(:)
+
+ integer(kind=int32)::i
+
+ do i=1,size(sparse)
+  call sparse(i)%destroy()
+ enddo
+
+end subroutine
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS64!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
+!**LOAD
+function load_crs64(namefile,unlog)  result(sparse)
+ type(crssparse64)::sparse
+ integer(kind=int32),intent(in),optional::unlog
+ character(len=*),intent(in)::namefile
+
+ integer(kind=int32)::un,dim1,dim2
+ integer(kind=int64)::nonzero
+ logical::lupperstorage
+
+ open(newunit=un,file=namefile,action='read',status='old',access='stream')!,buffered='yes')
+ read(un)dim1
+ if(dim1.ne.typecrs64)then
+  write(*,'(a)')' ERROR: the proposed file is not a CRS64 file'
+  stop
+ endif
+ read(un)dim1            !int32
+ read(un)dim2            !int32
+ read(un)nonzero         !int64
+ read(un)lupperstorage   !logical
+
+ if(present(unlog))then
+  sparse=crssparse64(dim1,nonzero,dim2,lupperstorage,unlog)
+ else
+  sparse=crssparse64(dim1,nonzero,dim2,lupperstorage)
+ endif
+
+ read(un)sparse%ia              !int64
+ read(un)sparse%ja              !int64
+ read(un)sparse%a               !wp
+
+ close(un)
+
+end function
+
+
+!FINAL
+subroutine deallocate_scal_crs64(sparse)
+ type(crssparse64),intent(inout)::sparse
+
+ call sparse%destroy()
+
+end subroutine
+
+subroutine deallocate_rank1_crs64(sparse)
+ type(crssparse64),intent(inout)::sparse(:)
 
  integer(kind=int32)::i
 
@@ -1553,6 +1918,109 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
 end subroutine
 
+subroutine convertfromcootocrs64(othersparse,sparse)
+ type(crssparse64),intent(out)::othersparse
+ type(coosparse),intent(in)::sparse
+
+ integer(kind=int64)::i,nel,row,col
+ integer(kind=int64),allocatable::rowpos(:)
+ integer(kind=int64)::i8
+ logical::lsquare
+
+
+ !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
+
+ !Number of elements=number of rows+number off-diagonal elements
+ !from sparse
+ lsquare=sparse%issquare()
+
+ allocate(rowpos(sparse%dim1))
+ rowpos=0
+
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.row.ne.sparse%ij(2,i8))then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.ne.0.and.sparse%ij(2,i8).ne.sparse%dim2)then
+    rowpos(row)=rowpos(row)+1
+   endif
+  enddo
+ endif
+
+ nel=sparse%dim1+sum(rowpos)
+
+ !othersparse=crssparse(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+ call othersparse%init(sparse%dim1,nel,sparse%dim2,sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+ if(allocated(sparse%perm64))allocate(othersparse%perm64,source=sparse%perm64)
+
+ !if(othersparse%ia(othersparse%dim1+1).ne.0)othersparse%ia=0
+
+ !determine the number of non-zero off-diagonal elements per row
+ othersparse%ia(2:othersparse%dim1+1)=rowpos
+
+ !accumulate the number of elements and add diagonal elements
+ othersparse%ia(1)=1
+ if(lsquare)then
+  do i=1,sparse%dim1
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=i   !set diagonal element for the case it would not be present
+  enddo
+ else
+  do i=1,sparse%dim1
+   othersparse%ia(i+1)=othersparse%ia(i+1)+1+othersparse%ia(i)
+   othersparse%ja(othersparse%ia(i))=sparse%dim2   !set last element for the case it would not be present
+  enddo
+ endif
+
+ !add the non-zero elements to crs (othersparse)
+ !allocate(rowpos(othersparse%dim1))
+ rowpos=othersparse%ia(1:othersparse%dim1)
+ if(lsquare)then
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.row)then
+     othersparse%a(othersparse%ia(row))=sparse%a(i8)
+    else
+     rowpos(row)=rowpos(row)+1
+     othersparse%ja(rowpos(row))=col
+     othersparse%a(rowpos(row))=sparse%a(i8)
+    endif
+   endif
+  enddo
+ else
+  do i8=1_int64,sparse%nel
+   row=sparse%ij(1,i8)
+   if(row.gt.0)then
+    col=sparse%ij(2,i8)
+    if(col.eq.sparse%dim2)then
+     othersparse%a(othersparse%ia(row))=sparse%a(i8)
+    else
+     rowpos(row)=rowpos(row)+1
+     othersparse%ja(rowpos(row))=col
+     othersparse%a(rowpos(row))=sparse%a(i8)
+    endif
+   endif
+  enddo
+ endif
+
+ deallocate(rowpos)
+
+! call othersparse%print()
+
+end subroutine
+
 subroutine convertfromcootoll(othersparse,sparse)
  type(llsparse),intent(out)::othersparse
  type(coosparse),intent(in)::sparse
@@ -1592,6 +2060,30 @@ subroutine convertfromcrstocoo(othersparse,sparse)
  do i=1,sparse%dim1
   do j=sparse%ia(i),sparse%ia(i+1)-1
    call othersparse%add(i,sparse%ja(j),sparse%a(j))
+  enddo
+ enddo
+
+! call othersparse%print()
+
+end subroutine
+
+subroutine convertfromcrs64tocoo(othersparse,sparse)
+ type(coosparse),intent(out)::othersparse
+ type(crssparse64),intent(in)::sparse
+
+ integer(kind=int32)::i
+ integer(kind=int64)::j
+
+ othersparse=coosparse(sparse%dim1,sparse%dim2,sparse%nonzero(),sparse%lupperstorage)
+
+ call othersparse%setsymmetric(sparse%lsymmetric)
+
+ if(allocated(sparse%perm))allocate(othersparse%perm,source=sparse%perm)
+ if(allocated(sparse%perm64))allocate(othersparse%perm64,source=sparse%perm64)
+
+ do i=1,sparse%dim1
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   call othersparse%add(i,int(sparse%ja(j),int32),sparse%a(j))
   enddo
  enddo
 

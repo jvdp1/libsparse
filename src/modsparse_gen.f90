@@ -18,6 +18,7 @@ module subroutine destroy_gen_gen(sparse)
  sparse%lsymmetric=.false.
  sparse%lupperstorage=.false.
  if(allocated(sparse%perm))deallocate(sparse%perm)
+ if(allocated(sparse%perm64))deallocate(sparse%perm64)
 
 end subroutine
 
@@ -104,6 +105,7 @@ module function getmem_gen(sparse) result(getmem)
  getmem=sizeof(sparse%unlog)+sizeof(sparse%dim1)+sizeof(sparse%dim2)+sizeof(sparse%namemat)&
         +sizeof(sparse%lsymmetric)+sizeof(sparse%lupperstorage)
  if(allocated(sparse%perm))getmem=getmem+sizeof(sparse%perm)
+ if(allocated(sparse%perm64))getmem=getmem+sizeof(sparse%perm64)
 
 end function
 
@@ -135,7 +137,7 @@ module subroutine print_dim_gen(sparse)
  write(sparse%unlog,'( "  Sorted                      : ",l1)')sparse%issorted()
  write(sparse%unlog,'( "  Symmetrix                   : ",l1)')sparse%lsymmetric
  write(sparse%unlog,'( "  Upper storage               : ",l1)')sparse%lupperstorage
- write(sparse%unlog,'( "  Permutation array provided  : ",l1)')allocated(sparse%perm)
+ write(sparse%unlog,'( "  Permutation array provided  : ",l1)')(allocated(sparse%perm).or.allocated(sparse%perm64))
 
  select type(sparse)
   type is(coosparse)
@@ -191,7 +193,7 @@ module subroutine setoutputunit(sparse,unlog)
 end subroutine
 
 !** SET PERMUTATION VECTOR
-module subroutine setpermutation(sparse,array)
+module subroutine setpermutation32(sparse,array)
  class(gen_sparse),intent(inout)::sparse
  integer(kind=int32)::array(:)
 
@@ -203,6 +205,21 @@ module subroutine setpermutation(sparse,array)
  !Probably pointer would be better???
  if(.not.allocated(sparse%perm))allocate(sparse%perm(sparse%getdim(1)))
  sparse%perm=array
+
+end subroutine
+
+module subroutine setpermutation64(sparse,array)
+ class(gen_sparse),intent(inout)::sparse
+ integer(kind=int64)::array(:)
+
+ if(size(array).ne.sparse%getdim(1))then
+  write(sparse%unlog,'(a)')' ERROR: The permutation array has a wrong size.'
+  error stop
+ endif
+
+ !Probably pointer would be better???
+ if(.not.allocated(sparse%perm64))allocate(sparse%perm64(sparse%getdim(1)))
+ sparse%perm64=array
 
 end subroutine
 
