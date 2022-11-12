@@ -781,8 +781,8 @@ module modsparse
   procedure,public::save=>save_crs64
   !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
   procedure,public::scale=>scale_crs64
-!  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
-!  procedure,public::set=>set_crs64
+  !> @brief Sets an entry to a certain value (even if equal to 0); condition: the entry must exist; e.g., call mat\%set(row,col,val)
+  procedure,public::set=>set_crs64
   !> @brief MKL PARDISO solver
   procedure,private::solve_crs64_vector
   procedure,private::solve_crs64_array
