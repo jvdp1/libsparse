@@ -439,7 +439,7 @@ module subroutine solve_crs64_vector(sparse,x,y,msglvl)
 #if (_VERBOSE == 1)
   sparse%pardisovar%iparm(19)=-1
 #endif
-  sparse%pardisovar%iparm(24)=1
+  sparse%pardisovar%iparm(24)=0
   sparse%pardisovar%iparm(27)=1
 #if (_DP==0)
   sparse%pardisovar%iparm(28)=1
@@ -558,7 +558,7 @@ module subroutine solve_crs64_array(sparse,x,y,msglvl)
 #if (_VERBOSE == 1)
   sparse%pardisovar%iparm(19)=-1
 #endif
-  sparse%pardisovar%iparm(24)=1
+  sparse%pardisovar%iparm(24)=0
   sparse%pardisovar%iparm(27)=1
 #if (_DP==0)
   sparse%pardisovar%iparm(28)=1
