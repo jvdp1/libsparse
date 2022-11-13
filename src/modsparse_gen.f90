@@ -135,7 +135,7 @@ module subroutine print_dim_gen(sparse)
  write(sparse%unlog,'( "  Dimension of the matrix     : ",i0," x ",i0)')sparse%dim1,sparse%dim2
  write(sparse%unlog,'( "  Number of non-zero elements : ",i0)')sparse%nonzero()
  write(sparse%unlog,'( "  Sorted                      : ",l1)')sparse%issorted()
- write(sparse%unlog,'( "  Symmetrix                   : ",l1)')sparse%lsymmetric
+ write(sparse%unlog,'( "  Symmetric                   : ",l1)')sparse%lsymmetric
  write(sparse%unlog,'( "  Upper storage               : ",l1)')sparse%lupperstorage
  write(sparse%unlog,'( "  Permutation array provided  : ",l1)')(allocated(sparse%perm).or.allocated(sparse%perm64))
 
@@ -148,7 +148,13 @@ module subroutine print_dim_gen(sparse)
 #if (_PARDISO==1)
    write(sparse%unlog,'( "  PARDISO status              : ",i0)')sparse%lpardisofirst
 #endif
+  type is(crssparse64)
+   write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
+#if (_PARDISO==1)
+   write(sparse%unlog,'( "  PARDISO status              : ",i0)')sparse%lpardisofirst
+#endif
   class default
+   write(sparse%unlog,'(a)')"Undefined sparse matrix"
  end select
  write(sparse%unlog,'(a)')' '
 
