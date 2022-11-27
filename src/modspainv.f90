@@ -5,7 +5,8 @@
 !Based on Karin Meyer 's code (didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran).
 !The content of Karin Meyer 's wiki is licensed under CC Attribution-Sahre Alike 4.0 International.
 !
-!Support of sparse inverse of SPSD matrices by implementing the S. D. Kachman modifications (https://www.ars.usda.gov/ARSUserFiles/80420530/MTDFREML/MTDFMan.pdf ; Chapter 6)
+!Support of sparse inverse of SPSD matrices by implementing the S. D. Kachman modifications
+!(https://www.ars.usda.gov/ARSUserFiles/80420530/MTDFREML/MTDFMan.pdf ; Chapter 6)
 
 !Rewritten for my purposes
 
@@ -36,6 +37,17 @@ module modspainv
 
  interface get_spainv
   module procedure get_spainv_crs
+ end interface
+
+ interface
+  SUBROUTINE dgtrsm(SIDE,UPLO,TRANSA,DIAG,M,N,ALPHA,A,LDA,B,LDB)
+   !.. Scalar Arguments ..
+   DOUBLE PRECISION ALPHA
+   INTEGER LDA,LDB,M,N
+   CHARACTER DIAG,SIDE,TRANSA,UPLO
+   !.. Array Arguments ..
+   DOUBLE PRECISION A(lda,*),B(ldb,*)
+  end subroutine
  end interface
 
  interface
