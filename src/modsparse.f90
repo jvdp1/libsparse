@@ -734,7 +734,8 @@ module modsparse
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs64
 !#if (_SPAINV==1)
-!  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
+!  !> @brief Computes and replaces the sparse matrix by the (complete) LDLt
+!  !!(L is stored in the upper triangle and D in the diagonal)
 !  procedure,public::getldlt=>getldlt_crs64
 !#endif
   !> @brief Gets memory used
