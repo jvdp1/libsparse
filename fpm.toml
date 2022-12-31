@@ -11,6 +11,7 @@ suffixes = ["f90"]
 macros =  ["_DP=1", "_METIS=1", "_PARDISO=1", "_SPAINV=1", "_VERBOSE=0"]
 
 [build]
+external-modules = ["mkl_pardiso"]
 auto-executables = false
 auto-tests = false
 auto-examples = false
