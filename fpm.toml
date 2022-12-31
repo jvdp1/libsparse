@@ -8,7 +8,7 @@ copyright = "Copyright 2021, Jeremie Vandenplas"
 [preprocess]
 [preprocess.cpp]
 suffixes = ["f90"]
-macros =  ["_DP=1", "_METIS=0", "_PARDISO=1", "_SPAINV=1", "_VERBOSE=0"]
+macros =  ["_DP=1", "_METIS=1", "_PARDISO=1", "_SPAINV=1", "_VERBOSE=0"]
 
 [build]
 auto-executables = false
