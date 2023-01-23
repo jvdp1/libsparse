@@ -615,6 +615,58 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
 
 end function
 
+module function submatrix_index_coo(sparse,indvector,sizeblock,unlog) result(subsparse)
+ !Not programmed efficiently, but it should do the job
+ class(coosparse),intent(in)::sparse
+ type(coosparse)::subsparse
+ integer(kind=int32),intent(in)::indvector(:)
+ integer(kind=int32),intent(in),optional::sizeblock
+ integer(kind=int32),intent(in),optional::unlog
 
+ integer(kind=int32)::i,j
+ integer(kind=int32)::i_
+ integer(kind=int32)::ii,jj
+ integer(kind=int64)::sizeblock_
+ integer(kind=int32)::startdim1,enddim1,startdim2,enddim2
+ integer(kind=int64)::nel
+
+
+ if(.not.validvalue_gen(sparse,minval(indvector),minval(indvector)))return
+ if(.not.validvalue_gen(sparse,maxval(indvector),maxval(indvector)))return
+ if(.not.sparse%lupperstorage)return
+
+ nel = size(indvector)
+
+ sizeblock_ = nel
+ if(present(sizeblock))sizeblock_=sizeblock
+
+
+ startdim1 = minval(indvector)
+ enddim1 = maxval(indvector)
+ startdim2 = minval(indvector)
+ enddim2 = maxval(indvector)
+
+ if(present(unlog))then
+  call subsparse%init(size(indvector), size(indvector), nel, sparse%lupperstorage, unlog)
+ else
+  call subsparse%init(size(indvector), size(indvector), nel, sparse%lupperstorage)
+ endif
+
+ ! upper -> upper
+ do i_ = 1, nel, sizeblock_
+  do i = i_, i_ + sizeblock_ - 1
+   do j = i, i_ + sizeblock_ - 1
+    ii = indvector(i)
+    jj = indvector(j)
+    if(ii.le.jj)then
+     call subsparse%add(i, j, sparse%get(ii,jj))
+    else
+     call subsparse%add(i, j, sparse%get(jj,ii))
+    endif
+   enddo
+  enddo
+ enddo
+
+end function
 
 end submodule
