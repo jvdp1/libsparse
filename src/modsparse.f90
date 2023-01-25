@@ -390,14 +390,14 @@ module modsparse
    integer(kind=int32),intent(in),optional::unlog
    logical,intent(in),optional::lupper
   end function
-  module function submatrix_index_coo(sparse,indvector,sizeblock,unlog) result(subsparse)
+  module subroutine submatrix_index_coo(sparse,subsparse,indvector,sizeblock,unlog)
    !Not programmed efficiently, but it should do the job
    class(coosparse),intent(in)::sparse
-   type(coosparse)::subsparse
+   type(coosparse),intent(out)::subsparse
    integer(kind=int32),intent(in)::indvector(:)
    integer(kind=int32),intent(in),optional::sizeblock
    integer(kind=int32),intent(in),optional::unlog
-  end function
+  end subroutine
  end interface
 
 ! !> @brief Load a COO matrix from file
