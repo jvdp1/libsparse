@@ -275,9 +275,9 @@ module modsparse
   !> @brief Sets an entry to a certain value (even if equal to 0); e.g., call mat\%set(row,col,val)
   procedure,public::set=>set_coo
   !> @brief Gets a submatrix from a sparse matrix
-  procedure::submatrix_coo
-  procedure::submatrix_index_coo
-  generic,public::submatrix=>submatrix_coo,submatrix_index_coo
+  procedure,public::submatrix=>submatrix_coo
+  !> @brief Gets a submatrix from a sparse matrix based on an index vector
+  procedure,public::submatrix_index=>submatrix_index_coo
   final::deallocate_scal_coo,deallocate_rank1_coo
  end type
 
