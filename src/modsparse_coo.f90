@@ -615,10 +615,10 @@ module function submatrix_coo(sparse,startdim1,enddim1,startdim2,enddim2,lupper,
 
 end function
 
-module function submatrix_index_coo(sparse,indvector,sizeblock,unlog) result(subsparse)
+module subroutine submatrix_index_coo(sparse,subsparse,indvector,sizeblock,unlog)
  !Not programmed efficiently, but it should do the job
  class(coosparse),intent(in)::sparse
- type(coosparse)::subsparse
+ type(coosparse),intent(out)::subsparse
  integer(kind=int32),intent(in)::indvector(:)
  integer(kind=int32),intent(in),optional::sizeblock
  integer(kind=int32),intent(in),optional::unlog
@@ -654,8 +654,8 @@ module function submatrix_index_coo(sparse,indvector,sizeblock,unlog) result(sub
 
  ! upper -> upper
  do i_ = 1, nel, sizeblock_
-  do i = i_, i_ + sizeblock_ - 1
-   do j = i, i_ + sizeblock_ - 1
+  do i = i_, min(i_ + sizeblock_ - 1, size(indvector))
+   do j = i, min(i_ + sizeblock_ - 1, size(indvector))
     ii = indvector(i)
     jj = indvector(j)
     if(ii.le.jj)then
@@ -667,6 +667,6 @@ module function submatrix_index_coo(sparse,indvector,sizeblock,unlog) result(sub
   enddo
  enddo
 
-end function
+end subroutine
 
 end submodule
