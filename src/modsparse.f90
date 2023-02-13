@@ -1545,9 +1545,9 @@ pure subroutine submatrix_dense_crs(sparse,indx,dense,lupper,unlog)
    k = sparse%ja(j)
    pos = findloc(indx, value = k)
    if(pos(1).gt.0)then
-    dense(i, pos(1)) = sparse%a(j)
+    dense(ii, pos(1)) = sparse%a(j)
     if(sparse%lupperstorage .and. sparse%lsymmetric)then
-     dense(pos(1), i) = sparse%a(j)
+     dense(pos(1), ii) = sparse%a(j)
     endif
    endif
   enddo
