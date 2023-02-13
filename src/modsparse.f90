@@ -1519,7 +1519,7 @@ function submatrix_crs(sparse,startdim1,enddim1,startdim2,enddim2,lupper,unlog) 
 
 end function
 
-subroutine submatrix_dense_crs(sparse,indx,dense,lupper,unlog)
+pure subroutine submatrix_dense_crs(sparse,indx,dense,lupper,unlog)
  !Not programmed efficiently, but it should do the job
  class(crssparse),intent(in)::sparse
  integer(kind=int32),intent(in)::indx(:)
@@ -1529,9 +1529,13 @@ subroutine submatrix_dense_crs(sparse,indx,dense,lupper,unlog)
 
  integer(kind=int32)::i,ii,j,k,nel,un
  integer(kind=int32) :: pos(1)
- logical::lincludediag,lupperstorage
+ logical::lupper_
 
  nel = size(indx)
+
+ lupper_ = sparse%lupperstorage
+ if(present(lupper))lupper_ = lupper
+
 
  allocate(dense(nel, nel), source = 0._real64)
 
