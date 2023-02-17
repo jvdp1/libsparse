@@ -456,7 +456,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
     ldpotrf = .false.
     deallocate(ttt)
     jvec = 0
-    cycle
+    cycle loopjnode
 !    error stop
    endif
   endif
