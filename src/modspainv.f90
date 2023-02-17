@@ -25,7 +25,7 @@ module modspainv
  public::get_chol,get_ichol,get_spainv
 
  integer(kind=int32),parameter::minsizesupernode=0  !values other than 0 (e.g., 256) may give troubles
- real(kind=wp),parameter::tol=1.e-10_wp
+ real(kind=wp),parameter::tol=1.e-8_wp
 
  interface get_chol
   module procedure get_chol_crs
@@ -385,7 +385,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
  jnode = nnode_ + 1
  ldpotrf = .true.
 
- do !jnode = nnode, 1, -1
+ loopjnode: do !jnode = nnode, 1, -1
   if(.not.ldpotrf)then
    call split_inode(inode_, nnode_, jnode)
    ldpotrf = .true.
@@ -397,6 +397,16 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
   icol1 = inode_(jnode+1) + 1
   icol2 = inode_(jnode)
   mm = icol2 - icol1 +1
+
+  !check all diagonal elements are > tol
+  if(mm.gt.1)then
+   do irow = icol1, icol2
+    if(diag(irow).le.tol)then
+     ldpotrf = .false.
+     cycle loopjnode
+    endif
+   enddo
+  endif
 
   call progress(icol2,neqns)
 
@@ -446,7 +456,7 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
     ldpotrf = .false.
     deallocate(ttt)
     jvec = 0
-    cycle
+    cycle loopjnode
 !    error stop
    endif
   endif
@@ -559,7 +569,7 @@ end block
 #endif
   endif
 
- enddo ! jnode
+ enddo loopjnode ! jnode
 
  !zeroing columns for positive semi-definite matrix
  do irow=neqns,1,-1
