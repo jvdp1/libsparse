@@ -246,14 +246,14 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 #endif
  endif
  
-!#if (_VERBOSE >0)
+#if (_VERBOSE >0)
  write(*,'(/2x,a,i0)')'Flag symbolic factorization    : ',flag
  !write(*,'(2x,a,i0)')'Number of non-zero in the facor: ',maxlnz
  write(*,'(2x,a,i0)')'Number of super-nodes          : ',nnode
  write(*,'(2x,a,i0)')'Min size of super-nodes        : ',mssn
  write(*,'(2x,a,i0)')'Max size of super-nodes        : ',maxnode
  write(*,'(2x,a,i0/)')'Rank of the matrix             : ',rank
-!#endif
+#endif
 #if (_VERBOSE >2)
  do i=1,nnode
   write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
