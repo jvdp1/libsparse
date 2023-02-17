@@ -105,6 +105,9 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs submatrix_full_full", test_submatrix_full_full) &
     , new_unittest("crs submatrix_full_upper", test_submatrix_full_upper) &
     , new_unittest("crs submatrix_upper_full", test_submatrix_upper_full) &
+    , new_unittest("crs submatrix_dense_upper_upper", test_submatrix_dense_upper_upper) &
+    , new_unittest("crs submatrix_dense_upper_upper_sym", test_submatrix_dense_upper_upper_sym) &
+    , new_unittest("crs submatrix_dense_upper_full", test_submatrix_dense_upper_full) &
     ]
 
   !to check: diag_mat
@@ -2304,7 +2307,110 @@ subroutine test_submatrix_upper_full(error)
 
 end subroutine
 
+subroutine test_submatrix_dense_upper_upper(error)
+ type(error_type), allocatable, intent(out) :: error
 
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ integer, parameter :: vector(*) = [1, 3, 4]
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat1(nrow, ncol)
+ real(wp), allocatable :: mat(:, :)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+
+ crs = coo
+
+ call crs%submatrix_dense(vector, mat)!, lupper = .true.)
+
+ mat1 = getmat(crs)
+
+ if(verbose)call printmat(mat1(vector, vector))
+ if(verbose)call printmat(mat)
+
+ call check(error, all(mat1(vector, vector) == mat) &
+            , 'submatrix_dense_upper_upper')
+
+end subroutine
+
+subroutine test_submatrix_dense_upper_upper_sym(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ integer, parameter :: vector(*) = [1, 3, 4]
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat1(nrow, ncol)
+ real(wp), allocatable :: mat(:, :)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+ call coo%setsymmetric(.true.)
+
+ crs = coo
+
+ call crs%submatrix_dense(vector, mat, lupper = .true.)
+
+ mat1 = getmat(crs)
+ do i = 2, size(mat1, 1)
+  mat1(i, 1:i-1) = 0
+ enddo
+
+ if(verbose) call printmat(mat1(vector, vector))
+ if(verbose)call printmat(mat)
+
+ call check(error, all(mat1(vector, vector) == mat) &
+            , 'submatrix_dense_upper_upper_sym')
+
+end subroutine
+
+subroutine test_submatrix_dense_upper_full(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ integer, parameter :: vector(*) = [1, 3, 4]
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol .and. ia.le.ja
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat1(nrow, ncol)
+ real(wp), allocatable :: mat(:, :)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a, iat, jat, at, mat)
+ call coo%setsymmetric(.true.)
+
+ crs = coo
+
+ call crs%submatrix_dense(vector, mat, lupper = .false.)
+
+ mat1 = getmat(crs)
+
+ if(verbose)call printmat(mat1(vector, vector))
+ if(verbose)call printmat(mat)
+
+ call check(error, all(mat1(vector, vector) == mat) &
+            , 'submatrix_dense_upper_full')
+
+end subroutine
 
 !INTERNAL
 subroutine getija_crs(crs, iat, jat, at, mat)
