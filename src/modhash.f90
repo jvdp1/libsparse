@@ -168,9 +168,9 @@ pure function roundinguppower2(x) result(next)
  integer(kind=int64),intent(in)::x
  integer(kind=int64)::next
 
- !https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
- 
- next=2_int64**int((ceiling(log(real(x,real64))/log(real(2,real64)))),int64)
+ real(real64), parameter :: log2 = log(2._real64)
+
+ next = 2_int64 ** int((ceiling( log(real(x, real64)) / log2) ), int64)
 
 end function
 

@@ -61,9 +61,6 @@ This library was inspired by several sources:
  * https://software.intel.com/en-us/forums/intel-visual-fortran-compiler-for-windows/topic/755612  
 
 
- * https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2   
-
-
  * and by many courses related to object-oriented programming and Fortran 2003/2008.  
 
 ## To be implemented  
