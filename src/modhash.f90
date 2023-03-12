@@ -39,34 +39,35 @@ function hashf_vect(row,mat,dim2,filled,getval) result(address)
  integer(kind=int32)::i 
  logical::indzero,indequal
 
- a=int(row,kind(a))        !conversion of 1st coordinate
- b=bparam                 !conversion of 2nd coordinate
- c=cparam          !default value for 3rd coordinate
+ a = int(row,kind(a))        !conversion of 1st coordinate
+ b = bparam                 !conversion of 2nd coordinate
+ c = cparam          !default value for 3rd coordinate
 
  !Cycle until a free entry is found
- do i=1,maxiter
+ do i = 1, maxiter
   !Hashing
   call mix(a,b,c)
   !Computation of the address
-  address=iand(c,dim2-1)+1
+  address = iand(c, dim2-1) + 1
   !Check if the address is correct
-  indzero=.false.;indequal=.false.
-  if(mat(address).eq.row)indequal=.true.
-  if(mat(address).eq.0)indzero=.true.
+  indzero = .false.
+  indequal = .false.
+  if(mat(address).eq.row)indequal = .true.
+  if(mat(address).eq.0)indzero = .true.
   if(indzero.or.indequal)then
    if(.not.getval.and.indzero)then
-    mat(address)=row
-    filled=filled+1
+    mat(address) = row
+    filled = filled + 1
     return
    endif
    if(getval.and.indzero)then
-    address=0
+    address = 0
    endif
    return
   endif
  enddo
 
- address=-1
+ address = -1
  write(*,'(a)')' Warning: the maximum number of searches was reached!'
 
 end function
@@ -91,35 +92,36 @@ function hashf_array(row,col,mat,dim2,filled,getval) result(address)
  integer(kind=int32)::i 
  logical::indzero,indequal
 
- a=int(row,kind(a))        !conversion of 1st coordinate
- b=int(col,kind(b))        !conversion of 2nd coordinate
- c=cparam                  !default value for 3rd coordinate
+ a = int(row,kind(a))        !conversion of 1st coordinate
+ b = int(col,kind(b))        !conversion of 2nd coordinate
+ c = cparam                  !default value for 3rd coordinate
 
  !Cycle until a free entry is found
- do i=1,maxiter
+ do i = 1, maxiter
   !Hashing
   call mix(a,b,c)
   !Computation of the address
-  address=iand(c,dim2-1)+1
+  address = iand(c,dim2-1) + 1
   !Check if the address is correct
-  indzero=.false.;indequal=.false.
-  if(mat(1,address).eq.row.and.mat(2,address).eq.col)indequal=.true.
-  if(mat(1,address).eq.0.or.mat(2,address).eq.0)indzero=.true.
+  indzero = .false.
+  indequal = .false.
+  if(mat(1,address).eq.row.and.mat(2,address).eq.col)indequal = .true.
+  if(mat(1,address).eq.0.or.mat(2,address).eq.0)indzero = .true.
   if(indzero.or.indequal)then
    if(.not.getval.and.indzero)then
-    mat(1,address)=row
-    mat(2,address)=col
-    filled=filled+1
+    mat(1,address) = row
+    mat(2,address) = col
+    filled = filled + 1
     return
    endif
    if(getval.and.indzero)then
-    address=0
+    address = 0
    endif
    return
   endif
  enddo
 
- address=-1
+ address = -1
  write(*,'(a)')' Warning: the maximum number of searches was reached!'
 
 end function
@@ -139,27 +141,28 @@ pure function hashf_array_getval(row,col,mat,dim2) result(address)
  integer(kind=int32)::i
  logical::indzero,indequal
 
- a=int(row,kind(a))        !conversion of 1st coordinate
- b=int(col,kind(b))        !conversion of 2nd coordinate
- c=cparam                  !default value for 3rd coordinate
+ a = int(row,kind(a))        !conversion of 1st coordinate
+ b = int(col,kind(b))        !conversion of 2nd coordinate
+ c = cparam                  !default value for 3rd coordinate
 
  !Cycle until a free entry is found
- do i=1,maxiter
+ do i = 1, maxiter
   !Hashing
   call mix(a,b,c)
   !Computation of the address
-  address=iand(c,dim2-1)+1
+  address = iand(c,dim2-1) + 1
   !Check if the address is correct
-  indzero=.false.;indequal=.false.
-  if(mat(1,address).eq.row.and.mat(2,address).eq.col)indequal=.true.
-  if(mat(1,address).eq.0.or.mat(2,address).eq.0)indzero=.true.
+  indzero = .false.
+  indequal = .false.
+  if(mat(1,address).eq.row.and.mat(2,address).eq.col)indequal = .true.
+  if(mat(1,address).eq.0.or.mat(2,address).eq.0)indzero = .true.
   if(indzero.or.indequal)then
-   if(indzero)address=0
+   if(indzero)address = 0
    return
   endif
  enddo
 
- address=-1
+ address = -1
 
 end function
   
@@ -186,12 +189,12 @@ end function
 pure subroutine mix(a,b,c)
  integer(kind=int64),intent(inout)::a,b,c
 
- a=a-c;a=ieor(a,rot(c,4_int64));c=c+b 
- b=b-a;b=ieor(b,rot(a,6_int64));a=a+c 
- c=c-b;c=ieor(c,rot(b,8_int64));b=b+a 
- a=a-c;a=ieor(a,rot(c,16_int64));c=c+b 
- b=b-a;b=ieor(b,rot(a,19_int64));a=a+c 
- c=c-b;c=ieor(c,rot(b,4_int64));b=b+a 
+ a=a-c; a=ieor(a,rot(c,4_int64)); c=c+b 
+ b=b-a; b=ieor(b,rot(a,6_int64)); a=a+c 
+ c=c-b; c=ieor(c,rot(b,8_int64)); b=b+a 
+ a=a-c; a=ieor(a,rot(c,16_int64)); c=c+b 
+ b=b-a; b=ieor(b,rot(a,19_int64)); a=a+c 
+ c=c-b; c=ieor(c,rot(b,4_int64)); b=b+a 
 
 end subroutine 
 
