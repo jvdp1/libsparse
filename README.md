@@ -26,7 +26,7 @@ To build the `libsparse` you need (at least):
  * Make or fpm.
 
 The library relies on different libraries, such as BLAS/LAPACK libraries (currently on Intel MKL library), and optionally on PARDISO (at this stage, Intel MKL PARDISO), and on [METIS 5](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
-The library can be built with the compilers `gfortran` and `ifort`
+The library can be built with the compilers `gfortran` and `ifort`.
 
 
 See the brief [documentation](doc/documentation.md) for more details regarding the compilation.  
@@ -61,9 +61,6 @@ This library was inspired by several sources:
  * https://software.intel.com/en-us/forums/intel-visual-fortran-compiler-for-windows/topic/755612  
 
 
- * https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2   
-
-
  * and by many courses related to object-oriented programming and Fortran 2003/2008.  
 
 ## To be implemented  
@@ -71,3 +68,5 @@ This library was inspired by several sources:
  * Check for symmetric matrix  
 
  * Allow the option spainv + single precision
+
+ * Full support of 8-byte integers
