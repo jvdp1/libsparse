@@ -87,7 +87,7 @@ export SPAINVENABLE
 all: lib
 	$(MAKE) --directory=test
 
-examples:
+examples: lib
 	$(MAKE) --directory=examples
 
 lib:
