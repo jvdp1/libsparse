@@ -58,7 +58,7 @@ program cholesky
 
  !test
  if(ltest)then
-  if(test_cholesky(coo, perm, crs))then
+  if(test_cholesky(coo, crs))then
    write(*,'(a)')'Cholesky solver OK'
   else
    write(*,'(a)')'Cholesky solver NOT OK'
@@ -67,8 +67,7 @@ program cholesky
 
 contains
 
-function test_cholesky(coo, perm, crschol) result(ltest)
- integer, intent(in) :: perm(:)
+function test_cholesky(coo, crschol) result(ltest)
  type(coosparse), intent(in) :: coo
  type(crssparse), intent(in) :: crschol
  logical :: ltest
@@ -91,8 +90,6 @@ function test_cholesky(coo, perm, crschol) result(ltest)
  !pardiso
  allocate(sol2(coo%getdim(1)))
  crs = coo
-
- call crs%setpermutation(perm)
  call crs%solve(sol2, rhs)
 
  !test
