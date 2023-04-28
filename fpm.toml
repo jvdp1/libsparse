@@ -13,6 +13,11 @@ auto-examples = false
 [install]
 library = false
 
+[fortran]
+implicit-typing = true
+implicit-external = true
+source-form = "default"
+
 [[test]]
 name = "test_sparse"
 main = "test_sparse.f90"
