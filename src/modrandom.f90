@@ -4,7 +4,7 @@ module modrandom
 #else
  use, intrinsic:: iso_fortran_env, only: wp=>real64
 #endif
- implicit none (type, external)
+ implicit none
  private
  public :: setseed
  public :: rand_stduniform
