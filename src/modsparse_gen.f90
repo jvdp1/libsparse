@@ -109,6 +109,33 @@ module function getmem_gen(sparse) result(getmem)
 
 end function
 
+!** GET PERMUTATION VECTOR
+module subroutine getpermutation32(sparse,array)
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int32),intent(out),allocatable::array(:)
+
+ if(allocated(sparse%perm))then
+  allocate(array, source = sparse%perm)
+ else
+  write(sparse%unlog,'(a)')' ERROR: The permutation array is not allocated.'
+  error stop
+ endif
+
+end subroutine
+
+module subroutine getpermutation64(sparse,array)
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int64),intent(out),allocatable::array(:)
+
+ if(allocated(sparse%perm64))then
+  allocate(array, source = sparse%perm64)
+ else
+  write(sparse%unlog,'(a)')' ERROR: The permutation array (int64) is not allocated.'
+  error stop
+ endif
+
+end subroutine
+
 !INITIATE GEN SPARSE
 module subroutine init_gen(sparse,namemat,dim1,dim2)
  class(gen_sparse),intent(inout)::sparse
@@ -219,7 +246,7 @@ module subroutine setpermutation64(sparse,array)
  integer(kind=int64)::array(:)
 
  if(size(array).ne.sparse%getdim(1))then
-  write(sparse%unlog,'(a)')' ERROR: The permutation array has a wrong size.'
+  write(sparse%unlog,'(a)')' ERROR: The permutation array (int64) has a wrong size.'
   error stop
  endif
 
