@@ -39,6 +39,7 @@ subroutine collect_crs64(testsuite)
     , new_unittest("crs64 get nel", test_get_nel) &
     , new_unittest("crs64 get lupper", test_get_lupper) &
     , new_unittest("crs64 get lupper_sym", test_get_lupper_sym) &
+    , new_unittest("crs64 get permutation", test_getpermutation) &
     , new_unittest("crs64 ncol get", test_ncol_get) &
     , new_unittest("crs64 ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs64 ncol get lupper", test_ncol_get_lupper) &
@@ -493,6 +494,34 @@ subroutine test_ncol_get_lupper(error)
  crs = coo
 
  call check(error, all(getmat(crs) == matcheck(nrow, ncol, ia, ja, a, lvalid)), 'get')
+
+end subroutine
+
+!GET PERMUTATION
+subroutine test_getpermutation(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer(int64), parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer(int64), allocatable :: gperm(:)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call crs%setpermutation(perm)
+
+ call crs%getpermutation(gperm)
+
+ call check(error, all(gperm.eq.perm), 'get permutation')
+ if(allocated(error))return
 
 end subroutine
 

@@ -57,6 +57,10 @@ module modsparse
   procedure,public::cg=>cg_gen
   !> @brief Returns the dimension of the matrix; e.g., ...=mat%getdim(1)
   procedure,public::getdim=>getdim_gen
+  !> @brief Returns the permutation vector; e.g., call mat%getpermutation(array)
+  procedure :: getpermutation32
+  procedure :: getpermutation64
+  generic,public::getpermutation => getpermutation32, getpermutation64
   !> @brief Initializes the values
   procedure,public::initialize=>init_gen
   !> @brief Returns true if the matrix is sorted; else returns false
@@ -160,6 +164,15 @@ module modsparse
    class(gen_sparse),intent(in)::sparse
    integer(kind=int64)::getmem
   end function
+  !** GET PERMUTATION VECTOR
+  module subroutine getpermutation32(sparse,array)
+   class(gen_sparse),intent(in)::sparse
+   integer(kind=int32),allocatable,intent(out)::array(:)
+  end subroutine
+  module subroutine getpermutation64(sparse,array)
+   class(gen_sparse),intent(in)::sparse
+   integer(kind=int64),allocatable,intent(out)::array(:)
+  end subroutine
   !INITIATE GEN SPARSE
   module subroutine init_gen(sparse,namemat,dim1,dim2)
    class(gen_sparse),intent(inout)::sparse
