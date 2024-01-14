@@ -17,12 +17,25 @@ include(GNUInstallDirs)
 # General configuration information
 add_subdirectory("config")
 
-find_package("OpenMP" REQUIRED)
+if(NOT TARGET "OpenMP::OpenMP_Fortran")
+  find_package("OpenMP" REQUIRED)
+endif()
 
+set(BLA_STATIC ON)
 if(NOT TARGET "BLAS::BLAS")
   find_package("custom-blas" REQUIRED)
 endif()
 
+if(NOT TARGET "LAPACK::LAPACK")
+  find_package("custom-lapack" REQUIRED)
+endif()
+
+set(
+  lib-deps
+  "OpenMP::OpenMP_Fortran"
+  "BLAS::BLAS"
+  "LAPACK::LAPACK"
+)
 
 #Compiler
 #if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
@@ -75,6 +88,11 @@ set_target_properties(
   SOVERSION "${PROJECT_VERSION_MAJOR}"
   Fortran_MODULE_DIRECTORY "${PROJECT_BINARY_DIR}/include"
 )
+target_link_libraries(
+  "${PROJECT_NAME}-lib"
+  PUBLIC
+  "${lib-deps}"
+)
 target_include_directories(
   "${PROJECT_NAME}-lib"
   PUBLIC
@@ -123,8 +141,8 @@ install(
 
 
 
-## add the testsuite
-#include(CTest)
-#if(BUILD_TESTING AND TEST_DRIVE_BUILD_TESTING)
-#  add_subdirectory("test")
-#endif()
+# add the testsuite
+include(CTest)
+if(BUILD_TESTING AND LIBSPARSE_BUILD_TESTING)
+  add_subdirectory("test")
+endif()
