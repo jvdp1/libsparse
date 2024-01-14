@@ -1,14 +1,17 @@
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(
     CMAKE_Fortran_FLAGS_INIT
-    "-fimplicit-none"
-    "-ffree-line-length-132"
+    "-cpp -fall-intrinsics"
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT
+    "-O3"
   )
   set(
     CMAKE_Fortran_FLAGS_DEBUG_INIT
+    "-g"
+    "-fcheck=all"
+    "-fbacktrace"
     "-Wall"
     "-Wextra"
     "-Wimplicit-procedure"
@@ -17,11 +20,11 @@ if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
   set(
     CMAKE_Fortran_FLAGS_INIT
-    "-O3 -fpp"
+    -fpp -heap-arrays -qopt-report=5
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT
-    "-O3 -fpp"
+    "-O3 -parallel -qopt-matmul"
   )
   if(WIN32)
     set(
@@ -32,8 +35,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
   else()
     set(
       CMAKE_Fortran_FLAGS_DEBUG_INIT
+      "-g"
       "-stand f18"
-      "-warn declarations,general,usage,interfaces,unused"
+      "-check all -traceback -debug extended -debug inline-debug-info -check noarg_temp_created"
+      "-warn all"
     )
   endif()
 else()

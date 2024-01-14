@@ -23,7 +23,7 @@ set(module-dir "${module-dir}" PARENT_SCOPE)
 # Set build type as CMake does not provide defaults
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
   set(
-    CMAKE_BUILD_TYPE "RelWithDebInfo"
+    CMAKE_BUILD_TYPE "Release"
     CACHE STRING "Build type to be used."
     FORCE
   )
@@ -39,16 +39,6 @@ check_fortran_source_compiles(
   WITH_QP
 )
 set(WITH_QP ${WITH_QP} PARENT_SCOPE)
-check_fortran_source_compiles(
-  "
-  integer, parameter :: xdp = merge(-1, selected_real_kind(18), selected_real_kind(18) == selected_real_kind(33))
-  complex(xdp) :: x
-  end
-  "
-  WITH_XDP
-)
-set(WITH_XDP ${WITH_XDP} PARENT_SCOPE)
-
 
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")

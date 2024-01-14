@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.10)
-get_directory_property(is-subproject PARENT_DIRECTORY)
+cmake_minimum_required(VERSION 3.20)
 
 # Include overwrites before setting up the project
 set(CMAKE_USER_MAKE_RULES_OVERRIDE ${CMAKE_CURRENT_SOURCE_DIR}/config/DefaultFlags.cmake)
+
+get_directory_property(is-subproject PARENT_DIRECTORY)
 
 project(
   "libsparse"
@@ -21,6 +22,15 @@ if(NOT TARGET "OpenMP::OpenMP_Fortran")
   find_package("OpenMP" REQUIRED)
 endif()
 
+#MKL
+message(STATUS "ENV{MKLROOT}: $ENV{MKLROOT}")
+
+#set(MKL_INTERFACE "lp64")
+#set(ENABLE_BLAS95 true)
+#set(ENABLE_LAPACK95 true)
+#set(MKL_LINK "static")
+#find_package(MKL CONFIG REQUIRED)
+
 set(BLA_STATIC ON)
 if(NOT TARGET "BLAS::BLAS")
   find_package("custom-blas" REQUIRED)
@@ -36,33 +46,6 @@ set(
   "BLAS::BLAS"
   "LAPACK::LAPACK"
 )
-
-#Compiler
-#if (CMAKE_Fortran_COMPILER_ID STREQUAL "Intel")
-#  include(Compiler-Intel)
-#elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
-#  include(Compiler-GNU)
-#elseif(CMAKE_Fortran_COMPILER_ID STREQUAL "PGI")
-#  include(Compiler-PGI)
-#else ()
-#  message (FATAL_ERROR "Compiler type (CMAKE_Fortran_COMPILER_ID) not recognized")
-#endif ()
-#
-#set (CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE} "${BUILDCMD_PRE} ${OPENMP_FLAGS} ${STANDARD_CHECK} ${OPTIMIZATION_FLAGS} ${COMPILE_FLAGS} ${PRECISION_FLAGS}")
-#set (CMAKE_Fortran_LINK_EXECUTABLE           "${BUILDCMD_PRE} ${CMAKE_Fortran_COMPILER} ${OPENMP_FLAGS}   ${OPTIMIZATION_FLAGS} ${LINKER_FLAGS}")
-#
-#if (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
-#  set (CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE} "${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}} ${DEBUG_FLAGS}")
-#  set (CMAKE_Fortran_LINK_EXECUTABLE           "${CMAKE_Fortran_LINK_EXECUTABLE} ${DEBUG_FLAGS}")
-#endif ()
-#
-#set (CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}   "${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}} ${BUILDCMD_POST}")
-#set (CMAKE_Fortran_LINK_EXECUTABLE             "${CMAKE_Fortran_LINK_EXECUTABLE} <OBJECTS> -o <TARGET> <LINK_LIBRARIES> ${BUILDCMD_POST}")
-#
-#
-#message ("Fortran Compiler Flags:\n${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}\n")
-#message ("C Compiler Flags:\n${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}\n")
-#message ("Fortran Linker Command:\n${CMAKE_Fortran_LINK_EXECUTABLE}\n")
 
 
 # Collect source of the project
@@ -102,10 +85,11 @@ target_include_directories(
 target_compile_definitions(
   "${PROJECT_NAME}-lib"
   PRIVATE
-  "WITH_QP=$<BOOL:${WITH_QP}>"
   "-D_DP=1"
   "-D_METIS=0"
   "-D_PARDISO=1"
+  "-D_SPAINV=1"
+  "-D_VERBOSE=0"
 )
 
 # Export targets for other projects
@@ -138,7 +122,6 @@ install(
   "LICENSE"
   DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/${PROJECT_NAME}"
 )
-
 
 
 # add the testsuite
