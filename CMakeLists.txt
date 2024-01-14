@@ -40,11 +40,18 @@ if(NOT TARGET "LAPACK::LAPACK")
   find_package("custom-lapack" REQUIRED)
 endif()
 
+# Find METIS library
+if (NOT METIS_LIB)
+    find_library(METIS_LIB metis)
+endif ()
+
+
 set(
   lib-deps
   "OpenMP::OpenMP_Fortran"
   "BLAS::BLAS"
   "LAPACK::LAPACK"
+  ${METIS_LIB}
 )
 
 
@@ -86,7 +93,7 @@ target_compile_definitions(
   "${PROJECT_NAME}-lib"
   PRIVATE
   "-D_DP=1"
-  "-D_METIS=0"
+  "-D_METIS=1"
   "-D_PARDISO=1"
   "-D_SPAINV=1"
   "-D_VERBOSE=0"

@@ -70,3 +70,7 @@ This library was inspired by several sources:
  * Allow the option spainv + single precision
 
  * Full support of 8-byte integers
+
+
+cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Release
+cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Debug -DMETIS_LIB=$(pwd)/../metis-5.1.0/build/Linux-x86_64/libmetis/libmetis.a

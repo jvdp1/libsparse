@@ -10,8 +10,10 @@ macro(ADDTEST name)
       "test_${name}"
       PRIVATE
       "-D_DP=1"
-      "-D_METIS=0"
+      "-D_METIS=1"
       "-D_PARDISO=1"
+      "-D_SPAINV=1"
+      "-D_VERBOSE=0"
     )
     add_test(NAME ${name}
              COMMAND $<TARGET_FILE:test_${name}> ${CMAKE_CURRENT_BINARY_DIR}
