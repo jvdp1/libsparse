@@ -23,7 +23,6 @@ if(NOT TARGET "OpenMP::OpenMP_Fortran")
 endif()
 
 #MKL
-
 message(STATUS "ENV{MKLROOT}: $ENV{MKLROOT}")
 
 if(NOT TARGET "MKL::MKL")
