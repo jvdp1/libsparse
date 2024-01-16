@@ -7,7 +7,7 @@ get_directory_property(is-subproject PARENT_DIRECTORY)
 
 project(
   "libsparse"
-  LANGUAGES "Fortran"
+  LANGUAGES Fortran C
   VERSION "0.1.0"
   DESCRIPTION "Sparse matrices"
 )
@@ -25,20 +25,16 @@ endif()
 #MKL
 message(STATUS "ENV{MKLROOT}: $ENV{MKLROOT}")
 
-#set(MKL_INTERFACE "lp64")
-#set(ENABLE_BLAS95 true)
-#set(ENABLE_LAPACK95 true)
-#set(MKL_LINK "static")
-#find_package(MKL CONFIG REQUIRED)
-
-set(BLA_STATIC ON)
-if(NOT TARGET "BLAS::BLAS")
-  find_package("custom-blas" REQUIRED)
+if(NOT TARGET "MKL::MKL")
+  list(APPEND CMAKE_PREFIX_PATH "$ENV{MKLROOT}/lib/cmake/mkl")
+  set(MKL_INTERFACE "lp64")
+  set(MKL_LINK "static")
+  set(ENABLE_BLAS95 true)
+  set(ENABLE_LAPACK95 true)
+  find_package(MKL REQUIRED)
 endif()
 
-if(NOT TARGET "LAPACK::LAPACK")
-  find_package("custom-lapack" REQUIRED)
-endif()
+message(STATUS "MKL found: ${MKL_IMPORTED_TARGETS}")
 
 # Find METIS library
 if(NOT DEFINED CMAKE_METIS_LIB)
@@ -47,17 +43,16 @@ endif()
 
 if(CMAKE_METIS_LIB)
   set(WITH_METIS 1 STRING)
-  message("METIS found: ${CMAKE_METIS_LIB}")
+  message(STATUS "METIS found: ${CMAKE_METIS_LIB}")
 else()
   set(WITH_METIS 0 STRING)
-  message("METIS not found")
+  message(STATUS "METIS not found")
 endif()
 
 set(
   lib-deps
   "OpenMP::OpenMP_Fortran"
-  "BLAS::BLAS"
-  "LAPACK::LAPACK"
+  "MKL::MKL"
 )
 
 if(CMAKE_METIS_LIB)
@@ -77,7 +72,7 @@ if(CMAKE_MKLPARDISO OR CMAKE_Fortran_COMPILER_ID MATCHES "^Intel" )
 else()
   set(WITH_MKLPARDISO 0 STRING)
 endif()
-message("Support of MKL PARDISO: ${WITH_MKLPARDISO}")
+message(STATUS "Support of MKL PARDISO: ${WITH_MKLPARDISO}")
 
 #SPAINV
 if(NOT DEFINED CMAKE_SPAINV)
