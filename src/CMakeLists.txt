@@ -1,8 +1,10 @@
 # Based on test-drive.
-# SPDX-Identifier: MIT
+# License test-drive
+# SPDX-Identifier: Apache-2.0 OR MIT
 #
-# Licensed under either of MIT license; you may not use this file except
-# in compliance with the License.
+# Licensed under either of Apache License, Version 2.0 or MIT license
+# at your option; you may not use this file except in compliance with
+# the License.
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,

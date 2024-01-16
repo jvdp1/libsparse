@@ -1,3 +1,5 @@
+#Based on Fortran stdlib (License: MIT)
+
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(
     CMAKE_Fortran_FLAGS_INIT
