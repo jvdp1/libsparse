@@ -88,7 +88,7 @@ endif()
 if(NOT DEFINED CMAKE_VERBOSE)
   set(WITH_VERBOSE 0 CACHE STRING "Support of verbosity")
 else()
-  set(WITH_VERBOSE ${CMAKE_SPAINV} CACHE STRING "Support of verbosity")
+  set(WITH_VERBOSE ${CMAKE_VERBOSE} CACHE STRING "Support of verbosity")
 endif()
 
 
