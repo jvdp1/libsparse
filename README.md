@@ -73,4 +73,4 @@ This library was inspired by several sources:
 
 
 cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Release
-cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Debug -DMETIS_LIB=$(pwd)/../metis-5.1.0/build/Linux-x86_64/libmetis/libmetis.a
+cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Debug -DCMAKE_METIS_LIB=$(pwd)/../metis-5.1.0/build/Linux-x86_64/libmetis/libmetis.a

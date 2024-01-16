@@ -65,8 +65,6 @@ if(CMAKE_METIS_LIB)
   )
 endif()
 
-message("lib-deps ${lib-deps}")
-
 # Collect source of the project
 set(srcs)
 add_subdirectory("src")
