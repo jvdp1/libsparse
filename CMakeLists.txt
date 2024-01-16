@@ -41,9 +41,9 @@ if(NOT TARGET "LAPACK::LAPACK")
 endif()
 
 # Find METIS library
-if (NOT DEFINED CMAKE_METIS_LIB)
+if(NOT DEFINED CMAKE_METIS_LIB)
     find_library(CMAKE_METIS_LIB metis)
-endif ()
+endif()
 
 if(CMAKE_METIS_LIB)
   set(WITH_METIS 1 STRING)
@@ -64,6 +64,18 @@ if(CMAKE_METIS_LIB)
     "${CMAKE_METIS_LIB}"
   )
 endif()
+
+#MKL PARDISO
+if(NOT CMAKE_MKLPARDISO AND NOT CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
+ find_file(CMAKE_MKLPARDISO "mkl_pardiso.f90" HINTS $ENV{MKLROOT} PATH_SUFFIXES "include")
+endif()
+
+if(CMAKE_MKLPARDISO OR CMAKE_Fortran_COMPILER_ID MATCHES "^Intel" )
+ set(WITH_MKLPARDISO 1)
+else()
+ set(WITH_MKLPARDISO 0)
+endif()
+message("Support of MKL PARDISO: ${WITH_MKLPARDISO}")
 
 # Collect source of the project
 set(srcs)
@@ -98,13 +110,14 @@ target_include_directories(
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${module-dir}>
+  "$ENV{MKLROOT}/include"
 )
 target_compile_definitions(
   "${PROJECT_NAME}-lib"
   PRIVATE
   "-D_DP=1"
   "-D_METIS=${WITH_METIS}"
-  "-D_PARDISO=1"
+  "-D_PARDISO=${WITH_MKLPARDISO}"
   "-D_SPAINV=1"
   "-D_VERBOSE=0"
 )

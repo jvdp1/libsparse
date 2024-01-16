@@ -11,7 +11,7 @@ macro(ADDTEST name)
       PRIVATE
       "-D_DP=1"
       "-D_METIS=${WITH_METIS}"
-      "-D_PARDISO=1"
+      "-D_PARDISO=${WITH_MKLPARDISO}"
       "-D_SPAINV=1"
       "-D_VERBOSE=0"
     )
