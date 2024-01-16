@@ -126,7 +126,7 @@ target_include_directories(
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${module-dir}>
-  "$ENV{MKLROOT}/include"
+  "$ENV{MKLROOT}/include"  #SHOULD BE OPTIONAL
 )
 target_compile_definitions(
   "${PROJECT_NAME}-lib"
