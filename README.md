@@ -23,7 +23,7 @@ To build the `libsparse` you need (at least):
  * at least a Fortran 2008 compliant compiler (GCC Fortran 11 and Intel Fortran
    classic compilers have been tested successfully);
  * Intel MKL library;
- * Make or fpm.
+ * Make or CMake or fpm.
 
 The library relies on different libraries, such as BLAS/LAPACK libraries (currently on Intel MKL library), and optionally on PARDISO (at this stage, Intel MKL PARDISO), and on [METIS 5](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
 The library can be built with the compilers `gfortran` and `ifort`.
@@ -70,7 +70,3 @@ This library was inspired by several sources:
  * Allow the option spainv + single precision
 
  * Full support of 8-byte integers
-
-
-cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Release
-cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Debug -DCMAKE_METIS_LIB=$(pwd)/../metis-5.1.0/build/Linux-x86_64/libmetis/libmetis.a
