@@ -12,8 +12,7 @@ macro(ADDTEST name)
       "-D_DP=1"
       "-D_METIS=${WITH_METIS}"
       "-D_PARDISO=${WITH_MKLPARDISO}"
-      "-D_SPAINV=1"
-      "-D_VERBOSE=0"
+      "-D_SPAINV=${WITH_SPAINV}"
     )
     add_test(NAME ${name}
              COMMAND $<TARGET_FILE:test_${name}> ${CMAKE_CURRENT_BINARY_DIR}

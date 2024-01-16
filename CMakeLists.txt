@@ -67,15 +67,31 @@ endif()
 
 #MKL PARDISO
 if(NOT CMAKE_MKLPARDISO AND NOT CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
- find_file(CMAKE_MKLPARDISO "mkl_pardiso.f90" HINTS $ENV{MKLROOT} PATH_SUFFIXES "include")
+  find_file(CMAKE_MKLPARDISO "mkl_pardiso.f90" HINTS $ENV{MKLROOT} PATH_SUFFIXES "include")
 endif()
 
 if(CMAKE_MKLPARDISO OR CMAKE_Fortran_COMPILER_ID MATCHES "^Intel" )
- set(WITH_MKLPARDISO 1)
+  set(WITH_MKLPARDISO 1 STRING)
 else()
- set(WITH_MKLPARDISO 0)
+  set(WITH_MKLPARDISO 0 STRING)
 endif()
 message("Support of MKL PARDISO: ${WITH_MKLPARDISO}")
+
+#SPAINV
+if(NOT DEFINED CMAKE_SPAINV)
+  set(WITH_SPAINV 1 CACHE STRING "Support of SPAINV")
+else()
+  set(WITH_SPAINV ${CMAKE_SPAINV} CACHE STRING "Support of SPAINV")
+endif()
+
+#SPAINV
+if(NOT DEFINED CMAKE_VERBOSE)
+  set(WITH_VERBOSE 0 CACHE STRING "Support of verbosity")
+else()
+  set(WITH_VERBOSE ${CMAKE_SPAINV} CACHE STRING "Support of verbosity")
+endif()
+
+
 
 # Collect source of the project
 set(srcs)
@@ -118,8 +134,8 @@ target_compile_definitions(
   "-D_DP=1"
   "-D_METIS=${WITH_METIS}"
   "-D_PARDISO=${WITH_MKLPARDISO}"
-  "-D_SPAINV=1"
-  "-D_VERBOSE=0"
+  "-D_SPAINV=${WITH_SPAINV}"
+  "-D_VERBOSE=${WITH_VERBOSE}"
 )
 
 # Export targets for other projects
