@@ -17,7 +17,6 @@ list(
   "${dir}/dgtrsm.f"
   "${dir}/modcommon.f90"
   "${dir}/modhash.f90"
-  "${dir}/modmetis.f90"
   "${dir}/modrandom.f90"
   "${dir}/modspainv.f90"
   "${dir}/modsparse_coo.f90"
@@ -32,5 +31,12 @@ list(
   "${dir}/sgtrsm.f"
   "${dir}/smbfct.f"
 )
+
+if(CMAKE_METIS_LIB)
+  list(
+    APPEND srcs
+    "${dir}/modmetis.f90"
+  )
+endif()
 
 set(srcs "${srcs}" PARENT_SCOPE)

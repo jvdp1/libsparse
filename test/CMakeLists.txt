@@ -10,7 +10,7 @@ macro(ADDTEST name)
       "test_${name}"
       PRIVATE
       "-D_DP=1"
-      "-D_METIS=1"
+      "-D_METIS=${WITH_METIS}"
       "-D_PARDISO=1"
       "-D_SPAINV=1"
       "-D_VERBOSE=0"

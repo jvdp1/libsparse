@@ -41,19 +41,31 @@ if(NOT TARGET "LAPACK::LAPACK")
 endif()
 
 # Find METIS library
-if (NOT METIS_LIB)
-    find_library(METIS_LIB metis)
+if (NOT DEFINED CMAKE_METIS_LIB)
+    find_library(CMAKE_METIS_LIB metis)
 endif ()
 
+if(CMAKE_METIS_LIB)
+  set(WITH_METIS 1 STRING)
+else()
+  set(WITH_METIS 0 STRING)
+endif()
 
 set(
   lib-deps
   "OpenMP::OpenMP_Fortran"
   "BLAS::BLAS"
   "LAPACK::LAPACK"
-  ${METIS_LIB}
 )
 
+if(CMAKE_METIS_LIB)
+  list(
+    APPEND lib-deps
+    "${CMAKE_METIS_LIB}"
+  )
+endif()
+
+message("lib-deps ${lib-deps}")
 
 # Collect source of the project
 set(srcs)
@@ -93,7 +105,7 @@ target_compile_definitions(
   "${PROJECT_NAME}-lib"
   PRIVATE
   "-D_DP=1"
-  "-D_METIS=1"
+  "-D_METIS=${WITH_METIS}"
   "-D_PARDISO=1"
   "-D_SPAINV=1"
   "-D_VERBOSE=0"
