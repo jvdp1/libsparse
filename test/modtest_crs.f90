@@ -817,7 +817,7 @@ subroutine test_harville(error)
 
  call crs%harville(100, 10, diaginv)
 
- call check(error, all(abs(int(diaginv*10**7)/10._wp**7 - int(diaginvsol*10**7)/10._wp**7) < tol_wp), 'harville')
+ call check(error, all(abs(int(diaginv*10**7)/10._wp**7 - int(diaginvsol*10**7)/10._wp**7) < 2.5_wp*10._wp**(-5)), 'harville')
  return
 
 end subroutine

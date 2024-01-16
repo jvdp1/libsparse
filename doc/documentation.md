@@ -50,6 +50,28 @@ Compilation with debug options is possible by adding the argument `DEBUGENABLE=1
 
 Compilation for single precision is possible by adding the argument `DPENABLE=0`.  
 
+
+### Build with CMake
+
+Configure the build with, e.g.,
+
+```sh
+export FFLAGS="-O3"
+cmake -B build -DCMAKE_VERBOSE_MAKEFILE=On -DCMAKE_BUILD_TYPE=Debug -DCMAKE_METIS_LIB=$(pwd)/../metis-5.1.0/build/Linux-x86_64/libmetis/libmetis.a
+```
+
+To build the project, run
+
+```sh
+cmake --build build
+```
+
+To test your build, run the test suite after the build has finished with
+
+```sh
+cmake --build build --target test
+```
+
 ### Building with fpm
 
 To compile with GCC Fortran compiler `gfortran`:

@@ -320,7 +320,7 @@ module modsparse
    real(kind=wp),allocatable::array(:)
   end function
   !**ADD ELEMENTS
-  module recursive subroutine add_coo(sparse,row,col,val)
+  recursive module subroutine add_coo(sparse,row,col,val)
    class(coosparse),intent(inout)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp),intent(in)::val
@@ -386,7 +386,7 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**SET ELEMENTS
-  module recursive subroutine set_coo(sparse,row,col,val)
+  recursive module subroutine set_coo(sparse,row,col,val)
    !from add_coo
    class(coosparse),intent(inout)::sparse
    integer(kind=int32),intent(in)::row,col

@@ -1116,22 +1116,24 @@ module subroutine solve_crs_array(sparse,x,y,msglvl)
 
 end subroutine
 #else
-module subroutine solve_crs_vector(sparse,x,y)
+module subroutine solve_crs_vector(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:)
  real(kind=wp),intent(inout),contiguous::y(:)
+ integer(kind=int32),intent(in),optional::msglvl
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
 
 end subroutine
 
-module subroutine solve_crs_array(sparse,x,y)
+module subroutine solve_crs_array(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:,:)
  real(kind=wp),intent(inout),contiguous::y(:,:)
+ integer(kind=int32),intent(in),optional::msglvl
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y

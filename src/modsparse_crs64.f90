@@ -617,22 +617,24 @@ module subroutine solve_crs64_array(sparse,x,y,msglvl)
 
 end subroutine
 #else
-module subroutine solve_crs64_vector(sparse,x,y)
+module subroutine solve_crs64_vector(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:)
  real(kind=wp),intent(inout),contiguous::y(:)
+ integer(kind=int64),intent(in),optional::msglvl
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y
 
 end subroutine
 
-module subroutine solve_crs64_array(sparse,x,y)
+module subroutine solve_crs64_array(sparse,x,y,msglvl)
  !sparse*x=y
  class(crssparse64),intent(inout)::sparse
  real(kind=wp),intent(out),contiguous::x(:,:)
  real(kind=wp),intent(inout),contiguous::y(:,:)
+ integer(kind=int64),intent(in),optional::msglvl
 
  write(sparse%unlog,'(a)')' Warning: Pardiso is not enabled! Array returned = rhs'
  x=y

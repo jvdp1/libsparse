@@ -23,7 +23,7 @@ To build the `libsparse` you need (at least):
  * at least a Fortran 2008 compliant compiler (GCC Fortran 11 and Intel Fortran
    classic compilers have been tested successfully);
  * Intel MKL library;
- * Make or fpm.
+ * Make or CMake or fpm.
 
 The library relies on different libraries, such as BLAS/LAPACK libraries (currently on Intel MKL library), and optionally on PARDISO (at this stage, Intel MKL PARDISO), and on [METIS 5](http://glaros.dtc.umn.edu/gkhome/metis/metis/overview).  
 The library can be built with the compilers `gfortran` and `ifort`.
