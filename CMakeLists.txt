@@ -47,8 +47,10 @@ endif()
 
 if(CMAKE_METIS_LIB)
   set(WITH_METIS 1 STRING)
+  message("METIS found: ${CMAKE_METIS_LIB}")
 else()
   set(WITH_METIS 0 STRING)
+  message("METIS not found")
 endif()
 
 set(

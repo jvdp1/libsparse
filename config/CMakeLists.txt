@@ -16,7 +16,8 @@ option(LIBSPARSE_BUILD_TESTING "Enable testing for this project" ON)
 
 set(
   module-dir
-  "${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}-${CMAKE_Fortran_COMPILER_VERSION}"
+  "${PROJECT_NAME}"
+#  "${PROJECT_NAME}/${CMAKE_Fortran_COMPILER_ID}-${CMAKE_Fortran_COMPILER_VERSION}"
 )
 set(module-dir "${module-dir}" PARENT_SCOPE)
 
