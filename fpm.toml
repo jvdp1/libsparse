@@ -5,24 +5,41 @@ author = "Jeremie Vandenplas"
 maintainer = "jvdp1"
 copyright = "Copyright 2021, Jeremie Vandenplas"
 
-[build]
-auto-executables = false
-auto-tests = false
-auto-examples = false
-
-[install]
-library = false
 
 [fortran]
 implicit-typing = true
 implicit-external = true
 source-form = "default"
 
+
+[build]
+auto-executables = false
+auto-tests = false
+auto-examples = false
+external-modules = "mkl_pardiso"
+
+
+[preprocess]
+[preprocess.cpp]
+suffixes = [".F90", ".f90"]
+macros = [
+  "_DP=1",
+  "_METIS=0",
+  "_PARDISO=1",
+  "_SPAINV=1",
+  "_VERBOSE=0",
+]
+
+
+[install]
+library = false
+
+
 [[test]]
 name = "test_sparse"
 main = "test_sparse.f90"
-link = ["mkl_gf_lp64", "mkl_gnu_thread", "mkl_core", "gomp", "pthread", "m", "dl"]
-#link = ["mkl_blas95_lp64", "mkl_lapack95_lp64", "mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5", "pthread", "m", "dl"]
+#link = ["mkl_gf_lp64", "mkl_gnu_thread", "mkl_core", "gomp", "pthread", "m", "dl"]
+link = ["mkl_blas95_lp64", "mkl_lapack95_lp64", "mkl_intel_lp64", "mkl_intel_thread", "mkl_core", "iomp5", "pthread", "m", "dl"]
 
 [test.dependencies]
 test-drive = {git = "https://github.com/fortran-lang/test-drive.git" }
