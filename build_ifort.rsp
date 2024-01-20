@@ -1,4 +1,4 @@
 #defaults for compiling with ifort
 options build
-options --flag "-O3 -fpp -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5 -I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64 "
+options --flag "-O3 -heap-arrays -parallel -qopt-matmul -qopt-report=5 -I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64 -L${LMETIS}"
 options --compiler ifort
