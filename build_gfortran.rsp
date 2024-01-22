@@ -1,3 +1,3 @@
 #defaults for compiling with gfortran
 options build
-options --flag "-O3 -cpp -fopenmp -fall-intrinsics -I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64 -D_DP=1 -D_METIS=0 -D_PARDISO=1 -D_SPAINV=1 -D_VERBOSE=0"
+options --flag "-O3 -fall-intrinsics -I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64 -L${LMETIS}"
