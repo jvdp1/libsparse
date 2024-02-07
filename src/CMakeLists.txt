@@ -31,7 +31,8 @@ list(
   "${dir}/modsparse_mkl.f90"
   "${dir}/modvariablepardiso.f90"
   "${dir}/sgtrsm.f"
-  "${dir}/smbfct.f"
+#  "${dir}/smbfct.f"
+  "${dir}/modsmbfct.f90"
 )
 
 if(CMAKE_METIS_LIB)

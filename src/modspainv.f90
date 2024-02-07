@@ -19,6 +19,7 @@ module modspainv
  use modsparse_mkl, only: dpotrf, dpotri, dtrsm, dsymm, dgemm
 #endif
  use modcommon, only: progress
+ use modsmbfct, only: smbfct
  !$ use omp_lib
  implicit none
  private
@@ -47,19 +48,6 @@ module modspainv
    CHARACTER DIAG,SIDE,TRANSA,UPLO
    !.. Array Arguments ..
    DOUBLE PRECISION A(lda,*),B(ldb,*)
-  end subroutine
- end interface
-
- interface
-  subroutine smbfct(neqns,xadj,adjncy,perm,invp,&
-              xlnz,maxlnz,xnzsub,nzsub,maxsub,&
-              rchlnk,mrglnk,marker,flag&
-              )
-   integer::neqns
-   integer::maxsub,flag,maxlnz
-   integer::xadj(*),adjncy(*)
-   integer::perm(*),invp(*)
-   integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
   end subroutine
  end interface
 
