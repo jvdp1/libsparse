@@ -71,6 +71,7 @@ C                                                                         56.
      1           KXSUB, MRGK, LMAX, M, MAXLNZ, MAXSUB,                    61.
      1           NABOR, NEQNS, NODE, NP1, NZBEG, NZEND,                   62.
      1           RCHM, MRKFLG                                             63.
+         LOGICAL :: GO_TO_1400
 C                                                                         64.
 C****************************************************************         65.
 C                                                                         66.
@@ -87,7 +88,7 @@ C       FOR EACH COLUMN ......... .  KNZ COUNTS THE NUMBER                78.
 C       OF NONZEROS IN COLUMN K ACCUMULATED IN RCHLNK.                    79.
 C       --------------------------------------------------                80.
         NP1 = NEQNS + 1                                                   81.
-        DO 1500  K = 1, NEQNS                                             82.
+        DO_1500: DO  K = 1, NEQNS                                         82.
            KNZ = 0                                                        83.
            MRGK = MRGLNK(K)                                               84.
            MRKFLG = 0                                                     85.
@@ -97,7 +98,8 @@ C       --------------------------------------------------                80.
            NODE = PERM(K)                                                 89.
            JSTRT = XADJ(NODE)                                             90.
            JSTOP = XADJ(NODE+1) - 1                                       91.
-           IF (JSTRT.GT.JSTOP)  GO TO 1500                                92.
+           if_1500_1: IF (JSTRT.GT.JSTOP)then
+           else
 C          -------------------------------------------                    93.
 C          USE RCHLNK TO LINK THROUGH THE STRUCTURE OF                    94.
 C          A(*,K) BELOW DIAGONAL                                          95.
@@ -122,15 +124,17 @@ C          --------------------------------------                        111.
 C          TEST FOR MASS SYMBOLIC ELIMINATION ...                        112.
 C          --------------------------------------                        113.
            LMAX = 0                                                      114.
+           GO_TO_1400 = .false.
            IF ( MRKFLG .NE. 0 .OR. MRGK .EQ. 0 )then                     115.
            else
            IF ( MRGLNK(MRGK) .NE. 0 )then                                116.
            else
            XNZSUB(K) = XNZSUB(MRGK) + 1                                  117.
            KNZ = XLNZ(MRGK+1) - (XLNZ(MRGK) + 1)                         118.
-           GO TO 1400                                                    119.
+           GO_TO_1400 = .true.                                                   119.
            endif
            endif
+           if_GO_TO_1400: if(.not.GO_TO_1400)then
 C          -----------------------------------------------               120.
 C          LINK THROUGH EACH COLUMN I THAT AFFECTS L(*,K).               121.
 C          -----------------------------------------------               122.
@@ -175,18 +179,26 @@ C             -----------------------------------------------            154.
               IF (NZBEG.GT.NZEND)then                                    155.
               else
                  I = RCHLNK(K)                                           156.
-                 DO 900 JSTRT=NZBEG,NZEND                                157.
-                    IF (NZSUB(JSTRT)-I)  900, 1000, 1200                 158.
-  900            CONTINUE                                                159.
+                 DO_900: DO JSTRT=NZBEG,NZEND                            157.
+                    IF (NZSUB(JSTRT)-I.lt.0)then                         158.
+                      cycle DO_900
+                    elseIF (NZSUB(JSTRT)-I.eq.0)then                     158.
+                      GO TO 1000
+                    elseIF (NZSUB(JSTRT)-I.gt.0)then                     158.
+                      GO TO 1200
+                    endif
+                 ENDDO DO_900                                            159.
                  GO TO 1200                                              160.
  1000            XNZSUB(K) = JSTRT                                       161.
                  DO J=JSTRT,NZEND                                        162.
                     IF (NZSUB(J).NE.I)  GO TO 1200                       163.
                     I = RCHLNK(I)                                        164.
-                    IF (I.GT.NEQNS)  GO TO 1400                          165.
+                    IF (I.GT.NEQNS)then                                  165.
+                       exit if_GO_TO_1400
+                    endif
                  END DO
                  NZEND = JSTRT - 1                                       167.
-               endif
+              endif
 C             ----------------------------------------                   168.
 C             COPY THE STRUCTURE OF L(*,K) FROM RCHLNK                   169.
 C             TO THE DATA STRUCTURE (XNZSUB, NZSUB).                     170.
@@ -206,17 +218,22 @@ C             ----------------------------------------                   171.
               XNZSUB(K) = NZBEG                                          181.
               MARKER(K) = K                                              182.
            endif
+           endif if_GO_TO_1400
 C          --------------------------------------------------------      183.
 C          UPDATE THE VECTOR MRGLNK.  NOTE COLUMN L(*,K) JUST FOUND      184.
 C          IS REQUIRED TO DETERMINE COLUMN L(*,J), WHERE                 185.
 C          L(J,K) IS THE FIRST NONZERO IN L(*,K) BELOW DIAGONAL.         186.
 C          --------------------------------------------------------      187.
- 1400      IF (KNZ.LE.1)  GO TO 1500                                     188.
+           IF (KNZ.LE.1)then                                             188.
+           else
               KXSUB = XNZSUB(K)                                          189.
               I = NZSUB(KXSUB)                                           190.
               MRGLNK(K) = MRGLNK(I)                                      191.
               MRGLNK(I) = K                                              192.
- 1500      XLNZ(K+1) = XLNZ(K) + KNZ                                     193.
+           endif
+           endif if_1500_1
+           XLNZ(K+1) = XLNZ(K) + KNZ                                     193.
+        END DO DO_1500
         MAXLNZ = XLNZ(NEQNS) - 1                                         194.
         MAXSUB = XNZSUB(NEQNS)                                           195.
         XNZSUB(NEQNS+1) = XNZSUB(NEQNS)                                  196.
