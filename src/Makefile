@@ -9,7 +9,7 @@ ifeq ($(METISENABLE),1)
 endif
 
 ifeq ($(SPAINVENABLE),1)
- OBJSPAINV = sgtrsm.o dgtrsm.o smbfct.o modspainv.o
+ OBJSPAINV = sgtrsm.o dgtrsm.o modsmbfct.o modspainv.o
 endif
 
 
@@ -36,7 +36,7 @@ libsparse.a: $(OBJ)
 modsparse_coo.o: modsparse.o modhash.o
 modsparse_crs.o: modsparse_mkl.o modsparse.o $(OBJSPAINV) $(OBJPARDISO) $(OBJMETIS)
 modsparse_crs64.o: modsparse.o $(OBJPARDISO)
-modspainv.o: modcommon.o modsparse_mkl.o
+modspainv.o: modcommon.o modsparse_mkl.o modsmbfct.o
 modsparse.o: $(OBJPARDISO)
 modsparse_gen.o: modsparse.o
 modsparse_ll.o: modsparse.o
