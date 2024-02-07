@@ -3,6 +3,9 @@ module modsmbfct
    private
    public :: smbfct
 
+   interface smbfct
+      module procedure smbfct_int32
+   end interface
 contains
 
 !c#######################################################################
@@ -10,7 +13,7 @@ contains
 !c#      of Large Sparse Positive Definite Systems' by A. George and    #
 !c#      J.W.-H. Liu, 1981, Prentice Hall, Inc. Englewood Cliffs,       #
 !c#      New Jersey 07632, pp. 149-151;                                 #
-!c#       Translated to modren Fotran by Jeremie Vandenplas 07/02/2024  #
+!c#      Translated to Modern Fotran by Jeremie Vandenplas 07/02/2024   #
 !c#######################################################################
 
 !C----- SUBROUTINE SMBFCT
@@ -64,19 +67,22 @@ contains
 !C                                                                         48.
 !C****************************************************************         49.
 !C                                                                         50.
-   subroutine smbfct(neqns, xadj, adjncy, perm, invp, &
-                     xlnz, maxlnz, xnzsub, nzsub, maxsub, &
-                     rchlnk, mrglnk, marker, flag)
+   subroutine smbfct_int32(neqns, xadj, adjncy, perm, invp, &
+                           xlnz, maxlnz, xnzsub, nzsub, maxsub, &
+                           rchlnk, mrglnk, marker, flag)
 !C                                                                         54.
 !C****************************************************************         55.
 !C                                                                         56.
-      integer :: adjncy(:), invp(:), mrglnk(:), nzsub(:), &
-                 perm(:), rchlnk(:), marker(:)
-      integer :: xadj(:), xlnz(:), xnzsub(:), &
-                 flag, i, inz, j, jstop, jstrt, k, knz, &
-                 kxsub, mrgk, lmax, m, maxlnz, maxsub, &
-                 nabor, neqns, node, np1, nzbeg, nzend, &
-                 rchm, mrkflg
+      integer(int32), intent(in) :: neqns, xadj(:), adjncy(:), perm(:), invp(:)
+      integer(int32), intent(out) :: xlnz(:), maxlnz, xnzsub(:), nzsub(:) &
+                                     , rchlnk(:), mrglnk(:), marker(:) &
+                                     , flag
+      integer(int32), intent(inout) :: maxsub
+
+      integer(int32) :: i, inz, j, jstop, jstrt, k, knz, &
+                        kxsub, mrgk, lmax, m, &
+                        nabor, node, np1, nzbeg, nzend, &
+                        rchm, mrkflg
       logical :: go_to_1400
 !C                                                                         64.
 !C****************************************************************         65.
@@ -104,8 +110,7 @@ contains
          node = perm(k)
          jstrt = xadj(node)
          jstop = xadj(node + 1) - 1
-         if_1500_1: if (jstrt .gt. jstop) then
-         else
+         if_1500_1: if (jstrt .le. jstop) then
 !C          -------------------------------------------                    93.
 !C          USE RCHLNK TO LINK THROUGH THE STRUCTURE OF                    94.
 !C          A(*,K) BELOW DIAGONAL                                          95.
@@ -133,8 +138,7 @@ contains
             go_to_1400 = .false.
             if (mrkflg .ne. 0 .or. mrgk .eq. 0) then
             else
-               if (mrglnk(mrgk) .ne. 0) then
-               else
+               if (mrglnk(mrgk) .eq. 0) then
                   xnzsub(k) = xnzsub(mrgk) + 1
                   knz = xlnz(mrgk + 1) - (xlnz(mrgk) + 1)
                   go_to_1400 = .true.
@@ -151,8 +155,7 @@ contains
                   inz = xlnz(i + 1) - (xlnz(i) + 1)
                   jstrt = xnzsub(i) + 1
                   jstop = xnzsub(i) + inz
-                  if_500: if (inz .le. lmax) then
-                  else
+                  if_500: if (inz .gt. lmax) then
                      lmax = inz
                      xnzsub(k) = jstrt
                   end if if_500
@@ -177,13 +180,11 @@ contains
 !C          ------------------------------------------------------        148.
 !C          CHECK IF SUBSCRIPTS DUPLICATE THOSE OF ANOTHER COLUMN.        149.
 !C          ------------------------------------------------------        150.
-               if (knz .eq. lmax) then
-               else
+               if (knz .ne. lmax) then
 !C             -----------------------------------------------            152.
 !C             OR IF TAIL OF K-1ST COLUMN MATCHES HEAD OF KTH.            153.
 !C             -----------------------------------------------            154.
-                  if_pre_1200: if (nzbeg .gt. nzend) then
-                  else
+                  if_pre_1200: if (nzbeg .le. nzend) then
                      i = rchlnk(k)
                      do_900: do jstrt = nzbeg, nzend
                         if (nzsub(jstrt) - i .lt. 0) then
@@ -193,9 +194,7 @@ contains
                            do j = jstrt, nzend
                               if (nzsub(j) .ne. i) exit if_pre_1200
                               i = rchlnk(i)
-                              if (i .gt. neqns) then
-                                 exit if_go_to_1400
-                              end if
+                              if (i .gt. neqns) exit if_go_to_1400
                            end do
                            nzend = jstrt - 1
                            exit if_pre_1200
@@ -233,8 +232,7 @@ contains
 !C          IS REQUIRED TO DETERMINE COLUMN L(*,J), WHERE                 185.
 !C          L(J,K) IS THE FIRST NONZERO IN L(*,K) BELOW DIAGONAL.         186.
 !C          --------------------------------------------------------      187.
-            if (knz .le. 1) then
-            else
+            if (knz .gt. 1) then
                kxsub = xnzsub(k)
                i = nzsub(kxsub)
                mrglnk(k) = mrglnk(i)
@@ -247,6 +245,5 @@ contains
       maxsub = xnzsub(neqns)
       xnzsub(neqns + 1) = xnzsub(neqns)
       flag = 0
-      return
    end subroutine
 end module
