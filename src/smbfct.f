@@ -80,10 +80,8 @@ C       ------------------                                                69.
         NZBEG = 1                                                         70.
         NZEND = 0                                                         71.
         XLNZ(1) = 1                                                       72.
-        DO 100 K = 1, NEQNS                                               73.
-           MRGLNK(K) = 0                                                  74.
-           MARKER(K) = 0                                                  75.
-  100   CONTINUE                                                          76.
+           MRGLNK(1:NEQNS) = 0                                            74.
+           MARKER(1:NEQNS) = 0                                            75.
 C       --------------------------------------------------                77.
 C       FOR EACH COLUMN ......... .  KNZ COUNTS THE NUMBER                78.
 C       OF NONZEROS IN COLUMN K ACCUMULATED IN RCHLNK.                    79.
@@ -169,11 +167,11 @@ C             -----------------------------------------------            154.
   900            CONTINUE                                                159.
                  GO TO 1200                                              160.
  1000            XNZSUB(K) = JSTRT                                       161.
-                 DO 1100 J=JSTRT,NZEND                                   162.
+                 DO J=JSTRT,NZEND                                        162.
                     IF (NZSUB(J).NE.I)  GO TO 1200                       163.
                     I = RCHLNK(I)                                        164.
                     IF (I.GT.NEQNS)  GO TO 1400                          165.
- 1100            CONTINUE                                                166.
+                 END DO
                  NZEND = JSTRT - 1                                       167.
 C             ----------------------------------------                   168.
 C             COPY THE STRUCTURE OF L(*,K) FROM RCHLNK                   169.
@@ -181,13 +179,16 @@ C             TO THE DATA STRUCTURE (XNZSUB, NZSUB).                     170.
 C             ----------------------------------------                   171.
  1200         NZBEG = NZEND +  1                                         172.
               NZEND = NZEND + KNZ                                        173.
-              IF (NZEND.GT.MAXSUB)  GO TO 1600                           174.
+              IF (NZEND.GT.MAXSUB) then
+                 FLAG = 1
+                 RETURN
+              END IF
               I = K                                                      175.
-              DO 1300 J=NZBEG,NZEND                                      176.
+              DO J=NZBEG,NZEND                                           176.
                  I = RCHLNK(I)                                           177.
                  NZSUB(J) = I                                            178.
                  MARKER(I) = K                                           179.
- 1300         CONTINUE                                                   180.
+              END DO
               XNZSUB(K) = NZBEG                                          181.
               MARKER(K) = K                                              182.
 C          --------------------------------------------------------      183.
@@ -209,7 +210,7 @@ C          --------------------------------------------------------      187.
 C       ----------------------------------------------------             199.
 C       ERROR - INSUFFICIENT STORAGE FOR NONZERO SUBSCRIPTS.             200.
 C       ----------------------------------------------------             201.
- 1600   FLAG = 1                                                         202.
+        FLAG = 1                                                         202.
         RETURN                                                           203.
         END                                                              204.
 
