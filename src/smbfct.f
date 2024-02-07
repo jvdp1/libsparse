@@ -176,7 +176,7 @@ C          ------------------------------------------------------        150.
 C             -----------------------------------------------            152.
 C             OR IF TAIL OF K-1ST COLUMN MATCHES HEAD OF KTH.            153.
 C             -----------------------------------------------            154.
-              IF (NZBEG.GT.NZEND)then                                    155.
+              if_pre_1200: IF (NZBEG.GT.NZEND)then                       155.
               else
                  I = RCHLNK(K)                                           156.
                  DO_900: DO JSTRT=NZBEG,NZEND                            157.
@@ -185,25 +185,25 @@ C             -----------------------------------------------            154.
                     elseIF (NZSUB(JSTRT)-I.eq.0)then                     158.
                       GO TO 1000
                     elseIF (NZSUB(JSTRT)-I.gt.0)then                     158.
-                      GO TO 1200
+                      exit if_pre_1200
                     endif
                  ENDDO DO_900                                            159.
-                 GO TO 1200                                              160.
+                 exit if_pre_1200
  1000            XNZSUB(K) = JSTRT                                       161.
                  DO J=JSTRT,NZEND                                        162.
-                    IF (NZSUB(J).NE.I)  GO TO 1200                       163.
+                    IF (NZSUB(J).NE.I)  exit if_pre_1200                 163.
                     I = RCHLNK(I)                                        164.
                     IF (I.GT.NEQNS)then                                  165.
                        exit if_GO_TO_1400
                     endif
                  END DO
                  NZEND = JSTRT - 1                                       167.
-              endif
+              endif if_pre_1200
 C             ----------------------------------------                   168.
 C             COPY THE STRUCTURE OF L(*,K) FROM RCHLNK                   169.
 C             TO THE DATA STRUCTURE (XNZSUB, NZSUB).                     170.
 C             ----------------------------------------                   171.
- 1200         NZBEG = NZEND +  1                                         172.
+              NZBEG = NZEND +  1                                         172.
               NZEND = NZEND + KNZ                                        173.
               IF (NZEND.GT.MAXSUB) then
                  FLAG = 1
