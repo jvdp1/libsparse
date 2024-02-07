@@ -122,47 +122,58 @@ C          --------------------------------------                        111.
 C          TEST FOR MASS SYMBOLIC ELIMINATION ...                        112.
 C          --------------------------------------                        113.
            LMAX = 0                                                      114.
-           IF ( MRKFLG .NE. 0 .OR. MRGK .EQ. 0 ) GO TO 350               115.
-           IF ( MRGLNK(MRGK) .NE. 0 ) GO TO 350                          116.
+           IF ( MRKFLG .NE. 0 .OR. MRGK .EQ. 0 )then                     115.
+           else
+           IF ( MRGLNK(MRGK) .NE. 0 )then                                116.
+           else
            XNZSUB(K) = XNZSUB(MRGK) + 1                                  117.
            KNZ = XLNZ(MRGK+1) - (XLNZ(MRGK) + 1)                         118.
            GO TO 1400                                                    119.
+           endif
+           endif
 C          -----------------------------------------------               120.
 C          LINK THROUGH EACH COLUMN I THAT AFFECTS L(*,K).               121.
 C          -----------------------------------------------               122.
-  350      I = K                                                         123.
-  400      I = MRGLNK(I)                                                 124.
-           IF (I.EQ.0)  GO TO 800                                        125.
+           I = K                                                         123.
+           DO_400: do
+           I = MRGLNK(I)                                                 124.
+           IF (I.EQ.0)  exit DO_400 !800                                 125.
               INZ = XLNZ(I+1) - (XLNZ(I)+1)                              126.
               JSTRT = XNZSUB(I) +  1                                     127.
               JSTOP = XNZSUB(I) + INZ                                    128.
-              IF (INZ.LE.LMAX)  GO TO 500                                129.
+              if_500: IF (INZ.LE.LMAX)then                               129.
+              else
                  LMAX = INZ                                              130.
                  XNZSUB(K) = JSTRT                                       131.
+              endif if_500
 C             -----------------------------------------------            132.
 C             MERGE STRUCTURE OF L(*,I) IN NZSUB INTO RCHLNK.            133.
 C             -----------------------------------------------            134.
-  500         RCHM = K                                                   135.
-              DO 700 J = JSTRT, JSTOP                                    136.
+              RCHM = K                                                   135.
+              DO_700: DO J = JSTRT, JSTOP                                    136.
                  NABOR = NZSUB(J)                                        137.
-  600            M = RCHM                                                138.
+                 DO_600: do
+                 M = RCHM                                                138.
                  RCHM = RCHLNK(M)                                        139.
-                 IF (RCHM.LT.NABOR)  GO TO 600                           140.
-                 IF (RCHM.EQ.NABOR)  GO TO 700                           141.
+                 IF (RCHM.ge.NABOR)  exit DO_600                         140.
+                 enddo DO_600
+                 IF (RCHM.EQ.NABOR)  cycle DO_700                        141.
                     KNZ = KNZ+1                                          142.
                     RCHLNK(M) = NABOR                                    143.
                     RCHLNK(NABOR) = RCHM                                 144.
                     RCHM = NABOR                                         145.
-  700         CONTINUE                                                   146.
-              GO TO 400                                                  147.
+              enddo DO_700                                               146.
+              enddo DO_400                                                  147.
 C          ------------------------------------------------------        148.
 C          CHECK IF SUBSCRIPTS DUPLICATE THOSE OF ANOTHER COLUMN.        149.
 C          ------------------------------------------------------        150.
-  800      IF (KNZ.EQ.LMAX)  GO TO 1400                                  151.
+           IF (KNZ.EQ.LMAX)then                                          151.
+           else
 C             -----------------------------------------------            152.
 C             OR IF TAIL OF K-1ST COLUMN MATCHES HEAD OF KTH.            153.
 C             -----------------------------------------------            154.
-              IF (NZBEG.GT.NZEND)  GO TO 1200                            155.
+              IF (NZBEG.GT.NZEND)then                                    155.
+              else
                  I = RCHLNK(K)                                           156.
                  DO 900 JSTRT=NZBEG,NZEND                                157.
                     IF (NZSUB(JSTRT)-I)  900, 1000, 1200                 158.
@@ -175,6 +186,7 @@ C             -----------------------------------------------            154.
                     IF (I.GT.NEQNS)  GO TO 1400                          165.
                  END DO
                  NZEND = JSTRT - 1                                       167.
+               endif
 C             ----------------------------------------                   168.
 C             COPY THE STRUCTURE OF L(*,K) FROM RCHLNK                   169.
 C             TO THE DATA STRUCTURE (XNZSUB, NZSUB).                     170.
@@ -193,6 +205,7 @@ C             ----------------------------------------                   171.
               END DO
               XNZSUB(K) = NZBEG                                          181.
               MARKER(K) = K                                              182.
+           endif
 C          --------------------------------------------------------      183.
 C          UPDATE THE VECTOR MRGLNK.  NOTE COLUMN L(*,K) JUST FOUND      184.
 C          IS REQUIRED TO DETERMINE COLUMN L(*,J), WHERE                 185.
