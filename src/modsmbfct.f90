@@ -1,4 +1,5 @@
 module modsmbfct
+   use, intrinsic:: iso_fortran_env, only: int32
    implicit none(external, type)
    private
    public :: smbfct
