@@ -183,13 +183,7 @@ C             -----------------------------------------------            154.
                     IF (NZSUB(JSTRT)-I.lt.0)then                         158.
                       cycle DO_900
                     elseIF (NZSUB(JSTRT)-I.eq.0)then                     158.
-                      GO TO 1000
-                    elseIF (NZSUB(JSTRT)-I.gt.0)then                     158.
-                      exit if_pre_1200
-                    endif
-                 ENDDO DO_900                                            159.
-                 exit if_pre_1200
- 1000            XNZSUB(K) = JSTRT                                       161.
+                 XNZSUB(K) = JSTRT                                       161.
                  DO J=JSTRT,NZEND                                        162.
                     IF (NZSUB(J).NE.I)  exit if_pre_1200                 163.
                     I = RCHLNK(I)                                        164.
@@ -198,6 +192,12 @@ C             -----------------------------------------------            154.
                     endif
                  END DO
                  NZEND = JSTRT - 1                                       167.
+                 exit if_pre_1200
+                    elseIF (NZSUB(JSTRT)-I.gt.0)then                     158.
+                      exit if_pre_1200
+                    endif
+                 ENDDO DO_900                                            159.
+                 exit if_pre_1200
               endif if_pre_1200
 C             ----------------------------------------                   168.
 C             COPY THE STRUCTURE OF L(*,K) FROM RCHLNK                   169.
@@ -206,6 +206,9 @@ C             ----------------------------------------                   171.
               NZBEG = NZEND +  1                                         172.
               NZEND = NZEND + KNZ                                        173.
               IF (NZEND.GT.MAXSUB) then
+C       ----------------------------------------------------             199.
+C       ERROR - INSUFFICIENT STORAGE FOR NONZERO SUBSCRIPTS.             200.
+C       ----------------------------------------------------             201.
                  FLAG = 1
                  RETURN
               END IF
@@ -239,12 +242,4 @@ C          --------------------------------------------------------      187.
         XNZSUB(NEQNS+1) = XNZSUB(NEQNS)                                  196.
         FLAG = 0                                                         197.
         RETURN                                                           198.
-C       ----------------------------------------------------             199.
-C       ERROR - INSUFFICIENT STORAGE FOR NONZERO SUBSCRIPTS.             200.
-C       ----------------------------------------------------             201.
-        FLAG = 1                                                         202.
-        RETURN                                                           203.
         END                                                              204.
-
-
-
