@@ -103,19 +103,21 @@ C          USE RCHLNK TO LINK THROUGH THE STRUCTURE OF                    94.
 C          A(*,K) BELOW DIAGONAL                                          95.
 C          -------------------------------------------                    96.
            RCHLNK(K) = NP1                                                97.
-           DO 300 J = JSTRT, JSTOP                                        98.
+           DO_300: DO J = JSTRT, JSTOP                                    98.
               NABOR = ADJNCY(J)                                           99.
               NABOR = INVP(NABOR)                                        100.
-              IF ( NABOR .LE. K )  GO TO 300                             101.
+              IF ( NABOR .LE. K )  cycle DO_300                          101.
                  RCHM = K                                                102.
-  200            M = RCHM                                                103.
+                 DO_200: do
+                 M = RCHM                                                103.
                  RCHM = RCHLNK(M)                                        104.
-                 IF ( RCHM .LE. NABOR )  GO TO 200                       105.
+                 IF ( RCHM .gt. NABOR )  exit DO_200                     105.
+                 enddo DO_200
                     KNZ = KNZ+1                                          106.
                     RCHLNK(M) = NABOR                                    107.
                     RCHLNK(NABOR) = RCHM                                 108.
                     IF ( MARKER(NABOR) .NE. MARKER(K) )  MRKFLG = 1      109.
-  300      CONTINUE                                                      110.
+           end do DO_300                                                 110.
 C          --------------------------------------                        111.
 C          TEST FOR MASS SYMBOLIC ELIMINATION ...                        112.
 C          --------------------------------------                        113.
