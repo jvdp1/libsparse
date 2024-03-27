@@ -217,9 +217,9 @@ module subroutine printsquaretofile_gen(sparse,namefile)
 end subroutine
 
 !**SET OUTPUT UNIT
-module subroutine setoutputunit(sparse,unlog)
+pure module subroutine setoutputunit(sparse,unlog)
  class(gen_sparse),intent(inout)::sparse
- integer(kind=int32)::unlog
+ integer(kind=int32),intent(in)::unlog
 
  sparse%unlog=unlog
 
@@ -257,7 +257,7 @@ module subroutine setpermutation64(sparse,array)
 end subroutine
 
 ! SET THE STATUS SORTED
-module subroutine setsorted(sparse,ll)
+pure module subroutine setsorted(sparse,ll)
  class(gen_sparse),intent(inout)::sparse
  logical,intent(in)::ll
 
@@ -291,7 +291,7 @@ end subroutine
 
 
 !**OTHER
-module function issorted(sparse) result(ll)
+pure module function issorted(sparse) result(ll)
  class(gen_sparse),intent(in)::sparse
  logical::ll
 
@@ -299,7 +299,7 @@ module function issorted(sparse) result(ll)
 
 end function
 
-module function issquare(sparse) result(ll)
+pure module function issquare(sparse) result(ll)
  class(gen_sparse),intent(in)::sparse
  logical::ll
 
@@ -309,7 +309,7 @@ module function issquare(sparse) result(ll)
 end function
 
 !CHECKS
-module function validvalue_gen(sparse,row,col) result(lvalid)
+pure module function validvalue_gen(sparse,row,col) result(lvalid)
  class(gen_sparse),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  logical::lvalid
@@ -319,7 +319,7 @@ module function validvalue_gen(sparse,row,col) result(lvalid)
 
 end function
 
-module function validnonzero_gen(sparse,val) result(lvalid)
+pure module function validnonzero_gen(sparse,val) result(lvalid)
  class(gen_sparse),intent(in)::sparse
  real(kind=wp),intent(in)::val
  logical::lvalid
@@ -329,7 +329,7 @@ module function validnonzero_gen(sparse,val) result(lvalid)
 
 end function
 
-module function uppervalue_gen(row,col) result(lvalid)
+pure module function uppervalue_gen(row,col) result(lvalid)
  integer(kind=int32),intent(in)::row,col
  logical::lvalid
 

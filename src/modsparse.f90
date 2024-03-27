@@ -193,9 +193,9 @@ module modsparse
    character(len=*),intent(in)::namefile
   end subroutine
   !**SET OUTPUT UNIT
-  module subroutine setoutputunit(sparse,unlog)
+  pure module subroutine setoutputunit(sparse,unlog)
    class(gen_sparse),intent(inout)::sparse
-   integer(kind=int32)::unlog
+   integer(kind=int32),intent(in)::unlog
   end subroutine
   !** SET PERMUTATION VECTOR
   module subroutine setpermutation32(sparse,array)
@@ -207,7 +207,7 @@ module modsparse
    integer(kind=int64)::array(:)
   end subroutine
   ! SET THE STATUS SORTED
-  module subroutine setsorted(sparse,ll)
+  pure module subroutine setsorted(sparse,ll)
    class(gen_sparse),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
@@ -217,11 +217,11 @@ module modsparse
    logical,intent(in),optional::ll
   end subroutine
   !**OTHER
-  module function issorted(sparse) result(ll)
+  pure module function issorted(sparse) result(ll)
    class(gen_sparse),intent(in)::sparse
    logical::ll
   end function
-  module function issquare(sparse) result(ll)
+  pure module function issquare(sparse) result(ll)
    class(gen_sparse),intent(in)::sparse
    logical::ll
   end function
@@ -229,17 +229,17 @@ module modsparse
 
  interface
   !CHECKS
-  module function validvalue_gen(sparse,row,col) result(lvalid)
+  pure module function validvalue_gen(sparse,row,col) result(lvalid)
    class(gen_sparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    logical::lvalid
   end function
-  module function validnonzero_gen(sparse,val) result(lvalid)
+  pure module function validnonzero_gen(sparse,val) result(lvalid)
    class(gen_sparse),intent(in)::sparse
    real(kind=wp),intent(in)::val
    logical::lvalid
   end function
-  module function uppervalue_gen(row,col) result(lvalid)
+  pure module function uppervalue_gen(row,col) result(lvalid)
    integer(kind=int32),intent(in)::row,col
    logical::lvalid
   end function

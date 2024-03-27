@@ -797,7 +797,7 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
 
 end subroutine
 
-subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
+pure subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
  integer(kind=int32),intent(in)::neqns,maxlnz
  integer(kind=int32),intent(in)::ia(:),ja(:)
  integer(kind=int32),intent(in)::perm(:)
@@ -832,7 +832,7 @@ subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,
 
 end subroutine
 
-subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+pure subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(in)::ia(:),ja(:),perm(:)
@@ -866,13 +866,13 @@ subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+pure subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(in)::perm(:)
  integer(kind=int32),intent(inout)::ia(:),ja(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
- real(kind=wp),intent(inout):: a(:)
+ real(kind=wp),intent(out):: a(:)
 
  integer(kind=int32)::irow,ksub,i,icol
  integer(kind=int32)::pirow,ppirow,picol,ip
@@ -950,23 +950,18 @@ subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a)
+pure subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(inout)::ia(:)
- integer(kind=int32),intent(inout),allocatable::ja(:)
+ integer(kind=int32),intent(out),allocatable::ja(:)
  real(kind=wp),intent(in)::xspars(:),diag(:)
- real(kind=wp),intent(inout),allocatable::a(:)
+ real(kind=wp),intent(out),allocatable::a(:)
 
  integer(kind=int32)::j,irow,ksub,icol
 
- deallocate(ja)
- deallocate(a)
-
- allocate(ja(size(xspars)+neqns))
- allocate(a(size(xspars)+neqns))
- ja=0
- a=0._wp
+ allocate(ja(size(xspars)+neqns), source=0)
+ allocate(a(size(xspars)+neqns), source=0._wp)
 
  do irow=1,neqns
   ia(irow)=xlnz(irow)+irow-1
