@@ -121,16 +121,16 @@ subroutine metis_checkerror(err,unlog)
    !write(un,'(/a/)')' METIS_OK'
   case(METIS_ERROR_INPUT)
    write(un,'(/a/)')' METIS_ERROR_INPUT'
-   stop
+   error stop
   case(METIS_ERROR_MEMORY)
    write(un,'(/a/)')' METIS_ERROR_MEMORY'
-   stop
+   error stop
   case(METIS_ERROR)
    write(un,'(/a/)')' METIS_ERROR'
-   stop
+   error stop
   case default
    write(un,'(/a/)')' UNKNOWN METIS_ERROR'
-   stop
+   error stop
  end select
  
 end subroutine

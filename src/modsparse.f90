@@ -1347,7 +1347,7 @@ function load_crs(namefile,unlog)  result(sparse)
  read(un)dim1
  if(dim1.ne.typecrs)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS file'
-  stop
+  error stop
  endif
  read(un)dim1            !int32
  read(un)dim2            !int32
@@ -1602,7 +1602,7 @@ function load_crs64(namefile,unlog)  result(sparse)
  read(un)dim1
  if(dim1.ne.typecrs64)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS64 file'
-  stop
+  error stop
  endif
  read(un)dim1            !int32
  read(un)dim2            !int32
@@ -1885,7 +1885,7 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
  if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
-  stop
+  error stop
  endif
 
  !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
@@ -2185,7 +2185,7 @@ subroutine convertfromcrstometisgraph(metis,sparse)
 
  if(.not.sparse%lupperstorage.or..not.sparse%issquare())then
   write(sparse%unlog,'(a)')' ERROR: the CRS matrix must be square and upper triangular stored'
-  stop
+  error stop
  endif
 
  n=sparse%getdim(1)
