@@ -1275,7 +1275,7 @@ end subroutine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !**DIAGONAL ELEMENTS
 function diag_mat_crs(sparse,noff) result(diagsparse)
- class(crssparse),intent(inout)::sparse
+ class(crssparse),intent(in)::sparse
  integer(kind=int32),intent(in)::noff
  type(crssparse)::diagsparse
 
