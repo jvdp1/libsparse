@@ -62,7 +62,7 @@ module modvariablepardiso
 contains
 
 !**CONSTRUCTOR
-function constructor_pardiso_variable(maxfct,mnum,mtype,solver,msglvl) result(this)
+pure function constructor_pardiso_variable(maxfct,mnum,mtype,solver,msglvl) result(this)
  type(pardiso_variable)::this
  integer(kind=int32),intent(in),optional::maxfct
  integer(kind=int32),intent(in),optional::mnum
@@ -99,7 +99,7 @@ function constructor_pardiso_variable(maxfct,mnum,mtype,solver,msglvl) result(th
  
 end function
 
-function constructor_pardiso_variable_64(maxfct,mnum,mtype,solver,msglvl) result(this)
+pure function constructor_pardiso_variable_64(maxfct,mnum,mtype,solver,msglvl) result(this)
  type(pardiso_variable_64)::this
  integer(kind=int64),intent(in),optional::maxfct
  integer(kind=int64),intent(in),optional::mnum
@@ -148,7 +148,7 @@ subroutine checkpardiso(phase,error,un)
 
  if(error.ne.0)then
   write(unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
-  stop
+  error stop
  endif
 
 end subroutine
@@ -164,7 +164,7 @@ subroutine checkpardiso_64(phase,error,un)
 
  if(error.ne.0)then
   write(unlog,'(2(a,i0))')' The following error for phase ',phase,' was detected: ',error
-  stop
+  error stop
  endif
 
 end subroutine

@@ -195,15 +195,15 @@ module subroutine external_crs(sparse,ia,ja,a)
 
  if(size(ia).ne.size(sparse%ia))then
   write(sparse%unlog,'(a)')' ERROR: The provided array ia is of a different size!'
-  stop
+  error stop
  endif
  if(size(ja).ne.size(sparse%ja))then
   write(sparse%unlog,'(a)')' ERROR: The provided array ja is of a different size!'
-  stop
+  error stop
  endif
  if(size(a).ne.size(sparse%a))then
   write(sparse%unlog,'(a)')' ERROR: The provided array a is of a different size!'
-  stop
+  error stop
  endif
 
  sparse%ia=ia

@@ -193,9 +193,9 @@ module modsparse
    character(len=*),intent(in)::namefile
   end subroutine
   !**SET OUTPUT UNIT
-  module subroutine setoutputunit(sparse,unlog)
+  pure module subroutine setoutputunit(sparse,unlog)
    class(gen_sparse),intent(inout)::sparse
-   integer(kind=int32)::unlog
+   integer(kind=int32),intent(in)::unlog
   end subroutine
   !** SET PERMUTATION VECTOR
   module subroutine setpermutation32(sparse,array)
@@ -207,7 +207,7 @@ module modsparse
    integer(kind=int64)::array(:)
   end subroutine
   ! SET THE STATUS SORTED
-  module subroutine setsorted(sparse,ll)
+  pure module subroutine setsorted(sparse,ll)
    class(gen_sparse),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
@@ -217,11 +217,11 @@ module modsparse
    logical,intent(in),optional::ll
   end subroutine
   !**OTHER
-  module function issorted(sparse) result(ll)
+  pure module function issorted(sparse) result(ll)
    class(gen_sparse),intent(in)::sparse
    logical::ll
   end function
-  module function issquare(sparse) result(ll)
+  pure module function issquare(sparse) result(ll)
    class(gen_sparse),intent(in)::sparse
    logical::ll
   end function
@@ -229,17 +229,17 @@ module modsparse
 
  interface
   !CHECKS
-  module function validvalue_gen(sparse,row,col) result(lvalid)
+  pure module function validvalue_gen(sparse,row,col) result(lvalid)
    class(gen_sparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    logical::lvalid
   end function
-  module function validnonzero_gen(sparse,val) result(lvalid)
+  pure module function validnonzero_gen(sparse,val) result(lvalid)
    class(gen_sparse),intent(in)::sparse
    real(kind=wp),intent(in)::val
    logical::lvalid
   end function
-  module function uppervalue_gen(row,col) result(lvalid)
+  pure module function uppervalue_gen(row,col) result(lvalid)
    integer(kind=int32),intent(in)::row,col
    logical::lvalid
   end function
@@ -1207,7 +1207,7 @@ module modsparse
    integer(kind=int32),intent(in),optional::unlog
   end subroutine
   !** GET MEMORY
-  module function getmem_metisgraph(metis) result(getmem)
+  pure module function getmem_metisgraph(metis) result(getmem)
    class(metisgraph),intent(in)::metis
    integer(kind=int64)::getmem
   end function
@@ -1275,7 +1275,7 @@ end subroutine
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !**DIAGONAL ELEMENTS
 function diag_mat_crs(sparse,noff) result(diagsparse)
- class(crssparse),intent(inout)::sparse
+ class(crssparse),intent(in)::sparse
  integer(kind=int32),intent(in)::noff
  type(crssparse)::diagsparse
 
@@ -1347,7 +1347,7 @@ function load_crs(namefile,unlog)  result(sparse)
  read(un)dim1
  if(dim1.ne.typecrs)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS file'
-  stop
+  error stop
  endif
  read(un)dim1            !int32
  read(un)dim2            !int32
@@ -1602,7 +1602,7 @@ function load_crs64(namefile,unlog)  result(sparse)
  read(un)dim1
  if(dim1.ne.typecrs64)then
   write(*,'(a)')' ERROR: the proposed file is not a CRS64 file'
-  stop
+  error stop
  endif
  read(un)dim1            !int32
  read(un)dim2            !int32
@@ -1885,7 +1885,7 @@ subroutine convertfromcootocrs(othersparse,sparse)
 
  if(sparse%nonzero().ge.2_int64**31)then
   write(sparse%unlog,'(a)')' ERROR: impossible conversion due to a too large number of non-zero elements'
-  stop
+  error stop
  endif
 
  !Condition: all rows contain at least one element (diagonal element if square or one dummy entry in the last column if needed)
@@ -2185,7 +2185,7 @@ subroutine convertfromcrstometisgraph(metis,sparse)
 
  if(.not.sparse%lupperstorage.or..not.sparse%issquare())then
   write(sparse%unlog,'(a)')' ERROR: the CRS matrix must be square and upper triangular stored'
-  stop
+  error stop
  endif
 
  n=sparse%getdim(1)

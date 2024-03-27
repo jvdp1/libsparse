@@ -24,7 +24,7 @@ end subroutine
 
 
 !** GET MEMORY
-module function getmem_metisgraph(metis) result(getmem)
+pure module function getmem_metisgraph(metis) result(getmem)
  class(metisgraph),intent(in)::metis
  integer(kind=int64)::getmem
 

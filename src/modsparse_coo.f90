@@ -137,7 +137,7 @@ recursive module subroutine add_coo(sparse,row,col,val)
  else
   !is it possible?
   write(sparse%unlog,*)' ERROR: unexpected'!,__FILE__,__LINE__
-  stop
+  error stop
  endif
 
 end subroutine
@@ -194,7 +194,7 @@ module function load_coo(namefile,unlog) result(sparse)
  read(un)dim1
  if(dim1.ne.typecoo)then
   write(*,'(a)')' ERROR: the proposed file is not a COO file'
-  stop
+  error stop
  endif
  read(un)dim1            !int32
  read(un)dim2            !int32
