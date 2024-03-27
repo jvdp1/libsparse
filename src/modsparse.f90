@@ -1207,7 +1207,7 @@ module modsparse
    integer(kind=int32),intent(in),optional::unlog
   end subroutine
   !** GET MEMORY
-  module function getmem_metisgraph(metis) result(getmem)
+  pure module function getmem_metisgraph(metis) result(getmem)
    class(metisgraph),intent(in)::metis
    integer(kind=int64)::getmem
   end function
