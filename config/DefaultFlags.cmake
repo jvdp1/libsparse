@@ -19,6 +19,30 @@ if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     "-Wimplicit-procedure"
     "-std=f2018"
   )
+elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^IntelLLVM")
+  set(
+    CMAKE_Fortran_FLAGS_INIT
+    "-fpp -qopt-report=3"
+  )
+  set(
+    CMAKE_Fortran_FLAGS_RELEASE_INIT
+    "-O3"
+  )
+  if(WIN32)
+    set(
+      CMAKE_Fortran_FLAGS_DEBUG_INIT
+      "/stand:f18"
+      "/warn:declarations,general,usage,interfaces,unused"
+    )
+  else()
+    set(
+      CMAKE_Fortran_FLAGS_DEBUG_INIT
+      "-g"
+      "-stand f18"
+      "-check all,nouninit -traceback -debug extended -debug inline-debug-info -check noarg_temp_created"
+      "-warn all"
+    )
+  endif()
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
   set(
     CMAKE_Fortran_FLAGS_INIT
