@@ -5,10 +5,16 @@ module modhash
  implicit none
  private
  public::hashf,roundinguppower2
+ public::shashf
 
  interface hashf
    module procedure hashf_vect,hashf_array
    module procedure hashf_array_getval
+ end interface
+
+ interface shashf
+   module procedure shashf_vect
+   module procedure shashf_array
  end interface
 
  integer(kind=int64), parameter :: bparam = 11_int64                 !default value for 2nd coordinate
@@ -19,14 +25,14 @@ contains
 !Simplifications made by Jeremie Vandenplas - 2018
 
 !PUBLIC
-!> @brief Function hashing an integer to return a hash address
-function hashf_vect(row,mat,dim2,filled,getval) result(address)
+!> @brief Subroutine hashing an integer to return a hash address
+pure subroutine shashf_vect(row,mat,dim2,filled,getval,address)
  !address: address (row) of mat
  !mat of size dim2
  !filled: number of elements
  !getval .eq. .true. : search for a value and returns 0 if absent
  !getval .eq. .false.: add a value if row,col was not present before
- integer(kind=int64)::address
+ integer(kind=int64),intent(out)::address
  integer(kind=int32),intent(in)::row
  integer(kind=int32),intent(inout)::mat(:)
  integer(kind=int64),intent(in)::dim2
@@ -68,18 +74,37 @@ function hashf_vect(row,mat,dim2,filled,getval) result(address)
  enddo
 
  address = -1
- write(*,'(a)')' Warning: the maximum number of searches was reached!'
+
+end subroutine
+
+!> @brief Function hashing an integer to return a hash address
+function hashf_vect(row,mat,dim2,filled,getval) result(address)
+ !address: address (row) of mat
+ !mat of size dim2
+ !filled: number of elements
+ !getval .eq. .true. : search for a value and returns 0 if absent
+ !getval .eq. .false.: add a value if row,col was not present before
+ integer(kind=int64)::address
+ integer(kind=int32),intent(in)::row
+ integer(kind=int32),intent(inout)::mat(:)
+ integer(kind=int64),intent(in)::dim2
+ integer(kind=int64),intent(inout)::filled
+ logical,intent(in)::getval
+
+ call shashf_vect(row,mat,dim2,filled,getval, address)
+
+ if(address.eq.-1) write(*,'(a)')' Warning: the maximum number of searches was reached!'
 
 end function
 
-!> @brief Function hashing a row and a column to return a hash address
-function hashf_array(row,col,mat,dim2,filled,getval) result(address)
+!> @brief subroutine hashing a row and a column to return a hash address
+pure subroutine shashf_array(row,col,mat,dim2,filled,getval,address)
  !address: address (column) of mat
  !mat of size dim1 (=2) x dim2
  !filled: number of elements
  !getval .eq. .true. : search for a value and returns 0 if absent
  !getval .eq. .false.: add a value if row,col was not present before
- integer(kind=int64)::address
+ integer(kind=int64),intent(out)::address
  integer(kind=int32),intent(in)::row,col
  integer(kind=int32),intent(inout)::mat(:,:)
  integer(kind=int64),intent(in)::dim2
@@ -122,7 +147,26 @@ function hashf_array(row,col,mat,dim2,filled,getval) result(address)
  enddo
 
  address = -1
- write(*,'(a)')' Warning: the maximum number of searches was reached!'
+
+end subroutine
+
+!> @brief Function hashing a row and a column to return a hash address
+function hashf_array(row,col,mat,dim2,filled,getval) result(address)
+ !address: address (column) of mat
+ !mat of size dim1 (=2) x dim2
+ !filled: number of elements
+ !getval .eq. .true. : search for a value and returns 0 if absent
+ !getval .eq. .false.: add a value if row,col was not present before
+ integer(kind=int64)::address
+ integer(kind=int32),intent(in)::row,col
+ integer(kind=int32),intent(inout)::mat(:,:)
+ integer(kind=int64),intent(in)::dim2
+ integer(kind=int64),intent(inout)::filled
+ logical,intent(in)::getval
+
+ call shashf_array(row,col,mat,dim2,filled,getval,address)
+
+ if(address.eq.-1) write(*,'(a)')' Warning: the maximum number of searches was reached!'
 
 end function
 
