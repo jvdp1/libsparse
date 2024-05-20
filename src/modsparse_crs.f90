@@ -292,8 +292,7 @@ pure module subroutine get_rowptr_crs(sparse,ia)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),allocatable,intent(out)::ia(:)
  
-  allocate(ia(size(sparse%ia))) 
-  ia=sparse%ia
+  allocate(ia, source = sparse%ia)
 
 end subroutine
  
@@ -302,8 +301,7 @@ pure module subroutine get_colval_crs(sparse,ja)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),allocatable,intent(out)::ja(:)
  
-  allocate(ja(size(sparse%ja))) 
-  ja=sparse%ja
+  allocate(ja, source = sparse%ja)
 
 end subroutine
  
@@ -312,8 +310,7 @@ pure module subroutine get_nzval_crs(sparse,a)
   class(crssparse),intent(in)::sparse
   real(kind=wp),allocatable,intent(out)::a(:)
   
-  allocate(a(size(sparse%a))) 
-  a=sparse%a
+  allocate(a, source = sparse%a)
 
 end subroutine
 
