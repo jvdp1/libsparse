@@ -151,14 +151,14 @@ module subroutine addtotail_ll(sparse,row,col,val)
 end subroutine
 
 !**GET ELEMENTS
-module function get_ll(sparse,row,col) result(val)
+pure module function get_ll(sparse,row,col) result(val)
  class(llsparse),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
 
  integer(kind=int32)::trow,tcol
  type(ptrnode),pointer::cursor
- type(ptrnode),target::replacecursor
+ type(ptrnode),target, allocatable::replacecursor
 
  val=0.0_wp
 
@@ -171,7 +171,7 @@ module function get_ll(sparse,row,col) result(val)
  endif
 
  !cursor=>sparse%heads(trow)
- replacecursor=sparse%heads(trow)
+ allocate(replacecursor, source=sparse%heads(trow))
  cursor=>replacecursor
 
  do while(associated(cursor%p))

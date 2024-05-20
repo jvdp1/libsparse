@@ -98,7 +98,7 @@ module modsparse
    import::gen_sparse
    class(gen_sparse),intent(inout)::sparse
   end subroutine
-  function get_gen(sparse,row,col) result(val)
+  pure function get_gen(sparse,row,col) result(val)
    import::int32,wp,gen_sparse
    class(gen_sparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
@@ -326,7 +326,7 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**GET ELEMENTS
-  module function get_coo(sparse,row,col) result(val)
+  pure module function get_coo(sparse,row,col) result(val)
    class(coosparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
@@ -553,7 +553,7 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**GET ELEMENTS
-  module function get_crs(sparse,row,col) result(val)
+  pure module function get_crs(sparse,row,col) result(val)
    class(crssparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
@@ -577,17 +577,17 @@ module modsparse
    integer, intent(in), optional :: seed
   end subroutine
   !**ROWPTR
-  module subroutine get_rowptr_crs(sparse,ia)
+  pure module subroutine get_rowptr_crs(sparse,ia)
     class(crssparse),intent(in)::sparse
     integer(kind=int32),allocatable,intent(out)::ia(:)
   end subroutine
   !**COLVAL
-  module subroutine get_colval_crs(sparse,ja)
+  pure module subroutine get_colval_crs(sparse,ja)
     class(crssparse),intent(in)::sparse
     integer(kind=int32),allocatable,intent(out)::ja(:)
    end subroutine
   !**NZVAL
-  module subroutine get_nzval_crs(sparse,a)
+  pure module subroutine get_nzval_crs(sparse,a)
     class(crssparse),intent(in)::sparse
     real(kind=wp),allocatable,intent(out)::a(:)
   end subroutine  
@@ -858,7 +858,7 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**GET ELEMENTS
-  module function get_crs64(sparse,row,col) result(val)
+  pure module function get_crs64(sparse,row,col) result(val)
    class(crssparse64),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val
@@ -1122,7 +1122,7 @@ module modsparse
    real(kind=wp),intent(in)::val
   end subroutine
   !**GET ELEMENTS
-  module function get_ll(sparse,row,col) result(val)
+  pure module function get_ll(sparse,row,col) result(val)
    class(llsparse),intent(in)::sparse
    integer(kind=int32),intent(in)::row,col
    real(kind=wp)::val

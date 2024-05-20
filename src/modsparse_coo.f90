@@ -143,7 +143,7 @@ recursive module subroutine add_coo(sparse,row,col,val)
 end subroutine
 
 !**GET ELEMENTS
-module function get_coo(sparse,row,col) result(val)
+pure module function get_coo(sparse,row,col) result(val)
  class(coosparse),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val

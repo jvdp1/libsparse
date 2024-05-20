@@ -145,7 +145,7 @@ module subroutine add_crs(sparse,row,col,val,error)
 end subroutine
 
 !**GET ELEMENTS
-module function get_crs(sparse,row,col) result(val)
+pure module function get_crs(sparse,row,col) result(val)
  class(crssparse),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
@@ -288,32 +288,29 @@ module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
 end subroutine
 
 !**rowptr_crs
-module subroutine get_rowptr_crs(sparse,ia)
+pure module subroutine get_rowptr_crs(sparse,ia)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),allocatable,intent(out)::ia(:)
  
-  allocate(ia(size(sparse%ia))) 
-  ia=sparse%ia
+  allocate(ia, source = sparse%ia)
 
 end subroutine
  
 !**colval_crs
-module subroutine get_colval_crs(sparse,ja)
+pure module subroutine get_colval_crs(sparse,ja)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),allocatable,intent(out)::ja(:)
  
-  allocate(ja(size(sparse%ja))) 
-  ja=sparse%ja
+  allocate(ja, source = sparse%ja)
 
 end subroutine
  
 !**nzval_crs
-module subroutine get_nzval_crs(sparse,a)
+pure module subroutine get_nzval_crs(sparse,a)
   class(crssparse),intent(in)::sparse
   real(kind=wp),allocatable,intent(out)::a(:)
   
-  allocate(a(size(sparse%a))) 
-  a=sparse%a
+  allocate(a, source = sparse%a)
 
 end subroutine
 

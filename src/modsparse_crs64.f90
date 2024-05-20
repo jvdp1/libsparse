@@ -116,7 +116,7 @@ module subroutine add_crs64(sparse,row,col,val,error)
 end subroutine
 
 !**GET ELEMENTS
-module function get_crs64(sparse,row,col) result(val)
+pure module function get_crs64(sparse,row,col) result(val)
  class(crssparse64),intent(in)::sparse
  integer(kind=int32),intent(in)::row,col
  real(kind=wp)::val
