@@ -288,7 +288,7 @@ module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
 end subroutine
 
 !**rowptr_crs
-module subroutine get_rowptr_crs(sparse,ia)
+pure module subroutine get_rowptr_crs(sparse,ia)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),allocatable,intent(out)::ia(:)
  
@@ -298,7 +298,7 @@ module subroutine get_rowptr_crs(sparse,ia)
 end subroutine
  
 !**colval_crs
-module subroutine get_colval_crs(sparse,ja)
+pure module subroutine get_colval_crs(sparse,ja)
   class(crssparse),intent(in)::sparse
   integer(kind=int32),allocatable,intent(out)::ja(:)
  
@@ -308,7 +308,7 @@ module subroutine get_colval_crs(sparse,ja)
 end subroutine
  
 !**nzval_crs
-module subroutine get_nzval_crs(sparse,a)
+pure module subroutine get_nzval_crs(sparse,a)
   class(crssparse),intent(in)::sparse
   real(kind=wp),allocatable,intent(out)::a(:)
   
