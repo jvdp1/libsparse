@@ -34,13 +34,13 @@ module modsparse
  type,abstract::gen_sparse
   private
   integer(kind=int32)::unlog=output_unit
-  integer(kind=int32)::dim1,dim2
+  integer(kind=int32)::dim1=-1,dim2=-1
   integer(kind=int32),allocatable::perm(:)  !Ap(i,:)=A(perm(i),:)
   integer(kind=int64),allocatable::perm64(:)  !Ap(i,:)=A(perm(i),:)
   character(len=15)::namemat='UNKNOWN'
-  logical::lsorted
-  logical::lsymmetric
-  logical::lupperstorage
+  logical::lsorted=.false.
+  logical::lsymmetric=.false.
+  logical::lupperstorage=.false.
   contains
   private
   procedure(destroy_gen),public,deferred::destroy
