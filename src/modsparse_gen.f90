@@ -14,7 +14,8 @@ module subroutine destroy_gen_gen(sparse)
  sparse%namemat='UNKNOWN'
  sparse%dim1=-1
  sparse%dim2=-1
- sparse%unlog=6
+ sparse%unlog=output_unit
+ sparse%lsorted=.false.
  sparse%lsymmetric=.false.
  sparse%lupperstorage=.false.
  if(allocated(sparse%perm))deallocate(sparse%perm)
