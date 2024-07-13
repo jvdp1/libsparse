@@ -3,7 +3,8 @@
 if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
   set(
     CMAKE_Fortran_FLAGS_INIT
-    "-cpp -fall-intrinsics"
+    "-cpp"
+    "-fall-intrinsics"
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT
@@ -17,12 +18,13 @@ if(CMAKE_Fortran_COMPILER_ID STREQUAL "GNU")
     "-Wall"
     "-Wextra"
     "-Wimplicit-procedure"
-    "-std=f2018"
+#    "-std=f2018"
   )
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^IntelLLVM")
   set(
     CMAKE_Fortran_FLAGS_INIT
-    "-fpp -qopt-report=3"
+    "-fpp"
+    "-qopt-report=3"
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT
@@ -46,11 +48,15 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^IntelLLVM")
 elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
   set(
     CMAKE_Fortran_FLAGS_INIT
-    -fpp -heap-arrays -qopt-report=5
+    "-fpp"
+    "-heap-arrays"
+    "-qopt-report=5"
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT
-    "-O3 -parallel -qopt-matmul"
+    "-O3"
+    "-parallel"
+    "-qopt-matmul"
   )
   if(WIN32)
     set(
@@ -61,9 +67,10 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
   else()
     set(
       CMAKE_Fortran_FLAGS_DEBUG_INIT
-      "-g"
       "-stand f18"
-      "-check all -traceback -debug extended -debug inline-debug-info -check noarg_temp_created"
+      "-g"
+      "-check all -traceback -debug extended -debug inline-debug-info"
+      "-check noarg_temp_created"
       "-warn all"
     )
   endif()
