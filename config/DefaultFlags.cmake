@@ -25,6 +25,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^IntelLLVM")
     CMAKE_Fortran_FLAGS_INIT
     "-fpp"
     "-qopt-report=3"
+    "-traceback"
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT
@@ -51,6 +52,7 @@ elseif(CMAKE_Fortran_COMPILER_ID MATCHES "^Intel")
     "-fpp"
     "-heap-arrays"
     "-qopt-report=5"
+    "-qopt-matmul"
   )
   set(
     CMAKE_Fortran_FLAGS_RELEASE_INIT

@@ -8,7 +8,7 @@ contains
 
 !DESTROY
 !> @brief Subroutine to reset/destroy a generic object
-module subroutine destroy_gen_gen(sparse)
+module impure elemental subroutine destroy_gen_gen(sparse)
  class(gen_sparse),intent(inout)::sparse
 
  sparse%namemat='UNKNOWN'

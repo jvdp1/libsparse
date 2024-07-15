@@ -94,7 +94,7 @@ module modsparse
    class(gen_sparse),intent(inout)::sparse
    real(kind=wp),intent(in)::val
   end subroutine
-  subroutine destroy_gen(sparse)
+  impure elemental subroutine destroy_gen(sparse)
    import::gen_sparse
    class(gen_sparse),intent(inout)::sparse
   end subroutine
@@ -141,7 +141,7 @@ module modsparse
  interface
   !DESTROY
   !> @brief Subroutine to reset/destroy a generic object
-  module subroutine destroy_gen_gen(sparse)
+  module impure elemental subroutine destroy_gen_gen(sparse)
    class(gen_sparse),intent(inout)::sparse
   end subroutine
   !**CONJUGATE GRADIENT
@@ -291,7 +291,7 @@ module modsparse
   procedure,public::submatrix=>submatrix_coo
   !> @brief Gets a submatrix from a sparse matrix based on an index vector
   procedure,public::submatrix_index=>submatrix_index_coo
-  final::deallocate_scal_coo,deallocate_rank1_coo
+  final::deallocate_scal_coo
  end type
 
  interface
@@ -311,7 +311,7 @@ module modsparse
    logical,intent(in),optional::lupper
   end subroutine
   !**DESTROY
-  module subroutine destroy_coo(sparse)
+  module impure elemental subroutine destroy_coo(sparse)
    class(coosparse),intent(inout)::sparse
   end subroutine
   !**DIAGONAL ELEMENTS
@@ -516,7 +516,7 @@ module modsparse
   procedure,public::submatrix=>submatrix_crs
   !> @brief Gets a dense submatrix from a sparse matrix
   procedure,public::submatrix_dense=>submatrix_dense_crs
-  final::deallocate_scal_crs,deallocate_rank1_crs
+  final::deallocate_scal_crs
  end type
 
  interface
@@ -536,7 +536,7 @@ module modsparse
    logical,intent(in),optional::lupper
   end subroutine
   !**DESTROY
-  module subroutine destroy_crs(sparse)
+  module impure elemental subroutine destroy_crs(sparse)
    class(crssparse),intent(inout)::sparse
   end subroutine
   !**DIAGONAL ELEMENTS
@@ -821,7 +821,7 @@ module modsparse
 !#endif
 !  !> @brief Gets a submatrix from a sparse matrix
 !  procedure,public::submatrix=>submatrix_crs64
-  final::deallocate_scal_crs64,deallocate_rank1_crs64
+  final::deallocate_scal_crs64
  end type
 
  interface
@@ -841,7 +841,7 @@ module modsparse
    logical,intent(in),optional::lupper
   end subroutine
   !**DESTROY
-  module subroutine destroy_crs64(sparse)
+  module impure elemental subroutine destroy_crs64(sparse)
    class(crssparse64),intent(inout)::sparse
   end subroutine
 !  !**DIAGONAL ELEMENTS
@@ -1066,7 +1066,7 @@ module modsparse
   procedure,public::scale=>scale_ll
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_ll
-  final::deallocate_scal_ll,deallocate_rank1_ll
+  final::deallocate_scal_ll
  end type
 
  type::node
@@ -1088,10 +1088,10 @@ module modsparse
    logical,intent(in),optional::lupper
   end subroutine
   !**DESTROY
-  module subroutine destroy_scal_ptrnode(pnode)
-   type(ptrnode)::pnode
+  module impure elemental subroutine destroy_scal_ptrnode(pnode)
+   type(ptrnode), intent(inout)::pnode
   end subroutine
-  module subroutine destroy_ll(sparse)
+  module impure elemental subroutine destroy_ll(sparse)
    class(llsparse),intent(inout)::sparse
   end subroutine
   !**DIAGONAL ELEMENTS
@@ -1196,7 +1196,7 @@ module modsparse
   procedure,public::init=>constructor_sub_metisgraph
   procedure,public::destroy=>destroy_metisgraph
   procedure,public::getmem=>getmem_metisgraph
-  final::deallocate_scal_metisgraph,deallocate_rank1_metisgraph
+  final::deallocate_scal_metisgraph
  end type
 
  interface
@@ -1253,7 +1253,7 @@ function diag_mat_coo(sparse,noff) result(diagsparse)
 end function
 
 !FINAL
-subroutine deallocate_scal_coo(sparse)
+impure elemental subroutine deallocate_scal_coo(sparse)
  type(coosparse),intent(inout)::sparse
 
  call sparse%destroy()
@@ -1569,7 +1569,7 @@ pure subroutine submatrix_dense_crs(sparse,indx,dense,lupper,unlog)
 end subroutine
 
 !FINAL
-subroutine deallocate_scal_crs(sparse)
+impure elemental subroutine deallocate_scal_crs(sparse)
  type(crssparse),intent(inout)::sparse
 
  call sparse%destroy()
@@ -1625,7 +1625,7 @@ end function
 
 
 !FINAL
-subroutine deallocate_scal_crs64(sparse)
+impure elemental subroutine deallocate_scal_crs64(sparse)
  type(crssparse64),intent(inout)::sparse
 
  call sparse%destroy()
@@ -1665,7 +1665,7 @@ function constructor_ll(m,n,lupper,unlog) result(sparse)
 end function
 
 !FINAL
-subroutine deallocate_scal_ll(sparse)
+impure elemental subroutine deallocate_scal_ll(sparse)
  type(llsparse),intent(inout)::sparse
 
  call sparse%destroy()
@@ -1705,7 +1705,7 @@ function constructor_metisgraph(n,m,unlog) result(metis)
 end function
 
 !**DESTROY
-subroutine destroy_metisgraph(metis)
+impure elemental subroutine destroy_metisgraph(metis)
  class(metisgraph),intent(inout)::metis
 
  metis%unlog=6
@@ -1720,7 +1720,7 @@ end subroutine
 
 
 !FINAL
-subroutine deallocate_scal_metisgraph(metis)
+impure elemental subroutine deallocate_scal_metisgraph(metis)
  type(metisgraph),intent(inout)::metis
 
  call metis%destroy()
