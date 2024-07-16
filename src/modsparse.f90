@@ -1260,17 +1260,6 @@ impure elemental subroutine deallocate_scal_coo(sparse)
 
 end subroutine
 
-subroutine deallocate_rank1_coo(sparse)
- type(coosparse),intent(inout)::sparse(:)
-
- integer(kind=int32)::i
-
- do i=1,size(sparse)
-  call sparse(i)%destroy()
- enddo
-
-end subroutine
-
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !**DIAGONAL ELEMENTS
@@ -1576,17 +1565,6 @@ impure elemental subroutine deallocate_scal_crs(sparse)
 
 end subroutine
 
-subroutine deallocate_rank1_crs(sparse)
- type(crssparse),intent(inout)::sparse(:)
-
- integer(kind=int32)::i
-
- do i=1,size(sparse)
-  call sparse(i)%destroy()
- enddo
-
-end subroutine
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!CRS64!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !**LOAD
 function load_crs64(namefile,unlog)  result(sparse)
@@ -1632,17 +1610,6 @@ impure elemental subroutine deallocate_scal_crs64(sparse)
 
 end subroutine
 
-subroutine deallocate_rank1_crs64(sparse)
- type(crssparse64),intent(inout)::sparse(:)
-
- integer(kind=int32)::i
-
- do i=1,size(sparse)
-  call sparse(i)%destroy()
- enddo
-
-end subroutine
-
 
 !!!!!!!!!!!!!!!!!!!!!!!LINKED LIST!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
 !**CONSTRUCTOR
@@ -1669,17 +1636,6 @@ impure elemental subroutine deallocate_scal_ll(sparse)
  type(llsparse),intent(inout)::sparse
 
  call sparse%destroy()
-
-end subroutine
-
-subroutine deallocate_rank1_ll(sparse)
- type(llsparse),intent(inout)::sparse(:)
-
- integer(kind=int32)::i
-
- do i=1,size(sparse)
-  call sparse(i)%destroy()
- enddo
 
 end subroutine
 
@@ -1724,17 +1680,6 @@ impure elemental subroutine deallocate_scal_metisgraph(metis)
  type(metisgraph),intent(inout)::metis
 
  call metis%destroy()
-
-end subroutine
-
-subroutine deallocate_rank1_metisgraph(metis)
- type(metisgraph),intent(inout)::metis(:)
-
- integer(kind=int32)::i
-
- do i=1,size(metis)
-  call metis(i)%destroy()
- enddo
 
 end subroutine
 
