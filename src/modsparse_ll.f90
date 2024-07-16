@@ -24,8 +24,8 @@ module subroutine constructor_sub_ll(sparse,m,n,lupper,unlog)
 end subroutine
 
 !**DESTROY
-module subroutine destroy_scal_ptrnode(pnode)
- type(ptrnode)::pnode
+module elemental subroutine destroy_scal_ptrnode(pnode)
+ type(ptrnode), intent(inout)::pnode
 
  type(ptrnode)::cursor
 
@@ -38,7 +38,7 @@ module subroutine destroy_scal_ptrnode(pnode)
 
 end subroutine
 
-module subroutine destroy_ll(sparse)
+module elemental subroutine destroy_ll(sparse)
  class(llsparse),intent(inout)::sparse
  integer(kind=int32)::i
 

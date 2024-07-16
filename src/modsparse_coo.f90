@@ -60,7 +60,7 @@ module subroutine constructor_sub_coo(sparse,m,n,nel,lupper,unlog)
 end subroutine
 
 !**DESTROY
-module subroutine destroy_coo(sparse)
+module elemental subroutine destroy_coo(sparse)
  class(coosparse),intent(inout)::sparse
 
  call sparse%destroy_gen_gen()

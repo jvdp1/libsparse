@@ -66,7 +66,7 @@ module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
 end subroutine
 
 !**DESTROY
-module subroutine destroy_crs64(sparse)
+module impure elemental subroutine destroy_crs64(sparse)
  class(crssparse64),intent(inout)::sparse
 
 #if(_PARDISO==1)

@@ -15,7 +15,7 @@ ifeq ($(FC), ifort)
 FFLAGS=-O3 -fpp -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5
 FFLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
 
-FLIBS += -liomp5 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core 
+FLIBS += -liomp5 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
 FLIBS += -lpthread -lm -ldl
 
 ifeq ($(DEBUGENABLE), 1)
@@ -35,6 +35,20 @@ FLIBS += -lpthread -lm -ldl
 
 ifeq ($(DEBUGENABLE), 1)
 FFLAGS += -g -Wall -fcheck=all -fbacktrace -std=f2008
+endif
+
+endif
+
+#ifx
+ifeq ($(FC), ifx)
+FFLAGS=-O3 -fpp -heap-arrays -qopenmp -parallel -qopt-matmul -qopt-report=5
+FFLAGS+=-I${MKLROOT}/include -I${MKLROOT}/include/intel64/lp64 -L${MKLROOT}/lib/intel64
+
+FLIBS += -liomp5 -lmkl_blas95_lp64 -lmkl_lapack95_lp64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core
+FLIBS += -lpthread -lm -ldl
+
+ifeq ($(DEBUGENABLE), 1)
+FFLAGS += -g -check all -traceback -debug extended -debug inline-debug-info -check noarg_temp_created -warn all
 endif
 
 endif
