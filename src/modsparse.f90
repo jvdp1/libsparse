@@ -141,7 +141,7 @@ module modsparse
  interface
   !DESTROY
   !> @brief Subroutine to reset/destroy a generic object
-  module impure elemental subroutine destroy_gen_gen(sparse)
+  module elemental subroutine destroy_gen_gen(sparse)
    class(gen_sparse),intent(inout)::sparse
   end subroutine
   !**CONJUGATE GRADIENT
@@ -311,7 +311,7 @@ module modsparse
    logical,intent(in),optional::lupper
   end subroutine
   !**DESTROY
-  module impure elemental subroutine destroy_coo(sparse)
+  module elemental subroutine destroy_coo(sparse)
    class(coosparse),intent(inout)::sparse
   end subroutine
   !**DIAGONAL ELEMENTS
@@ -1088,10 +1088,10 @@ module modsparse
    logical,intent(in),optional::lupper
   end subroutine
   !**DESTROY
-  module impure elemental subroutine destroy_scal_ptrnode(pnode)
+  module elemental subroutine destroy_scal_ptrnode(pnode)
    type(ptrnode), intent(inout)::pnode
   end subroutine
-  module impure elemental subroutine destroy_ll(sparse)
+  module elemental subroutine destroy_ll(sparse)
    class(llsparse),intent(inout)::sparse
   end subroutine
   !**DIAGONAL ELEMENTS
@@ -1661,7 +1661,7 @@ function constructor_metisgraph(n,m,unlog) result(metis)
 end function
 
 !**DESTROY
-impure elemental subroutine destroy_metisgraph(metis)
+elemental subroutine destroy_metisgraph(metis)
  class(metisgraph),intent(inout)::metis
 
  metis%unlog=6
@@ -1676,7 +1676,7 @@ end subroutine
 
 
 !FINAL
-impure elemental subroutine deallocate_scal_metisgraph(metis)
+elemental subroutine deallocate_scal_metisgraph(metis)
  type(metisgraph),intent(inout)::metis
 
  call metis%destroy()
