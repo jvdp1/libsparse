@@ -31,6 +31,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs add", test_add) &
     , new_unittest("crs add nel", test_add_nel) &
     , new_unittest("crs add lupper", test_add_lupper) &
+    , new_unittest("crs add vect", test_add_vect) &
     , new_unittest("crs ncol add", test_ncol_add) &
     , new_unittest("crs ncol add nel", test_ncol_add_nel) &
     , new_unittest("crs ncol add lupper", test_ncol_add_lupper) &
@@ -189,6 +190,47 @@ subroutine test_add(error)
  if (allocated(error)) return
 
  if(verbose)call printmat(mat)
+
+end subroutine
+
+subroutine test_add_vect(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer, parameter :: ncrs = 3
+ integer, parameter :: nrow = 5
+ integer, parameter :: ncol = nrow
+ logical, parameter :: lvalid(size(ia)) = ia.le.nrow .and. ja.le.ncol
+
+ integer :: i
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, ncol)
+ type(coosparse) :: coo
+ type(crssparse), allocatable :: crs(:)
+
+ coo = coosparse(nrow, unlog = sparse_unit)
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, a)
+
+ allocate(crs(ncrs))
+
+ do i = 1, ncrs
+  crs(i) = coo
+  call getija_crs(crs(i), iat, jat, at, mat)
+
+  call check(error, size(iat), size(pack(ia, lvalid)), more = 'size(iat)')
+  call check(error, size(jat), size(pack(ja, lvalid)), more = 'size(jat)')
+  call check(error, size(at), size(pack(a, lvalid)), more = 'size(at)')
+  if (allocated(error)) return
+
+  call check(error, all(iat == pack(ia, lvalid)), 'ia')
+  call check(error, all(jat == pack(ja, lvalid)), 'ja')
+  call check(error, all(at == pack(a, lvalid)), 'a')
+  if (allocated(error)) return
+
+  if(verbose)call printmat(mat)
+ end do
+
+ deallocate(crs)
 
 end subroutine
 
