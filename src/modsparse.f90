@@ -23,6 +23,7 @@ module modsparse
  public::gen_sparse
  public::llsparse,coosparse,crssparse,crssparse64
  public::assignment(=)
+ public::deallocate_sparse
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!GEN!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!aaa
  integer(kind=int32),parameter::typegen=1,typecoo=10,typecrs=20,typell=30
@@ -1226,6 +1227,14 @@ module modsparse
                   ,convertfromcrstometisgraph&
                   ,convertfromcrstocoo,convertfromcrstoll&
                   ,convertfromcrs64tocoo
+ end interface
+
+ interface deallocate_sparse
+  module procedure deallocate_scal_coo &
+                   , deallocate_scal_crs &
+                   , deallocate_scal_crs64 &
+                   , deallocate_scal_ll &
+                   , deallocate_scal_metisgraph
  end interface
 
 contains
