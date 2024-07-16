@@ -67,7 +67,7 @@ jobs:
     - name: Install Intel OneAPI MKL
       run: |
         sudo apt-get install ${MKL_PACKAGES}
-        source /opt/intel/oneapi/setvars.sh
+        source /opt/intel/oneapi/mkl/latest/env/vars.sh
         printenv >> $GITHUB_ENV
 
     - name: Configure with CMake
