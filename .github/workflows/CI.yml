@@ -41,6 +41,9 @@ jobs:
             toolchain: {compiler: gcc, version: 13}
     env:
       BUILD_DIR: ${{ matrix.build == 'cmake' && 'build' || '.' }}
+      MKL_PACKAGES: >-
+        intel-oneapi-mkl
+        intel-oneapi-mkl-devel
 
     steps:
     - name: Checkout code
@@ -60,6 +63,12 @@ jobs:
       with:
         compiler: ${{ matrix.toolchain.compiler }}
         version: ${{ matrix.toolchain.version }}
+
+    - name: Install Intel OneAPI MKL
+      run: |
+        sudo apt-get install ${MKL_PACKAGES}
+        source /opt/intel/oneapi/setvars.sh
+        printenv >> $GITHUB_ENV
 
     - name: Configure with CMake
       if: ${{ contains(matrix.build, 'cmake') }}
