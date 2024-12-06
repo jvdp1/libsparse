@@ -491,6 +491,8 @@ module modsparse
 #endif
   !> @brief Releases Pardiso memory if possible
 #if (_PARDISO==1)
+  procedure,public::isdecomposed=>isdecomposed_crs
+  procedure,public::setdecomposed=>setdecomposed_crs
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -650,6 +652,14 @@ module modsparse
   end subroutine
 #endif
 #if (_PARDISO==1)
+  pure module function isdecomposed_crs(sparse) result(ll)
+   class(crssparse),intent(in)::sparse
+   logical::ll
+  end function
+  module subroutine setdecomposed_crs(sparse,ll)
+   class(crssparse),intent(inout)::sparse
+   logical,intent(in)::ll
+  end subroutine
   !**RESET PARDISO MEMORY
   module subroutine reset_pardiso_memory_crs(sparse)
    !sparse*x=y
@@ -798,6 +808,8 @@ module modsparse
 !#endif
 !  !> @brief Releases Pardiso memory if possible
 #if (_PARDISO==1)
+  procedure,public::isdecomposed=>isdecomposed_crs64
+  procedure,public::setdecomposed=>setdecomposed_crs64
   procedure,public::resetpardiso=>reset_pardiso_memory_crs64
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -955,6 +967,14 @@ module modsparse
 !  end subroutine
 !#endif
 #if (_PARDISO==1)
+  pure module function isdecomposed_crs64(sparse) result(ll)
+   class(crssparse64),intent(in)::sparse
+   logical::ll
+  end function
+  module subroutine setdecomposed_crs64(sparse,ll)
+   class(crssparse64),intent(inout)::sparse
+   logical,intent(in)::ll
+  end subroutine
   !**RESET PARDISO MEMORY
   module subroutine reset_pardiso_memory_crs64(sparse)
    !sparse*x=y
