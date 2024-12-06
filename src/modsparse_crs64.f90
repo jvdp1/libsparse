@@ -767,7 +767,7 @@ pure module function isdecomposed_crs(sparse) result(ll)
  class(crssparse),intent(in)::sparse
  logical::ll
 
- ll=sparse%lpardisofirst
+ ll=(.not.sparse%lpardisofirst)
 
 end function
 
@@ -775,7 +775,7 @@ module subroutine setdecomposed_crs(sparse,ll)
  class(crssparse),intent(inout)::sparse
  logical,intent(in)::ll
 
- sparse%lpardisofirst=ll
+ sparse%lpardisofirst=(.not.ll)
 
 end subroutine
 
