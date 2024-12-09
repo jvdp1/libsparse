@@ -32,9 +32,7 @@ module function constructor_crs64(m,nel,n,lupper,unlog) result(sparse)
  sparse%ja=0
  sparse%a=0._wp
 
-#if (_PARDISO==1)
  sparse%lpardisofirst=.true.
-#endif
 
 end function
 
@@ -59,9 +57,7 @@ module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
  sparse%ja=0
  sparse%a=0._wp
 
-#if (_PARDISO==1)
  sparse%lpardisofirst=.true.
-#endif
 
 end subroutine
 
@@ -152,9 +148,7 @@ module function getmem_crs64(sparse) result(getmem)
  if(allocated(sparse%ia))getmem=getmem+sizeof(sparse%ia)
  if(allocated(sparse%ja))getmem=getmem+sizeof(sparse%ja)
  if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
-#if (_PARDISO==1)
  getmem=getmem+sizeof(sparse%lpardisofirst)
-#endif
 
 end function
 

@@ -432,8 +432,8 @@ module modsparse
   integer(kind=int32),allocatable::ia(:)
   integer(kind=int32),allocatable::ja(:)
   real(kind=wp),allocatable::a(:)
+  logical::lpardisofirst=.true.
 #if (_PARDISO==1)
-  logical::lpardisofirst
   type(pardiso_variable)::pardisovar
 #endif
   contains
@@ -748,8 +748,8 @@ module modsparse
   integer(kind=int64),allocatable::ia(:)
   integer(kind=int64),allocatable::ja(:)
   real(kind=wp),allocatable::a(:)
+  logical::lpardisofirst=.true.
 #if (_PARDISO==1)
-  logical::lpardisofirst
   type(pardiso_variable_64)::pardisovar
 #endif
   contains
