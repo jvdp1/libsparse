@@ -176,7 +176,7 @@ module subroutine print_dim_gen(sparse)
    write(sparse%unlog,'( "  Original status             : ",l1)')sparse%loriginal
   type is(crssparse64)
    write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
-   write(sparse%unlog,'( "  Original status              : ",l1)')sparse%loriginal
+   write(sparse%unlog,'( "  Original status             : ",l1)')sparse%loriginal
   class default
    write(sparse%unlog,'(a)')"Undefined sparse matrix"
  end select
