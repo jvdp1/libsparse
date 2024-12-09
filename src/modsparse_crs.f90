@@ -6,7 +6,7 @@ submodule (modsparse) modsparse_crs
                           , mkl_scsrtrsv, mkl_dcsrtrsv &
                           , mkl_scsrsymv, mkl_dcsrsymv
 #if (_SPAINV==1)
- use modspainv
+ use modspainv, only: get_chol, get_ichol, get_spainv
 #endif
 #if (_PARDISO==1)
  use modvariablepardiso, only: checkpardiso, pardiso_variable
@@ -421,6 +421,8 @@ module subroutine getchol_crs(sparse,minsizenode)
  !$ t2=t1
 #endif
 
+ if (sparse%isdecomposed())return
+
  call sparse%sort()
 
 #if (_VERBOSE>0)
@@ -462,6 +464,7 @@ module subroutine getchol_crs(sparse,minsizenode)
 #endif
 
  call sparse%setsymmetric(.false.)
+ call sparse%setdecomposed(.true.)
 
  call sparse%setsorted(.false.)
  call sparse%sort()
@@ -656,6 +659,7 @@ module subroutine getichol_crs(sparse,minsizenode)
  endif
 
  call sparse%setsymmetric(.false.)
+ call sparse%setdecomposed(.true.)
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'ICHOL CRS Chol. fact.',': Elapsed time (s) = ',omp_get_wtime()-t1
