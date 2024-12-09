@@ -656,7 +656,7 @@ module modsparse
    class(crssparse),intent(in)::sparse
    logical::ll
   end function
-  module subroutine setdecomposed_crs(sparse,ll)
+  pure module subroutine setdecomposed_crs(sparse,ll)
    class(crssparse),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
@@ -971,7 +971,7 @@ module modsparse
    class(crssparse64),intent(in)::sparse
    logical::ll
   end function
-  module subroutine setdecomposed_crs64(sparse,ll)
+  pure module subroutine setdecomposed_crs64(sparse,ll)
    class(crssparse64),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
