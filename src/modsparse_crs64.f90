@@ -32,9 +32,7 @@ module function constructor_crs64(m,nel,n,lupper,unlog) result(sparse)
  sparse%ja=0
  sparse%a=0._wp
 
-#if (_PARDISO==1)
- sparse%lpardisofirst=.true.
-#endif
+ sparse%loriginal=.true.
 
 end function
 
@@ -59,9 +57,7 @@ module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
  sparse%ja=0
  sparse%a=0._wp
 
-#if (_PARDISO==1)
- sparse%lpardisofirst=.true.
-#endif
+ sparse%loriginal=.true.
 
 end subroutine
 
@@ -152,9 +148,7 @@ module function getmem_crs64(sparse) result(getmem)
  if(allocated(sparse%ia))getmem=getmem+sizeof(sparse%ia)
  if(allocated(sparse%ja))getmem=getmem+sizeof(sparse%ja)
  if(allocated(sparse%a))getmem=getmem+sizeof(sparse%a)
-#if (_PARDISO==1)
- getmem=getmem+sizeof(sparse%lpardisofirst)
-#endif
+ getmem=getmem+sizeof(sparse%loriginal)
 
 end function
 
@@ -248,7 +242,7 @@ module subroutine reset_pardiso_memory_crs64(sparse)
 
  if(.not.allocated(parvar%pt))return
 
- sparse%lpardisofirst=.true.
+ sparse%loriginal=.true.
 
  nrhs=1
 
@@ -415,7 +409,7 @@ module subroutine solve_crs64_vector(sparse,x,y,msglvl)
 
  nrhs=1 !always 1 since y is a vector
 
- if(sparse%lpardisofirst)then
+ if(sparse%loriginal)then
   !$ t1=omp_get_wtime()
   !Sort the matrix
   call sparse%sort()
@@ -475,7 +469,7 @@ module subroutine solve_crs64_vector(sparse,x,y,msglvl)
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
 
   sparse%pardisovar%iparm(27)=0 !disable Pardiso checker
-  sparse%lpardisofirst=.false.
+  sparse%loriginal=.false.
 
  endif
 
@@ -534,7 +528,7 @@ module subroutine solve_crs64_array(sparse,x,y,msglvl)
   error stop
  endif
 
- if(sparse%lpardisofirst)then
+ if(sparse%loriginal)then
   !$ t1=omp_get_wtime()
   !Sort the matrix
   call sparse%sort()
@@ -594,7 +588,7 @@ module subroutine solve_crs64_array(sparse,x,y,msglvl)
   !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
 
   sparse%pardisovar%iparm(27)=0 !disable Pardiso checker
-  sparse%lpardisofirst=.false.
+  sparse%loriginal=.false.
 
  endif
 
@@ -767,15 +761,15 @@ pure module function isdecomposed_crs(sparse) result(ll)
  class(crssparse),intent(in)::sparse
  logical::ll
 
- ll=(.not.sparse%lpardisofirst)
+ ll=(.not.sparse%loriginal)
 
 end function
 
-module subroutine setdecomposed_crs(sparse,ll)
+pure module subroutine setdecomposed_crs(sparse,ll)
  class(crssparse),intent(inout)::sparse
  logical,intent(in)::ll
 
- sparse%lpardisofirst=(.not.ll)
+ sparse%loriginal=(.not.ll)
 
 end subroutine
 

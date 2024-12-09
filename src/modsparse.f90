@@ -432,8 +432,8 @@ module modsparse
   integer(kind=int32),allocatable::ia(:)
   integer(kind=int32),allocatable::ja(:)
   real(kind=wp),allocatable::a(:)
+  logical::loriginal=.true.
 #if (_PARDISO==1)
-  logical::lpardisofirst
   type(pardiso_variable)::pardisovar
 #endif
   contains
@@ -656,7 +656,7 @@ module modsparse
    class(crssparse),intent(in)::sparse
    logical::ll
   end function
-  module subroutine setdecomposed_crs(sparse,ll)
+  pure module subroutine setdecomposed_crs(sparse,ll)
    class(crssparse),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
@@ -748,8 +748,8 @@ module modsparse
   integer(kind=int64),allocatable::ia(:)
   integer(kind=int64),allocatable::ja(:)
   real(kind=wp),allocatable::a(:)
+  logical::loriginal=.true.
 #if (_PARDISO==1)
-  logical::lpardisofirst
   type(pardiso_variable_64)::pardisovar
 #endif
   contains
@@ -971,7 +971,7 @@ module modsparse
    class(crssparse64),intent(in)::sparse
    logical::ll
   end function
-  module subroutine setdecomposed_crs64(sparse,ll)
+  pure module subroutine setdecomposed_crs64(sparse,ll)
    class(crssparse64),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine

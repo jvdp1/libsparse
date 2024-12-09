@@ -173,14 +173,10 @@ module subroutine print_dim_gen(sparse)
    write(sparse%unlog,'( "  Size of the array           : ",i0)')sparse%nel
   type is(crssparse)
    write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
-#if (_PARDISO==1)
-   write(sparse%unlog,'( "  PARDISO status              : ",l1)')sparse%lpardisofirst
-#endif
+   write(sparse%unlog,'( "  Original status             : ",l1)')sparse%loriginal
   type is(crssparse64)
    write(sparse%unlog,'( "  Memory (B)                  : ",i0)')sparse%getmem()
-#if (_PARDISO==1)
-   write(sparse%unlog,'( "  PARDISO status              : ",l1)')sparse%lpardisofirst
-#endif
+   write(sparse%unlog,'( "  Original status             : ",l1)')sparse%loriginal
   class default
    write(sparse%unlog,'(a)')"Undefined sparse matrix"
  end select

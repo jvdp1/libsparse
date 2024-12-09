@@ -516,8 +516,14 @@ subroutine test_chol(error)
  if(verbose)call printmat(mat)
 
  !Complete Cholesky decomposition
+ call check(error, crs%isdecomposed(), .false., 'Chol - wrong status 0')
+ if(allocated(error))return
+
  call crs%setpermutation(perm)
  call crs%chol()
+
+ call check(error, crs%isdecomposed(), .true., 'Chol - wrong status 1')
+ if(allocated(error))return
 
  deallocate(iat); deallocate(jat); deallocate(at)
  call getija_crs(crs, iat, jat, at, matchol)
@@ -529,8 +535,15 @@ subroutine test_chol(error)
 
  !Complete Cholesky decomposition
  crs = coo
+
+ call check(error, crs%isdecomposed(), .false., 'Chol_permf - wrong status 2')
+ if(allocated(error))return
+
  call crs%setpermutation(permf(nrow))
  call crs%chol()
+
+ call check(error, crs%isdecomposed(), .true., 'Chol_permf - wrong status 3')
+ if(allocated(error))return
 
  deallocate(iat); deallocate(jat); deallocate(at)
  call getija_crs(crs, iat, jat, at, matchol)
@@ -892,8 +905,15 @@ subroutine test_ichol(error)
  !ICHOL
  !Cholesky
  crschol= coo
+
+ call check(error, crschol%isdecomposed(), .false., 'ichol - status 0')
+ if(allocated(error))return
+
  call crschol%setpermutation(perm)
  call crschol%chol()
+
+ call check(error, crschol%isdecomposed(), .true., 'ichol - status 1')
+ if(allocated(error))return
  
  call getija_crs(crschol, iat, jat, at, matchol)
 
@@ -917,8 +937,15 @@ subroutine test_ichol(error)
  !ICHOL
  !Cholesky
  crschol= coo
+
+ call check(error, crschol%isdecomposed(), .false., 'ichol_permf - status 0')
+ if(allocated(error))return
+
  call crschol%setpermutation(permf(nrow))
  call crschol%chol()
+
+ call check(error, crschol%isdecomposed(), .true., 'ichol_permf - status 1')
+ if(allocated(error))return
  
  call getija_crs(crschol, iat, jat, at, matchol)
 
@@ -1011,8 +1038,14 @@ subroutine test_isolve(error)
  if(verbose)call printmat(mat)
 
  !Cholesky
+ call check(error, crs%isdecomposed(), .false., 'isolve - status 0')
+ if(allocated(error))return
+
  call crs%setpermutation(perm)
  call crs%chol()
+
+ call check(error, crs%isdecomposed(), .true., 'isolve - status 1')
+ if(allocated(error))return
  
  do i = 1, nrow
   call crs%isolve(mat_d(:,i), mat(:,i))
@@ -1028,8 +1061,14 @@ subroutine test_isolve(error)
  !Cholesky
  crs = coo
 
+ call check(error, crs%isdecomposed(), .false., 'isolve_permf - status 0')
+ if(allocated(error))return
+
  call crs%setpermutation(permf(nrow))
  call crs%chol()
+
+ call check(error, crs%isdecomposed(), .true., 'isolve_permf - status 0')
+ if(allocated(error))return
  
  do i = 1, nrow
   call crs%isolve(mat_d(:,i), mat(:,i))
