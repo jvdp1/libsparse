@@ -1284,8 +1284,6 @@ module subroutine solveldlt_crs_vector(sparse,x,y)
   return
  endif
 
-
-
  if(sparse%loriginal)then
   !$ t1=omp_get_wtime()
   !Sort the matrix
