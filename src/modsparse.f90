@@ -477,8 +477,8 @@ module modsparse
   procedure,public::init=>constructor_sub_crs
   !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
   procedure,public::isolve=>isolve_crs
-  !> @brief Solver using LDLt decomposition
-  procedure,public::solveldlt=>solveldlt_crs
+  !> @brief Solver using pre-computed LDLt decomposition
+  procedure,public::solveldlt_s=>solveldlt_s_crs
   !> @brief Multiplication with a vector
   procedure::multbyv=>multgenv_csr
   !> @brief Multiplication with a matrix
@@ -717,7 +717,7 @@ module modsparse
    real(kind=wp),intent(in)::y(:)
   end subroutine
   !**SOLVE WITH LDLt DECOMPOSITION
-  module subroutine solveldlt_crs(sparse,x,y)
+  module subroutine solveldlt_s_crs(sparse,x,y)
    !sparse*x=y
    class(crssparse),intent(in)::sparse
    real(kind=wp),intent(out)::x(:)
@@ -794,8 +794,8 @@ module modsparse
   procedure,public::init=>constructor_sub_crs64
 !  !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
 !  procedure,public::isolve=>isolve_crs64
-!  !> @brief Solver using LDLt decomposition
-!  procedure,public::solveldlt=>solveldlt_crs64
+!  !> @brief Solver using pre-computed LDLt decomposition
+!  procedure,public::solveldlt_s=>solveldlt_s_crs64
   !> @brief Multiplication with a vector
   procedure::multbyv=>multgenv_csr64
   !> @brief Multiplication with a matrix
@@ -1032,7 +1032,7 @@ module modsparse
 !   real(kind=wp),intent(in)::y(:)
 !  end subroutine
 !  !**SOLVE WITH LDLt DECOMPOSITION
-!  module subroutine solveldlt_crs64(sparse,x,y)
+!  module subroutine solveldlt_s_crs64(sparse,x,y)
 !   !sparse*x=y
 !   class(crssparse64),intent(in)::sparse
 !   real(kind=wp),intent(out)::x(:)

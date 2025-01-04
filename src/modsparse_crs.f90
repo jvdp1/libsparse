@@ -1196,8 +1196,8 @@ module subroutine isolve_crs(sparse,x,y)
 
 end subroutine
 
-!**SOLVE WITH LDLt DECOMPOSITION
-module subroutine solveldlt_crs(sparse,x,y)
+!**SOLVE WITH PRE-COMPUTED LDLt DECOMPOSITION
+module subroutine solveldlt_s_crs(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
  real(kind=wp),intent(out)::x(:)

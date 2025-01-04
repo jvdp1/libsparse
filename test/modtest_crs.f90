@@ -83,18 +83,18 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs nonzero_sym", test_nonzero_sym) &
     , new_unittest("crs scale", test_scale) &
 #if (_PARDISO==1)
-    , new_unittest("crs solveldlt", test_solve_vector) &
-    , new_unittest("crs solveldlt", test_solve_vector_perm) &
-    , new_unittest("crs solveldlt_arr", test_solve_array) &
-    , new_unittest("crs solveldlt_arr", test_solve_array_perm) &
+    , new_unittest("crs solve", test_solve_vector) &
+    , new_unittest("crs solve_perm", test_solve_vector_perm) &
+    , new_unittest("crs solve_arr", test_solve_array) &
+    , new_unittest("crs solve_arr_perm", test_solve_array_perm) &
 #else
-    , new_unittest("crs solveldlt", test_solve_vector, should_fail = .true.) &
-    , new_unittest("crs solveldlt", test_solve_vector_perm, should_fail = .true.) &
-    , new_unittest("crs solveldlt_arr", test_solve_array, should_fail = .true.) &
-    , new_unittest("crs solveldlt_arr", test_solve_array_perm, should_fail = .true.) &
+    , new_unittest("crs solve", test_solve_vector, should_fail = .true.) &
+    , new_unittest("crs solve_perm", test_solve_vector_perm, should_fail = .true.) &
+    , new_unittest("crs solve_arr", test_solve_array, should_fail = .true.) &
+    , new_unittest("crs solve_arr_perm", test_solve_array_perm, should_fail = .true.) &
 #endif
 #if (_SPAINV==1)
-    , new_unittest("crs solveldlt", test_solveldlt) &
+    , new_unittest("crs solveldlt_s", test_solveldlt_s) &
     , new_unittest("crs spainv", test_spainv) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
     , new_unittest("crs spainv_1", test_spainv_1) &
@@ -1772,7 +1772,7 @@ end subroutine
 
 #if (_SPAINV==1)
 !SOLVE LDLt
-subroutine test_solveldlt(error)
+subroutine test_solveldlt_s(error)
  type(error_type), allocatable, intent(out) :: error
 
  integer :: i
@@ -1802,7 +1802,7 @@ subroutine test_solveldlt(error)
  call crs%getldlt()
  
  do i = 1, nrow
-  call crs%solveldlt(mat_d(:,i), mat(:,i))
+  call crs%solveldlt_s(mat_d(:,i), mat(:,i))
  enddo
 
  !mat_l: expected result 
@@ -1819,7 +1819,7 @@ subroutine test_solveldlt(error)
  call crs%getldlt()
  
  do i = 1, nrow
-  call crs%solveldlt(mat_d(:,i), mat(:,i))
+  call crs%solveldlt_s(mat_d(:,i), mat(:,i))
  enddo
 
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt permf')
@@ -1988,7 +1988,7 @@ subroutine test_spainv_spsd(error)
  do i = 1, nrow
   vect = 0
   vect(i) = 1
-  call crschol%solveldlt(matinv(:,i), vect)
+  call crschol%solveldlt_s(matinv(:,i), vect)
  enddo
 
  if(verbose)call printmat(matinv)
@@ -2020,7 +2020,7 @@ subroutine test_spainv_spsd(error)
  do i = 1, nrow
   vect = 0
   vect(i) = 1
-  call crschol%solveldlt(matinv(:,i), vect)
+  call crschol%solveldlt_s(matinv(:,i), vect)
  enddo
 
  if(verbose)call printmat(matinv)
@@ -2075,7 +2075,7 @@ subroutine test_spainv_spsd_1(error)
  do i = 1, nrow
   vect = 0
   vect(i) = 1
-  call crschol%solveldlt(matinv(:,i), vect)
+  call crschol%solveldlt_s(matinv(:,i), vect)
  enddo
 
  if(verbose)call printmat(matinv)
@@ -2107,7 +2107,7 @@ subroutine test_spainv_spsd_1(error)
  do i = 1, nrow
   vect = 0
   vect(i) = 1
-  call crschol%solveldlt(matinv(:,i), vect)
+  call crschol%solveldlt_s(matinv(:,i), vect)
  enddo
 
  if(verbose)call printmat(matinv)
