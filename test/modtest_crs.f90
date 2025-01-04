@@ -95,6 +95,8 @@ subroutine collect_crs(testsuite)
 #endif
 #if (_SPAINV==1)
     , new_unittest("crs solveldlt_s", test_solveldlt_s) &
+    , new_unittest("crs solveldlt_vector", test_solveldlt_vector) &
+    , new_unittest("crs solveldlt_array", test_solveldlt_array) &
     , new_unittest("crs spainv", test_spainv) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
     , new_unittest("crs spainv_1", test_spainv_1) &
@@ -1821,6 +1823,107 @@ subroutine test_solveldlt_s(error)
  do i = 1, nrow
   call crs%solveldlt_s(mat_d(:,i), mat(:,i))
  enddo
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt permf')
+
+end subroutine
+
+!SOLVE LDLt WITHOUT COMPUTING LDLt EXPLICITLY
+subroutine test_solveldlt_vector(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ !LDLt
+ call crs%setpermutation(perm)
+
+ do i = 1, nrow
+  call crs%solveldlt(mat_d(:,i), mat(:,i))
+ enddo
+
+ !mat_l: expected result
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt')
+ if(allocated(error))return
+
+ !LDLt
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+
+ do i = 1, nrow
+  call crs%solveldlt(mat_d(:,i), mat(:,i))
+ enddo
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt permf')
+
+end subroutine
+
+subroutine test_solveldlt_array(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+ integer, parameter :: nrow = 6
+ integer, parameter :: perm(nrow) = [(i, i = nrow, 1, -1)]
+
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: mat(nrow, nrow)
+ real(wp) :: mat_l(nrow, nrow)
+ real(wp) :: mat_d(nrow, nrow)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ !LDLt
+ call crs%setpermutation(perm)
+
+ call crs%solveldlt(mat_d(:,:), mat(:,:))
+
+ !mat_l: expected result
+ mat_l = reshape([(merge(1._wp, 0._wp, i/nrow.eq.mod(i,nrow)), i = 0, nrow**2 - 1)], [nrow, nrow])
+ where(mat <= tol_wp) mat_l = 0._wp
+
+ call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt')
+ if(allocated(error))return
+
+ !LDLt
+ crs = coo
+
+ call crs%setpermutation(permf(nrow))
+
+ call crs%solveldlt(mat_d(:,:), mat(:,:))
 
  call check(error, all(abs(mat_d - mat_l) < tol_wp), 'Solve LDLt permf')
 
