@@ -1388,16 +1388,16 @@ module subroutine sort_crs(sparse)
 end subroutine
 
 !**STATUS DECOMPOSITION
-pure module function isdecomposed_crs64(sparse) result(ll)
- class(crssparse64),intent(in)::sparse
+pure module function isdecomposed_crs(sparse) result(ll)
+ class(crssparse),intent(in)::sparse
  logical::ll
 
  ll=(.not.sparse%loriginal)
 
 end function
 
-pure module subroutine setdecomposed_crs64(sparse,ll)
- class(crssparse64),intent(inout)::sparse
+pure module subroutine setdecomposed_crs(sparse,ll)
+ class(crssparse),intent(inout)::sparse
  logical,intent(in)::ll
 
  sparse%loriginal=(.not.ll)
