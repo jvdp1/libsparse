@@ -479,6 +479,10 @@ module modsparse
   procedure,public::isolve=>isolve_crs
   !> @brief Solver using pre-computed LDLt decomposition
   procedure,public::solveldlt_s=>solveldlt_s_crs
+  !> @brief Solver using LDLt decomposition (after its computation if needed
+  procedure,private::solveldlt_crs_vector
+  procedure,private::solveldlt_crs_array
+  generic,public::solveldlt=>solveldlt_crs_vector,solveldlt_crs_array
   !> @brief Multiplication with a vector
   procedure::multbyv=>multgenv_csr
   !> @brief Multiplication with a matrix
@@ -722,6 +726,19 @@ module modsparse
    class(crssparse),intent(in)::sparse
    real(kind=wp),intent(out)::x(:)
    real(kind=wp),intent(in)::y(:)
+  end subroutine
+  !**SOLVE WITH LDLt DECOMPOSITION (AND COMPUTE IT IF NEEDED)
+  module subroutine solveldlt_crs_vector(sparse,x,y)
+   !sparse*x=y
+   class(crssparse),intent(inout)::sparse
+   real(kind=wp),intent(out),contiguous::x(:)
+   real(kind=wp),intent(inout),contiguous::y(:)
+  end subroutine
+  module subroutine solveldlt_crs_array(sparse,x,y)
+   !sparse*x=y
+   class(crssparse),intent(inout)::sparse
+   real(kind=wp),intent(out),contiguous::x(:,:)
+   real(kind=wp),intent(inout),contiguous::y(:,:)
   end subroutine
   !**SORT ARRAY
   module subroutine sort_crs(sparse)
