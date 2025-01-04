@@ -1196,8 +1196,8 @@ module subroutine isolve_crs(sparse,x,y)
 
 end subroutine
 
-!**SOLVE WITH LDLt DECOMPOSITION
-module subroutine solveldlt_crs(sparse,x,y)
+!**SOLVE WITH PRE-COMPUTED LDLt DECOMPOSITION
+module subroutine solveldlt_s_crs(sparse,x,y)
  !sparse*x=y
  class(crssparse),intent(in)::sparse
  real(kind=wp),intent(out)::x(:)
@@ -1264,6 +1264,97 @@ module subroutine solveldlt_crs(sparse,x,y)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'SOLVE LDLt CRS x permutation',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'SOLVE LDLt CRS',': Total   time (s) = ',omp_get_wtime()-t1
 #endif
+
+end subroutine
+
+!**SOLVE WITH LDLt DECOMPOSITION (AND COMPUTE IT IF NEEDED)
+module subroutine solveldlt_crs_vector(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(inout)::sparse
+ real(kind=wp),intent(out),contiguous::x(:)
+ real(kind=wp),intent(inout),contiguous::y(:)
+
+ !$ real(kind=real64)::t1
+
+ if(.not.sparse%issquare())then
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+#if (_VERBOSE>0)
+  write(sparse%unlog,'(1x,a,1x,i0)')__FILE__,__LINE__
+#endif
+  return
+ endif
+
+ if(sparse%loriginal)then
+  !$ t1=omp_get_wtime()
+  !Sort the matrix
+  call sparse%sort()
+
+  !Ordering and factorization
+  write(sparse%unlog,'(a)')' Start ordering and factorization'
+
+ !Preparation of Cholesky of A
+!   call sparse%chol()
+ call sparse%getldlt()
+ call sparse%sort()
+
+  !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
+
+  sparse%loriginal=.false.
+
+ endif
+
+ !Solving
+!  call sparse%isolve(x(:),y(:))
+ call sparse%solveldlt_s(x(:),y(:))
+
+end subroutine
+
+module subroutine solveldlt_crs_array(sparse,x,y)
+ !sparse*x=y
+ class(crssparse),intent(inout)::sparse
+ real(kind=wp),intent(out),contiguous::x(:,:)
+ real(kind=wp),intent(inout),contiguous::y(:,:)
+
+ integer(kind=int32)::i
+ !$ real(kind=real64)::t1
+
+ if(.not.sparse%issquare())then
+  write(sparse%unlog,'(a)')' Warning: the sparse matrix is not squared!'
+#if (_VERBOSE>0)
+  write(sparse%unlog,'(1x,a,1x,i0)')__FILE__,__LINE__
+#endif
+  return
+ endif
+
+ if(size(x,2).ne.size(y,2))then
+  write(sparse%unlog,'(a)')' ERROR: the number of colums of x and y provided to solve are different!'
+  error stop
+ endif
+
+ if(sparse%loriginal)then
+  !$ t1=omp_get_wtime()
+  !Sort the matrix
+  call sparse%sort()
+
+  !Ordering and factorization
+  write(sparse%unlog,'(a)')' Start ordering and factorization'
+
+ !Preparation of Cholesky of A
+!   call sparse%chol()
+ call sparse%getldlt()
+ call sparse%sort()
+
+  !$ write(sparse%unlog,'(a,f0.5)')' Elapsed time (s)               = ',omp_get_wtime()-t1
+
+  sparse%loriginal=.false.
+
+ endif
+
+ !Solving
+ do i=1,size(x,2)
+!   call sparse%isolve(x(:,i),y(:,i))
+  call sparse%solveldlt_s(x(:,i),y(:,i))
+ end do
 
 end subroutine
 
@@ -1388,16 +1479,16 @@ module subroutine sort_crs(sparse)
 end subroutine
 
 !**STATUS DECOMPOSITION
-pure module function isdecomposed_crs64(sparse) result(ll)
- class(crssparse64),intent(in)::sparse
+pure module function isdecomposed_crs(sparse) result(ll)
+ class(crssparse),intent(in)::sparse
  logical::ll
 
  ll=(.not.sparse%loriginal)
 
 end function
 
-pure module subroutine setdecomposed_crs64(sparse,ll)
- class(crssparse64),intent(inout)::sparse
+pure module subroutine setdecomposed_crs(sparse,ll)
+ class(crssparse),intent(inout)::sparse
  logical,intent(in)::ll
 
  sparse%loriginal=(.not.ll)
