@@ -137,6 +137,14 @@ module subroutine getpermutation64(sparse,array)
 
 end subroutine
 
+!**GET OUTPUT UNIT
+pure module subroutine getoutputunit() result(val)
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int32)::val
+
+ val = sparse%unlog
+end subroutine
+
 !INITIATE GEN SPARSE
 module subroutine init_gen(sparse,namemat,dim1,dim2)
  class(gen_sparse),intent(inout)::sparse

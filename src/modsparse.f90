@@ -62,6 +62,8 @@ module modsparse
   procedure :: getpermutation32
   procedure :: getpermutation64
   generic,public::getpermutation => getpermutation32, getpermutation64
+  !> @brief Gets the output unit; e.g., unit = mat%getouputunit()
+  procedure,public::getoutputunit
   !> @brief Initializes the values
   procedure,public::initialize=>init_gen
   !> @brief Returns true if the matrix is sorted; else returns false
@@ -173,6 +175,11 @@ module modsparse
   module subroutine getpermutation64(sparse,array)
    class(gen_sparse),intent(in)::sparse
    integer(kind=int64),allocatable,intent(out)::array(:)
+  end subroutine
+  !**GET OUTPUT UNIT
+  pure module subroutine getoutputunit() result(val)
+   class(gen_sparse),intent(in)::sparse
+   integer(kind=int32)::val
   end subroutine
   !INITIATE GEN SPARSE
   module subroutine init_gen(sparse,namemat,dim1,dim2)
