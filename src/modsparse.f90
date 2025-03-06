@@ -49,7 +49,9 @@ module modsparse
   procedure(multbyv_gen),deferred::multbyv
   procedure(multbym_gen),deferred::multbym
   procedure(nonzero_gen),public,deferred::nonzero
-  procedure(print_gen),public,deferred::print
+  procedure(print_gen),public,deferred::print_all
+  procedure(print_gen_idx),public,deferred::print_idx
+  generic, public :: print => print_all, print_idx
   procedure(printsquare_gen),public,deferred::printsquare
   procedure(scale_gen),public,deferred::scale
 
@@ -131,6 +133,13 @@ module modsparse
   subroutine print_gen(sparse,lint,output)
    import::int32,gen_sparse
    class(gen_sparse),intent(in)::sparse
+   integer(kind=int32),intent(in),optional::output
+   logical,intent(in),optional::lint
+  end subroutine
+  subroutine print_gen_idx(sparse,lidx,lint,output)
+   import::int32,gen_sparse
+   class(gen_sparse),intent(in)::sparse
+   logical,intent(in)::lidx(:) !!if .true. for both row and column the element will be printed; otherwise not
    integer(kind=int32),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
@@ -286,7 +295,9 @@ module modsparse
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_coo
   !> @brief Prints the sparse matrix to the output mat\%unlog
-  procedure,public::print=>print_coo
+  procedure,public::print_all=>print_coo
+  !> @brief Prints the selected entries of the sparse matrix to the output mat\%unlog
+  procedure,public::print_idx=>print_idx_coo
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_coo
   !> @brief Saves the matrix (internal format) to stream file
@@ -376,6 +387,12 @@ module modsparse
   !**PRINT
   module subroutine print_coo(sparse,lint,output)
    class(coosparse),intent(in)::sparse
+   integer(kind=int32),intent(in),optional::output
+   logical,intent(in),optional::lint
+  end subroutine
+  module subroutine print_idx_coo(sparse,lidx,lint,output)
+   class(coosparse),intent(in)::sparse
+   logical,intent(in)::lidx(:)
    integer(kind=int32),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
@@ -507,7 +524,9 @@ module modsparse
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_crs
+  procedure,public::print_all=>print_crs
+  !> @brief Prints the selected entries of the sparse matrix to the output mat\%unlog
+  procedure,public::print_idx=>print_idx_crs
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs
   !> @brief Saves the matrix (internal format) to stream file
@@ -683,6 +702,12 @@ module modsparse
    integer(kind=int32),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
+  module subroutine print_idx_crs(sparse,lidx,lint,output)
+   class(crssparse),intent(in)::sparse
+   logical,intent(in)::lidx(:)
+   integer(kind=int32),intent(in),optional::output
+   logical,intent(in),optional::lint
+  end subroutine
   module subroutine printsquare_crs(sparse,output)
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::output
@@ -837,7 +862,9 @@ module modsparse
   procedure,public::resetpardiso=>reset_pardiso_memory_crs64
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_crs64
+  procedure,public::print_all=>print_crs64
+  !> @brief Prints the selected entries of the sparse matrix to the output mat\%unlog
+  procedure,public::print_idx=>print_idx_crs64
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs64
   !> @brief Saves the matrix (internal format) to stream file
@@ -1011,6 +1038,12 @@ module modsparse
    integer(kind=int32),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
+  module subroutine print_idx_crs64(sparse,lidx,lint,output)
+   class(crssparse64),intent(in)::sparse
+   logical,intent(in)::lidx(:)
+   integer(kind=int32),intent(in),optional::output
+   logical,intent(in),optional::lint
+  end subroutine
   module subroutine printsquare_crs64(sparse,output)
    class(crssparse64),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::output
@@ -1104,7 +1137,9 @@ module modsparse
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_ll
   !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_ll
+  procedure,public::print_all=>print_ll
+  !> @brief Prints the selected entries of the sparse matrix to the output mat\%unlog
+  procedure,public::print_idx=>print_idx_ll
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_ll
   !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
@@ -1213,6 +1248,12 @@ module modsparse
   !**PRINT
   module subroutine print_ll(sparse,lint,output)
    class(llsparse),intent(in)::sparse
+   integer(kind=int32),intent(in),optional::output
+   logical,intent(in),optional::lint
+  end subroutine
+  module subroutine print_idx_ll(sparse,lidx,lint,output)
+   class(llsparse),intent(in)::sparse
+   logical,intent(in)::lidx(:)
    integer(kind=int32),intent(in),optional::output
    logical,intent(in),optional::lint
   end subroutine
@@ -1582,7 +1623,7 @@ pure subroutine submatrix_dense_crs(sparse,indx,dense,lupper,unlog)
  integer(kind=int32),intent(in),optional::unlog
  logical,intent(in),optional::lupper
 
- integer(kind=int32)::i,ii,j,k,nel,un
+ integer(kind=int32)::i,ii,j,k,nel
  integer(kind=int32) :: pos(1)
  logical::lupper_
 

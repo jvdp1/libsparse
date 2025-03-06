@@ -289,6 +289,41 @@ module subroutine print_crs64(sparse,lint,output)
 
 end subroutine
 
+module subroutine print_idx_crs64(sparse,lidx,lint,output)
+ class(crssparse64),intent(in)::sparse
+ logical,intent(in)::lidx(:)
+ integer(kind=int32),intent(in),optional::output
+ logical,intent(in),optional::lint
+
+ integer(kind=int32)::i
+ integer(kind=int32)::un
+ integer(kind=int64)::j
+ character(len=30),parameter::frm='(2(i0,1x),g0)'
+ logical::linternal
+
+ if(size(lidx).lt.sparse%getdim(1).or.size(lidx).lt.sparse%getdim(2))then
+  error stop ' ERROR: the vector lidx is smaller than the smallest dimension of CRS'
+ endif
+
+ linternal=.true.
+ if(present(lint))linternal=lint
+
+ un=sparse%unlog
+ if(present(output))un=output
+
+ do i=1,sparse%dim1
+  if(.not.lidx(i))cycle
+  do j=sparse%ia(i),sparse%ia(i+1)-1
+   if(.not.lidx(sparse%ja(j)))cycle
+   write(un,frm)i,sparse%ja(j),sparse%a(j)
+   if(.not.linternal.and.sparse%lupperstorage.and.sparse%lsymmetric.and.i.ne.sparse%ja(j))then
+    write(un,frm)sparse%ja(j),i,sparse%a(j)
+   endif
+  enddo
+ enddo
+
+end subroutine
+
 module subroutine printsquare_crs64(sparse,output)
  class(crssparse64),intent(inout)::sparse
  integer(kind=int32),intent(in),optional::output
