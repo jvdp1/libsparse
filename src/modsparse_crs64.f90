@@ -324,7 +324,6 @@ module subroutine print_idx_crs64(sparse,lidx,lint,output)
 
 end subroutine
 
-
 module subroutine printsquare_crs64(sparse,output)
  class(crssparse64),intent(inout)::sparse
  integer(kind=int32),intent(in),optional::output
