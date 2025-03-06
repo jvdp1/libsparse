@@ -299,6 +299,42 @@ module subroutine print_ll(sparse,lint,output)
 
 end subroutine
 
+module subroutine print_idx_ll(sparse,lidx,lint,output)
+ class(llsparse),intent(in)::sparse
+ logical,intent(in)::lidx(:)
+ integer(kind=int32),intent(in),optional::output
+ logical,intent(in),optional::lint
+
+ integer(kind=int32)::i,un
+ character(len=20)::frm='(2(i0,1x),g0)'
+ logical::linternal
+ type(ptrnode),pointer::cursor
+ type(ptrnode),target::replacecursor
+
+ linternal=.true.
+ if(present(lint))linternal=lint
+
+ un=sparse%unlog
+ if(present(output))un=output
+
+ do i=1,sparse%dim1
+  if(.not.lidx(i))cycle
+  !cursor=>sparse%heads(i)
+  replacecursor=sparse%heads(i)
+  cursor=>replacecursor
+  do while(associated(cursor%p))
+   if(.not.lidx(cursor%p%col))then
+    write(un,frm)i,cursor%p%col,cursor%p%val
+    if(.not.linternal.and.sparse%lupperstorage.and.sparse%lsymmetric.and.cursor%p%col.ne.i)then
+     write(un,frm)cursor%p%col,i,cursor%p%val
+    endif
+   endif
+   cursor=>cursor%p%next
+  enddo
+ enddo
+
+end subroutine
+
 module subroutine printsquare_ll(sparse,output)
  class(llsparse),intent(inout)::sparse
  integer(kind=int32),intent(in),optional::output

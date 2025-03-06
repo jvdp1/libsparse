@@ -422,6 +422,44 @@ module subroutine print_coo(sparse,lint,output)
 
 end subroutine
 
+module subroutine print_idx_coo(sparse,lidx,lint,output)
+ class(coosparse),intent(in)::sparse
+ logical,intent(in)::lidx(:)
+ integer(kind=int32),intent(in),optional::output
+ logical,intent(in),optional::lint
+
+ integer(kind=int32)::un,row,col
+ integer(kind=int64)::i8
+ real(kind=wp)::val
+ character(len=30)::frm='(2(i0,1x),g0)'
+ logical::linternal
+
+ if(size(lidx).lt.sparse%getdim(1).or.size(lidx).lt.sparse%getdim(2))then
+  error stop ' ERROR: the vector lidx is smaller than the smallest dimension of COO'
+ endif
+
+ linternal=.true.
+ if(present(lint))linternal=lint
+
+ un=sparse%unlog
+ if(present(output))un=output
+
+ do i8=1,sparse%nel
+  row=sparse%ij(1,i8)
+  col=sparse%ij(2,i8)
+  if(row.eq.0.and.col.eq.0)cycle
+  val=sparse%a(i8)
+  !if(.not.validvalue_gen(sparse,row,col))cycle  !it should never happen
+  !if(.not.validnonzero_gen(sparse,val))cycle    !to print as internal
+  if(.not.lidx(row).or..not.lidx(col))cycle
+  write(un,frm)row,col,val
+  if(.not.linternal.and.sparse%lupperstorage.and.sparse%lsymmetric.and.row.ne.col)then
+   write(un,frm)col,row,val
+  endif
+ enddo
+
+end subroutine
+
 module subroutine printsquare_coo(sparse,output)
  class(coosparse),intent(inout)::sparse
  integer(kind=int32),intent(in),optional::output
