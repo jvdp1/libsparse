@@ -49,7 +49,8 @@ module modsparse
   procedure(multbyv_gen),deferred::multbyv
   procedure(multbym_gen),deferred::multbym
   procedure(nonzero_gen),public,deferred::nonzero
-  procedure(print_gen),public,deferred::print
+  procedure(print_gen),public,deferred::print_all
+  generic, public :: print => print_all
   procedure(printsquare_gen),public,deferred::printsquare
   procedure(scale_gen),public,deferred::scale
 
@@ -286,7 +287,7 @@ module modsparse
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_coo
   !> @brief Prints the sparse matrix to the output mat\%unlog
-  procedure,public::print=>print_coo
+  procedure,public::print_all=>print_coo
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_coo
   !> @brief Saves the matrix (internal format) to stream file
@@ -507,7 +508,7 @@ module modsparse
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_crs
+  procedure,public::print_all=>print_crs
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs
   !> @brief Saves the matrix (internal format) to stream file
@@ -837,7 +838,7 @@ module modsparse
   procedure,public::resetpardiso=>reset_pardiso_memory_crs64
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_crs64
+  procedure,public::print_all=>print_crs64
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_crs64
   !> @brief Saves the matrix (internal format) to stream file
@@ -1104,7 +1105,7 @@ module modsparse
   !> @brief Returns the number of non-zero elements
   procedure,public::nonzero=>totalnumberofelements_ll
   !> @brief Prints the sparse matrix to the output sparse\%unlog
-  procedure,public::print=>print_ll
+  procedure,public::print_all=>print_ll
   !> @brief Prints the sparse matrix in a rectangular/square format to the default output
   procedure,public::printsquare=>printsquare_ll
   !> @brief Scales all entries of mat by real scalar val; e.g., call mat\%scale(val)
