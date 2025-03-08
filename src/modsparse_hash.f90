@@ -1,6 +1,6 @@
 !> Module containing functions for hashing
 
-module modhash
+module modsparse_hash
  use iso_fortran_env,only:int32,int64,real64
  implicit none
  private

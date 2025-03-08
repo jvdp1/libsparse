@@ -1,5 +1,5 @@
 submodule (modsparse) modsparse_coo
- use modhash, only:hashf,roundinguppower2
+ use modsparse_hash, only:hashf,roundinguppower2
  !$ use omp_lib
  implicit none
 
