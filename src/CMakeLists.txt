@@ -18,7 +18,7 @@ list(
   APPEND srcs
   "${dir}/dgtrsm.f"
   "${dir}/modcommon.f90"
-  "${dir}/modhash.f90"
+  "${dir}/modsparse_hash.f90"
   "${dir}/modrandom.f90"
   "${dir}/modspainv.f90"
   "${dir}/modsparse_coo.f90"

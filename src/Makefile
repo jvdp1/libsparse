@@ -18,7 +18,7 @@ all: libsparse.a
 OBJ = modcommon.o \
       modrandom.o \
       $(OBJPARDISO) $(OBJMETIS) $(OBJSPAINV) \
-      modsparse_mkl.o modhash.o modsparse.o modsparse_gen.o modsparse_coo.o \
+      modsparse_mkl.o modsparse_hash.o modsparse.o modsparse_gen.o modsparse_coo.o \
       modsparse_crs64.o \
       modsparse_crs.o modsparse_ll.o modsparse_metisgraph.o
 
@@ -33,7 +33,7 @@ libsparse.a: $(OBJ)
 
 
 #dependencies
-modsparse_coo.o: modsparse.o modhash.o
+modsparse_coo.o: modsparse.o modsparse_hash.o
 modsparse_crs.o: modsparse_mkl.o modsparse.o $(OBJSPAINV) $(OBJPARDISO) $(OBJMETIS)
 modsparse_crs64.o: modsparse.o $(OBJPARDISO)
 modspainv.o: modcommon.o modsparse_mkl.o
