@@ -48,7 +48,7 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
  integer(kind=int32)::minnode
  real(kind=wp)::xx
 
- ! establish boundaries between diaggonal blocks 100% full
+ ! find boundaries between diagonal blocks 100% full
  ilast = neqns
  nnode = 0
  inode = 0
