@@ -512,9 +512,9 @@ module modsparse
   procedure,public::getordering=>getordering_crs
 #endif
   !> @brief Releases Pardiso memory if possible
-#if (_PARDISO==1)
   procedure,public::isdecomposed=>isdecomposed_crs
   procedure,public::setdecomposed=>setdecomposed_crs
+#if (_PARDISO==1)
   procedure,public::resetpardiso=>reset_pardiso_memory_crs
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -669,7 +669,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::minsizenode
   end subroutine
-#if (_PARDISO==1)
   pure module function isdecomposed_crs(sparse) result(ll)
    class(crssparse),intent(in)::sparse
    logical::ll
@@ -678,6 +677,7 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
+#if (_PARDISO==1)
   !**RESET PARDISO MEMORY
   module subroutine reset_pardiso_memory_crs(sparse)
    !sparse*x=y
@@ -844,9 +844,9 @@ module modsparse
 !  procedure,public::getordering=>getordering_crs64
 !#endif
 !  !> @brief Releases Pardiso memory if possible
-#if (_PARDISO==1)
   procedure,public::isdecomposed=>isdecomposed_crs64
   procedure,public::setdecomposed=>setdecomposed_crs64
+#if (_PARDISO==1)
   procedure,public::resetpardiso=>reset_pardiso_memory_crs64
 #endif
   !> @brief Prints the sparse matrix to the output sparse\%unlog
@@ -1005,7 +1005,6 @@ module modsparse
 !   integer(kind=int32),intent(in),optional::minsizenode
 !  end subroutine
 !#endif
-#if (_PARDISO==1)
   pure module function isdecomposed_crs64(sparse) result(ll)
    class(crssparse64),intent(in)::sparse
    logical::ll
@@ -1014,6 +1013,7 @@ module modsparse
    class(crssparse64),intent(inout)::sparse
    logical,intent(in)::ll
   end subroutine
+#if (_PARDISO==1)
   !**RESET PARDISO MEMORY
   module subroutine reset_pardiso_memory_crs64(sparse)
    !sparse*x=y

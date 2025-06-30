@@ -41,6 +41,15 @@ module modsparse_inv
    integer::perm(*),invp(*)
    integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
   end subroutine
+
+  subroutine gsfct (neqns, xlnz, lnz, xnzsub, nzsub, diag, &
+                    link, first, temp, iflag )
+         import wp
+         real(wp) :: diag(*), lnz(*), temp(*)
+         integer::link(*), nzsub(*)
+         integer::first(*), xlnz(*), xnzsub(*)
+         integer::iflag, neqns
+  end subroutine
  end interface
 
 contains
@@ -59,7 +68,7 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
- real(kind=wp),allocatable::xspars(:),diag(:)
+ real(kind=wp),allocatable::lnz(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
 
@@ -73,12 +82,12 @@ subroutine get_ichol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,lnz,xnzsub,nzsub,diag,mssn,time)
 
  ! Cholesky factorization
  !Convert to ija
  !$ t1=omp_get_wtime()
- call converttoija_noperm(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ call converttoija_noperm(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a,perm)
  !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'SPARSE CHOL FACT.')
@@ -97,7 +106,7 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
- real(kind=wp),allocatable::xspars(:),diag(:)
+ real(kind=wp),allocatable::lnz(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
 
@@ -111,11 +120,11 @@ subroutine get_chol_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.false.,xlnz,lnz,xnzsub,nzsub,diag,mssn,time)
 
  !Convert to ija
  !$ t1=omp_get_wtime()
- call convertfactortoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a)
+ call convertfactortoija(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a)
  !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'CHOL FACT.')
@@ -134,7 +143,7 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
  integer(kind=int32)::unlog,neqns
  integer(kind=int32)::mssn
  integer(kind=int32),allocatable::xlnz(:),xnzsub(:),nzsub(:)
- real(kind=wp),allocatable::xspars(:),diag(:)
+ real(kind=wp),allocatable::lnz(:),diag(:)
  !$ real(kind=real64)::t1
  real(kind=real64)::time(6)
 
@@ -148,18 +157,18 @@ subroutine get_spainv_crs(ia,ja,a,xadj,adjncy,perm,minsizenode,un)
 
  neqns=size(ia)-1
 
- call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
+ call get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,.true.,xlnz,lnz,xnzsub,nzsub,diag,mssn,time)
 
  !Convert to ija
  !$ t1=omp_get_wtime()
- call converttoija(neqns,xlnz,xspars,xnzsub,nzsub,diag,ia,ja,a,perm)
+ call converttoija(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a,perm)
  !$ time(6)=omp_get_wtime()-t1
 
  call writetime(unlog,time,'INVERSION')
 
 end subroutine
 
-subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspars,xnzsub,nzsub,diag,mssn,time)
+subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,lnz,xnzsub,nzsub,diag,mssn,time)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(inout)::mssn
  integer(kind=int32),intent(in)::ia(:)
@@ -171,7 +180,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  logical,intent(in)::lspainv
 
  integer(kind=int32),allocatable,intent(out)::xlnz(:),xnzsub(:),nzsub(:)
- real(kind=wp),allocatable,intent(out)::xspars(:),diag(:)
+ real(kind=wp),allocatable,intent(out)::lnz(:),diag(:)
   
 #if (_VERBOSE >2)
  integer(kind=int32)::i
@@ -192,11 +201,11 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !$ write(*,'(1x,a,t30,a,g0)')'CRS Symb. fact.',': Elapsed time = ',time(1)
 #endif
 
- call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
+ call computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,lnz,diag,perm)
  !$ time(2)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
- !$ write(*,'(1x,a,t30,a,g0)')'CRS Compute xspars',': Elapsed time = ',time(2)
+ !$ write(*,'(1x,a,t30,a,g0)')'CRS Compute lnz',': Elapsed time = ',time(2)
 #endif
 
 #if (_SPAINV==1)
@@ -209,16 +218,22 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 #endif
 
  ! Cholesky factorization
- call super_gsfct(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode,rank)
+ call super_gsfct(neqns,xlnz,lnz,xnzsub,nzsub,diag,nnode,inode,rank)
  !$ time(4)=omp_get_wtime()-t1
  !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
  !$ write(*,'(1x,a,t30,a,g0)')'CRS Chol. fact.',': Elapsed time = ',time(4)
 #endif
+ print*,'aaaaaa0 ', neqns
+ print*,'aaaaaa1 ', xlnz
+ print*,'aaaaaa2 ', lnz
+ print*,'aaaaaa3 ', xnzsub
+ print*,'aaaaaa4 ', nzsub
+ print*,'aaaaaa5 ', diag
 
  if(lspainv)then
   ! Matrix inverse
-  call super_sparsinv(neqns,xlnz,xspars,xnzsub,nzsub,diag,nnode,inode)
+  call super_sparsinv(neqns,xlnz,lnz,xnzsub,nzsub,diag,nnode,inode)
   !$ time(5)=omp_get_wtime()-t1
   !$ t1=omp_get_wtime()
 #if (_VERBOSE >0)
@@ -241,7 +256,29 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
 #endif
 
 #else
- error stop 'SPAINV: not enabled'
+ block
+ integer(kind=int32), allocatable :: link(:), first(:)
+ real(kind=wp), allocatable :: temp(:)
+
+ allocate(link(neqns))
+ allocate(first(neqns))
+ allocate(temp(neqns))
+ call gsfct(neqns, xlnz, lnz, xnzsub, nzsub, diag, link, first, temp, flag )
+
+ print*,'bbbbbb0 ', neqns
+ print*,'bbbbbb1 ', xlnz
+ print*,'bbbbbb2 ', lnz
+ print*,'bbbbbb3 ', xnzsub
+ print*,'bbbbbb4 ', nzsub
+ print*,'bbbbbb5 ', diag
+ end block
+
+ write(*,'(/2x,a,i0)')'Flag symmetric factorization    : ',flag
+
+ if(lspainv)then
+  error stop 'SPAINV: not enabled'
+ endif
+
 #endif
 
 end subroutine
@@ -288,18 +325,18 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
 
 end subroutine
 
-pure subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,diag,perm)
+pure subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,lnz,diag,perm)
  integer(kind=int32),intent(in)::neqns,maxlnz
  integer(kind=int32),intent(in)::ia(:),ja(:)
  integer(kind=int32),intent(in)::perm(:)
  integer(kind=int32),intent(in)::xlnz(:),nzsub(:),xnzsub(:)
  real(kind=wp),intent(in)::a(:)
- real(kind=wp),intent(out),allocatable::xspars(:),diag(:)
+ real(kind=wp),intent(out),allocatable::lnz(:),diag(:)
 
  integer(kind=int32)::irow,iirow,icol,i,j,k
 
- allocate(xspars(maxlnz),diag(neqns))
- xspars=0._wp
+ allocate(lnz(maxlnz),diag(neqns))
+ lnz=0._wp
  diag=0._wp
 
  do i=1,neqns
@@ -314,7 +351,7 @@ pure subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,
    endif
    do j=ia(iirow)+1,ia(iirow+1)-1
     if(ja(j).eq.icol)then
-     xspars(k)=a(j)
+     lnz(k)=a(j)
      exit
     endif
    enddo
@@ -323,11 +360,11 @@ pure subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,xspars,
 
 end subroutine
 
-pure subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+pure subroutine converttoija(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::nzsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(in)::ia(:),ja(:),perm(:)
- real(kind=wp),intent(in)::xspars(:),diag(:)
+ real(kind=wp),intent(in)::lnz(:),diag(:)
  real(kind=wp),intent(inout):: a(:)
 
  integer(kind=int32)::irow,ksub,i,icol
@@ -339,7 +376,7 @@ pure subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
   ksub = xnzsub(irow)
   do i = xlnz(irow), xlnz(irow+1)-1
    ppirow=pirow
-   icol = ixsub(ksub)
+   icol = nzsub(ksub)
    picol=perm(icol)
    ksub = ksub + 1
    if(ppirow.gt.picol)then
@@ -348,7 +385,7 @@ pure subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
    endif
    intloop: do ip=ia(ppirow)+1,ia(ppirow+1)-1
     if(ja(ip).eq.picol)then
-     a(ip)=xspars(i)
+     a(ip)=lnz(i)
      exit intloop
     endif
    enddo intloop
@@ -357,12 +394,12 @@ pure subroutine converttoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
 
 end subroutine 
 
-pure subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,perm)
+pure subroutine converttoija_noperm(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a,perm)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::nzsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(in)::perm(:)
  integer(kind=int32),intent(inout)::ia(:),ja(:)
- real(kind=wp),intent(in)::xspars(:),diag(:)
+ real(kind=wp),intent(in)::lnz(:),diag(:)
  real(kind=wp),intent(out):: a(:)
 
  integer(kind=int32)::irow,ksub,i,icol
@@ -423,7 +460,7 @@ pure subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,
   ksub = xnzsub(irow)
   do i = xlnz(irow), xlnz(irow+1)-1
    ppirow=pirow
-   icol = ixsub(ksub)
+   icol = nzsub(ksub)
    picol=icol
    ksub = ksub + 1
    if(ppirow.gt.picol)then
@@ -432,7 +469,7 @@ pure subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,
    endif
    intloop: do ip=ia(ppirow)+1,ia(ppirow+1)-1
     if(ja(ip).eq.picol)then
-     a(ip)=xspars(i)
+     a(ip)=lnz(i)
      exit intloop
     endif
    enddo intloop
@@ -441,18 +478,18 @@ pure subroutine converttoija_noperm(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a,
 
 end subroutine 
 
-pure subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a)
+pure subroutine convertfactortoija(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a)
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::nzsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(inout)::ia(:)
  integer(kind=int32),intent(out),allocatable::ja(:)
- real(kind=wp),intent(in)::xspars(:),diag(:)
+ real(kind=wp),intent(in)::lnz(:),diag(:)
  real(kind=wp),intent(out),allocatable::a(:)
 
  integer(kind=int32)::j,irow,ksub,icol
 
- allocate(ja(size(xspars)+neqns), source=0)
- allocate(a(size(xspars)+neqns), source=0._wp)
+ allocate(ja(size(lnz)+neqns), source=0)
+ allocate(a(size(lnz)+neqns), source=0._wp)
 
  do irow=1,neqns
   ia(irow)=xlnz(irow)+irow-1
@@ -460,10 +497,10 @@ pure subroutine convertfactortoija(neqns,xlnz,xspars,xnzsub,ixsub,diag,ia,ja,a)
   a(ia(irow))=diag(irow)
   ksub=xnzsub(irow)
   do j=xlnz(irow),xlnz(irow+1)-1
-   icol=ixsub(ksub)
+   icol=nzsub(ksub)
    ksub=ksub+1
    ja(j+irow)=icol
-   a(j+irow)=xspars(j)
+   a(j+irow)=lnz(j)
   enddo
  enddo
  ia(neqns+1)=xlnz(neqns+1)+neqns

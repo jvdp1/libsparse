@@ -692,8 +692,8 @@ module subroutine submatrix_index_coo(sparse,subsparse,indvector,sizeblock,unlog
 
  ! upper -> upper
  do i_ = 1, nel, sizeblock_
-  do i = i_, min(i_ + sizeblock_ - 1, size(indvector))
-   do j = i, min(i_ + sizeblock_ - 1, size(indvector))
+  do i = i_, min(i_ + sizeblock_ - 1, size(indvector, kind=int64))
+   do j = i, min(i_ + sizeblock_ - 1, size(indvector, kind=int64))
     ii = indvector(i)
     jj = indvector(j)
     if(ii.le.jj)then
