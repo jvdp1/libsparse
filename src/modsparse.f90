@@ -464,10 +464,8 @@ module modsparse
   private
   !> @brief Adds the value val to mat(row,col); e.g., call mat\%add(row,col,val)
   procedure,public::add=>add_crs
-#if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
   procedure,public::chol=>getchol_crs
-#endif
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_crs
   procedure::diag_vect_crs
@@ -477,10 +475,8 @@ module modsparse
   generic,public::diag=>diag_vect_crs,diag_mat_crs
   !> @brief Returns the value of mat(row,col); e.g., ...=mat\%get(row,col)
   procedure,public::get=>get_crs
-#if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by the (complete) LDLt (L is stored in the upper triangle and D in the diagonal)
   procedure,public::getldlt=>getldlt_crs
-#endif
   !> @brief Gets memory used
   procedure,public::getmem=>getmem_crs
   !> @brief Initializes the vectors ia,ja,and a from external vectors
@@ -493,10 +489,8 @@ module modsparse
   procedure,public::get_nzval=>get_nzval_crs
   !> @brief Get diagonal elements of an approximate inverse using Harville (1999)
   procedure,public::harville=>harville_crs
-#if (_SPAINV==1)
   !> @brief Computes and replaces the sparse matrix by an incomplete Cholesky factor
   procedure,public::ichol=>getichol_crs
-#endif
   !> @brief Iniates crssparse
   procedure,public::init=>constructor_sub_crs
   !> @brief Solver with a triangular factor (e.g., a Cholesky factor or an incomplete Cholesky factor)
@@ -541,10 +535,8 @@ module modsparse
   generic,public::solve=>solve_crs_vector,solve_crs_array
   !> @brief Sorts the elements in a ascending order within a row
   procedure,public::sort=>sort_crs
-#if (_SPAINV==1)
   !> @brief Computes and replaces by the sparse inverse
   procedure,public::spainv=>getspainv_crs
-#endif
   !> @brief Gets a submatrix from a sparse matrix
   procedure,public::submatrix=>submatrix_crs
   !> @brief Gets a dense submatrix from a sparse matrix
@@ -646,7 +638,6 @@ module modsparse
    class(crssparse),intent(in)::sparse
    integer(kind=int64)::nel
   end function
-#if (_SPAINV==1)
   !**GET (COMPLETE) CHOLESKY FACTOR
   module subroutine getchol_crs(sparse,minsizenode)
    class(crssparse),intent(inout)::sparse
@@ -657,7 +648,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::minsizenode
   end subroutine
-#endif
 #if (_METIS==1)
   !**GET ORDER
   module function getordering_crs(sparse&
@@ -669,7 +659,6 @@ module modsparse
    integer(kind=int32),allocatable::perm(:)
   end function
 #endif
-#if (_SPAINV==1)
   !**GET INCOMPLETE CHOLESKY FACTOR
   module subroutine getichol_crs(sparse,minsizenode)
    class(crssparse),intent(inout)::sparse
@@ -680,7 +669,6 @@ module modsparse
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::minsizenode
   end subroutine
-#endif
 #if (_PARDISO==1)
   pure module function isdecomposed_crs(sparse) result(ll)
    class(crssparse),intent(in)::sparse
