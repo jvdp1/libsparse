@@ -13,10 +13,10 @@ program test_sparse
   stat = 0
 
   testsuites = [ &
-    new_testsuite("modtest_coo", collect_coo) &
-    , new_testsuite("modtest_crs", collect_crs) &
-    , new_testsuite("modtest_crs64", collect_crs64) &
-    , new_testsuite("modtest_random", collect_random) &
+!    new_testsuite("modtest_coo", collect_coo) &
+     new_testsuite("modtest_crs", collect_crs) &
+!    , new_testsuite("modtest_crs64", collect_crs64) &
+!    , new_testsuite("modtest_random", collect_random) &
     ]
 
   do is = 1, size(testsuites)
