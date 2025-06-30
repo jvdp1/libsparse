@@ -6,7 +6,7 @@ submodule (modsparse) modsparse_crs
                           , mkl_scsrtrsv, mkl_dcsrtrsv &
                           , mkl_scsrsymv, mkl_dcsrsymv
 #if (_SPAINV==1)
- use modspainv, only: get_chol, get_ichol, get_spainv
+ use modsparse_inv, only: get_chol, get_ichol, get_spainv
 #endif
 #if (_PARDISO==1)
  use modvariablepardiso, only: checkpardiso, pardiso_variable
