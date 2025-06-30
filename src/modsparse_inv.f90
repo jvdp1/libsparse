@@ -8,7 +8,9 @@ module modsparse_inv
 #else
  use iso_fortran_env,only:output_unit,int32,int64,real32,real64,wp=>real64
 #endif
+#if (_SPAINV==1)
  use modspainv, only: super_nodes, super_gsfct, super_sparsinv
+#endif
  !$ use omp_lib
  implicit none
  private
@@ -197,6 +199,7 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  !$ write(*,'(1x,a,t30,a,g0)')'CRS Compute xspars',': Elapsed time = ',time(2)
 #endif
 
+#if (_SPAINV==1)
  allocate(inode(neqns+1))  !to allow diagonal matrices (for which the number of super-nodes is equal to the number of equations
  call super_nodes(mssn,neqns,xlnz,xnzsub,nzsub,nnode,inode,maxnode)
  !$ time(3)=omp_get_wtime()-t1
@@ -235,6 +238,10 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,xspa
  do i=1,nnode
   write(*,'(1x,4(a,i8))') 'node',i,' from row', inode(i+1)+1,'  to row', inode(i),' size ',inode(i)-inode(i+1)
  end do
+#endif
+
+#else
+ error stop 'SPAINV: not enabled'
 #endif
 
 end subroutine

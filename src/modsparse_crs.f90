@@ -5,9 +5,7 @@ submodule (modsparse) modsparse_crs
                           , mkl_scsrmm, mkl_dcsrmm &
                           , mkl_scsrtrsv, mkl_dcsrtrsv &
                           , mkl_scsrsymv, mkl_dcsrsymv
-#if (_SPAINV==1)
  use modsparse_inv, only: get_chol, get_ichol, get_spainv
-#endif
 #if (_PARDISO==1)
  use modvariablepardiso, only: checkpardiso, pardiso_variable
 #endif
@@ -407,7 +405,6 @@ module function totalnumberofelements_crs(sparse) result(nel)
 
 end function
 
-#if (_SPAINV==1)
 !**GET (COMPLETE) CHOLESKY FACTOR
 module subroutine getchol_crs(sparse,minsizenode)
  class(crssparse),intent(inout)::sparse
@@ -517,7 +514,6 @@ module subroutine getldlt_crs(sparse,minsizenode)
 #endif
 
 end subroutine
-#endif
 
 #if (_METIS==1)
 !**GET ORDER
@@ -609,7 +605,6 @@ module function getordering_crs(sparse&
 end function
 #endif
 
-#if (_SPAINV==1)
 !**GET INCOMPLETE CHOLESKY FACTOR
 module subroutine getichol_crs(sparse,minsizenode)
  class(crssparse),intent(inout)::sparse
@@ -722,7 +717,6 @@ module subroutine getspainv_crs(sparse,minsizenode)
 #endif
 
 end subroutine
-#endif
 
 #if (_PARDISO==1)
 !**RESET PARDISO MEMORY
