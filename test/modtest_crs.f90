@@ -92,14 +92,12 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs solveldlt_s", test_solveldlt_s) &
     , new_unittest("crs solveldlt_vector", test_solveldlt_vector) &
     , new_unittest("crs solveldlt_array", test_solveldlt_array) &
-#if (_SPAINV==1)
     , new_unittest("crs spainv", test_spainv) &
     , new_unittest("crs spainv_failed", test_spainv_failed, should_fail = .true.) &
     , new_unittest("crs spainv_1", test_spainv_1) &
     , new_unittest("crs spainv_spsd", test_spainv_spsd) &
     , new_unittest("crs spainv_spsd_1", test_spainv_spsd_1) &
     , new_unittest("crs spainv_spsd_2", test_spainv_spsd_2) &
-#endif
     , new_unittest("crs submatrix_off_full_full", test_submatrix_off_full_full) &
     , new_unittest("crs submatrix_off_full_upper", test_submatrix_off_full_upper) &
     , new_unittest("crs submatrix_off_upper_full", test_submatrix_off_upper_full) &
@@ -1921,7 +1919,6 @@ subroutine test_solveldlt_array(error)
 
 end subroutine
 
-#if (_SPAINV==1)
 !GET SPARSE INVERSE
 subroutine test_spainv(error)
  type(error_type), allocatable, intent(out) :: error
@@ -2361,7 +2358,6 @@ subroutine test_spainv_failed(error)
  call check(error, all(abs(mat_l - matinv ) < tol_wp), 'should_spainv_failed')
 
 end subroutine
-#endif
 
 !SUBMATRIX
 subroutine test_submatrix_off_full_full(error)

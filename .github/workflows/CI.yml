@@ -65,6 +65,7 @@ jobs:
       if: ${{ contains(matrix.build, 'cmake') }}
       run: >-
         cmake -Wdev
+        -DCMAKE_SPAINV=0
         -DCMAKE_BUILD_TYPE=Debug
         -DCMAKE_INSTALL_PREFIX=$PWD/_dist
         -S . -B ${{ env.BUILD_DIR }}

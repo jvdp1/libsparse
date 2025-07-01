@@ -36,10 +36,10 @@ module modspainv
 
 contains
 
-subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
+subroutine super_nodes(mssn, neqns, xlnz, xnzsub, nzsub, nnode, inode,maxnode)
  integer(kind=int32),intent(inout)::mssn
  integer(kind=int32),intent(in)::neqns
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::nzsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(out)::nnode
  integer(kind=int32),intent(out)::maxnode
  integer(kind=int32),intent(out)::inode(:) !size=neqns+1
@@ -58,7 +58,7 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
     ii = xnzsub(i)
     n = 0
     do j = xlnz(i), xlnz(i+1)-1
-       kk = ixsub(ii)
+       kk = nzsub(ii)
        ii = ii + 1
        if(  kk > ilast ) exit
        n = n + 1
@@ -80,13 +80,13 @@ subroutine super_nodes(mssn, neqns, xlnz, xnzsub, ixsub, nnode, inode,maxnode)
 
 end subroutine 
 
-subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
+subroutine super_gsfct(neqns,xlnz,lnz,xnzsub,nzsub,diag,nnode,inode,rank)
  integer(kind=int32),intent(in)::neqns
  integer(kind=int32),intent(inout)::nnode
- integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:)
+ integer(kind=int32),intent(in)::nzsub(:),xlnz(:),xnzsub(:)
  integer(kind=int32),intent(inout)::inode(:)
  integer(kind=int32),intent(out),optional::rank
- real(kind=wp),intent(inout)::xspars(:),diag(:)
+ real(kind=wp),intent(inout)::lnz(:),diag(:)
 
  integer(kind=int32)::i,j,jrow,n,ksub,irow,jnode,icol1,icol2,jcol,ii,jj,mm,kk
 #if (_VERBOSE>0)
@@ -151,10 +151,10 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
    ttt(irow,irow) = diag(irow)
    ksub = xnzsub(irow)
    do i = xlnz(irow), xlnz(irow+1)-1
-    jcol = ixsub(ksub)
+    jcol = nzsub(ksub)
     ksub = ksub + 1
     if( jcol <= icol2 ) then
-     ttt(jcol,irow) = xspars(i) 
+     ttt(jcol,irow) = lnz(i) 
     else
      if(jvec(jcol).eq.0)then
       n=n+1
@@ -202,11 +202,11 @@ subroutine super_gsfct(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode,rank)
          do irow = icol1, icol2
             ksub = xnzsub(irow)
             do i = xlnz(irow), xlnz(irow+1)-1
-               jcol = ixsub(ksub)
+               jcol = nzsub(ksub)
                ksub = ksub + 1
                if( jcol <= icol2 ) cycle
                jj = jvec(jcol)
-               s21(jj,irow) = xspars(i)
+               s21(jj,irow) = lnz(i)
             end do
          end do
 
@@ -249,15 +249,15 @@ end block
              diag(jrow) = diag(jrow) - s22(i,i)
              ksub = xnzsub(jrow)
              do j = xlnz(jrow), xlnz(jrow+1)-1
-                jcol = ixsub(ksub)
+                jcol = nzsub(ksub)
                 if( jcol > kk ) exit
                 ksub = ksub + 1
                 ii = jvec(jcol)
                 if( ii > 0 ) then
                  if(ii>i)then
-                  xspars(j) = xspars(j) - s22(ii,i)
+                  lnz(j) = lnz(j) - s22(ii,i)
                  else
-                  xspars(j) = xspars(j) - s22(i,ii)
+                  lnz(j) = lnz(j) - s22(i,ii)
                  endif
                 endif
              end do
@@ -270,12 +270,12 @@ end block
        diag(irow) = ttt(irow,irow)
         ksub = xnzsub(irow)
         do i = xlnz(irow), xlnz(irow+1)-1
-           jcol = ixsub(ksub)
+           jcol = nzsub(ksub)
            ksub = ksub + 1
            if( jcol <= icol2 ) then
-               xspars(i) = ttt(jcol,irow)
+               lnz(i) = ttt(jcol,irow)
            else
-               xspars(i) = s21( jvec(jcol), irow)
+               lnz(i) = s21( jvec(jcol), irow)
            end if
         end do
      end do
@@ -288,7 +288,7 @@ end block
    do irow = icol1, icol2
     ksub = xnzsub(irow)
     do i = xlnz(irow), xlnz(irow+1)-1
-     jcol = ixsub(ksub)
+     jcol = nzsub(ksub)
      ksub = ksub + 1
      if( jcol <= icol2 ) then
      else
@@ -310,9 +310,9 @@ end block
   endif
   ksub = xnzsub(irow)
   do i = xlnz(irow), xlnz(irow+1)-1
-   jcol = ixsub(ksub)
+   jcol = nzsub(ksub)
    ksub = ksub + 1
-   if(jvec(jcol).ne.0)xspars(i)=0._wp
+   if(jvec(jcol).ne.0)lnz(i)=0._wp
   end do
  end do
 
@@ -329,10 +329,10 @@ end block
  
 end subroutine
 
-subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
+subroutine super_sparsinv(neqns,xlnz,lnz,xnzsub,nzsub,diag,nnode,inode)
   integer(kind=int32),intent(in)::neqns,nnode
-  integer(kind=int32),intent(in)::ixsub(:),xlnz(:),xnzsub(:),inode(:)
-  real(kind=wp),intent(inout) ::xspars(:),diag(:)
+  integer(kind=int32),intent(in)::nzsub(:),xlnz(:),xnzsub(:),inode(:)
+  real(kind=wp),intent(inout) ::lnz(:),diag(:)
 
   integer(kind=int32)::irow,ksub,i,k,m,jcol,jrow, jnode, icol2, icol1, ii,jj, mm, n21, iopt
   integer(kind=int32),allocatable::kvec(:),jvec(:)
@@ -364,10 +364,10 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
       ttt(irow,irow)=diag(irow)
       ksub=xnzsub(irow)
       do i=xlnz(irow),xlnz(irow+1)-1
-       jcol=ixsub(ksub)
+       jcol=nzsub(ksub)
        ksub=ksub+1
        if(jcol<=icol2)then
-        ttt(jcol,irow)=xspars(i) 
+        ttt(jcol,irow)=lnz(i) 
        else 
         if(jvec(jcol).eq.0)then
          n21=n21+1
@@ -387,11 +387,11 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
          do irow = icol1, icol2
             ksub = xnzsub(irow)
             do i = xlnz(irow), xlnz(irow+1)-1
-               jcol = ixsub(ksub)
+               jcol = nzsub(ksub)
                ksub = ksub + 1
                if( jcol <= icol2 ) cycle
                jj = jvec(jcol)
-               s21(jj,irow) = xspars(i)
+               s21(jj,irow) = lnz(i)
             end do
          end do
 !        ... post-multiply with inverse Chol factor -> solve
@@ -434,11 +434,11 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
                qx =  diag(jrow) * rr 
                ksub = xnzsub(jrow)
                do i = xlnz(jrow), xlnz(jrow+1)-1
-                  jcol = ixsub(ksub)
+                  jcol = nzsub(ksub)
                   ksub = ksub + 1
                   m = jvec(jcol)
                   if( m < 1 ) cycle
-                  xx = xspars(i)
+                  xx = lnz(i)
                   f21(m,:) = f21(m,:) + xx * rr
                   qx = qx + xx * s21(m,:) 
                end do
@@ -457,14 +457,14 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
                s22(k,k) = diag(jrow)
                ksub = xnzsub(jrow)
                do i = xlnz(jrow), xlnz(jrow+1)-1
-                  jcol = ixsub(ksub)
+                  jcol = nzsub(ksub)
                   ksub = ksub + 1
                   m = jvec(jcol)
                   if( m > 0 )then
                    if(m>k)then
-                    s22(m,k) = xspars(i)
+                    s22(m,k) = lnz(i)
                    else
-                    s22(k,m) = xspars(i)
+                    s22(k,m) = lnz(i)
                    endif
                   endif
                end do
@@ -507,12 +507,12 @@ subroutine super_sparsinv(neqns,xlnz,xspars,xnzsub,ixsub,diag,nnode,inode)
         diag(irow) = ttt(irow,irow)
         ksub = xnzsub(irow)
         do i = xlnz(irow), xlnz(irow+1)-1
-           jcol = ixsub(ksub)
+           jcol = nzsub(ksub)
            ksub = ksub + 1
            if( jcol <= icol2 ) then
-               xspars(i) = ttt(jcol,irow) 
+               lnz(i) = ttt(jcol,irow) 
            else 
-               xspars(i) = - f21(jvec(jcol),irow)
+               lnz(i) = - f21(jvec(jcol),irow)
            end if
         end do
      end do

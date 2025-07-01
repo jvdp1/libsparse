@@ -10,6 +10,8 @@ module modsparse_inv
 #endif
 #if (_SPAINV==1)
  use modspainv, only: super_nodes, super_gsfct, super_sparsinv
+#else
+ use modsparse_inv_int, only: gsfct, spainverse
 #endif
  !$ use omp_lib
  implicit none
@@ -40,15 +42,6 @@ module modsparse_inv
    integer::xadj(*),adjncy(*)
    integer::perm(*),invp(*)
    integer::xlnz(*),xnzsub(*),nzsub(*),rchlnk(*),mrglnk(*),marker(*)
-  end subroutine
-
-  subroutine gsfct (neqns, xlnz, lnz, xnzsub, nzsub, diag, &
-                    link, first, temp, iflag )
-         import wp
-         real(wp) :: diag(*), lnz(*), temp(*)
-         integer::link(*), nzsub(*)
-         integer::first(*), xlnz(*), xnzsub(*)
-         integer::iflag, neqns
   end subroutine
  end interface
 
@@ -224,12 +217,6 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,lnz,
 #if (_VERBOSE >0)
  !$ write(*,'(1x,a,t30,a,g0)')'CRS Chol. fact.',': Elapsed time = ',time(4)
 #endif
- print*,'aaaaaa0 ', neqns
- print*,'aaaaaa1 ', xlnz
- print*,'aaaaaa2 ', lnz
- print*,'aaaaaa3 ', xnzsub
- print*,'aaaaaa4 ', nzsub
- print*,'aaaaaa5 ', diag
 
  if(lspainv)then
   ! Matrix inverse
@@ -256,29 +243,31 @@ subroutine get_ichol_spainv_crs(neqns,ia,ja,a,xadj,adjncy,perm,lspainv,xlnz,lnz,
 #endif
 
 #else
- block
- integer(kind=int32), allocatable :: link(:), first(:)
- real(kind=wp), allocatable :: temp(:)
+ call gsfct(neqns, xlnz, lnz, xnzsub, nzsub, diag, flag )
 
- allocate(link(neqns))
- allocate(first(neqns))
- allocate(temp(neqns))
- call gsfct(neqns, xlnz, lnz, xnzsub, nzsub, diag, link, first, temp, flag )
-
- print*,'bbbbbb0 ', neqns
- print*,'bbbbbb1 ', xlnz
- print*,'bbbbbb2 ', lnz
- print*,'bbbbbb3 ', xnzsub
- print*,'bbbbbb4 ', nzsub
- print*,'bbbbbb5 ', diag
- end block
+ rank = neqns - flag
+ !$ time(4)=omp_get_wtime()-t1
+ !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+ !$ write(*,'(1x,a,t30,a,g0)')'CRS Chol. fact.',': Elapsed time = ',time(4)
+#endif
 
  write(*,'(/2x,a,i0)')'Flag symmetric factorization    : ',flag
 
  if(lspainv)then
-  error stop 'SPAINV: not enabled'
+  ! Inverse of sparse matrix
+  call spainverse(neqns,xlnz,lnz,xnzsub,nzsub,diag)
+  !$ time(5)=omp_get_wtime()-t1
+  !$ t1=omp_get_wtime()
+#if (_VERBOSE >0)
+  !$ write(*,'(1x,a,t30,a,g0)')'CRS Inversion',': Elapsed time = ',time(5)
+#endif
  endif
 
+#if (_VERBOSE >0)
+ write(*,'(/2x,a,i0)')'Flag symbolic factorization    : ',flag
+ write(*,'(2x,a,i0/)')'Rank of the matrix             : ',rank
+#endif
 #endif
 
 end subroutine

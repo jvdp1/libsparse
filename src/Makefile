@@ -17,7 +17,8 @@ all: libsparse.a
 
 OBJ = modcommon.o \
       modrandom.o \
-      modsparse_inv.o  smbfct.o gsfct.o\
+      modsparse_inv_int.o \
+      modsparse_inv.o  smbfct.o \
       $(OBJPARDISO) $(OBJMETIS) $(OBJSPAINV) \
       modsparse_mkl.o modsparse_hash.o modsparse.o modsparse_gen.o modsparse_coo.o \
       modsparse_crs64.o \
@@ -38,9 +39,9 @@ modsparse_coo.o: modsparse.o modsparse_hash.o
 modsparse_crs.o: modsparse_mkl.o modsparse.o $(OBJSPAINV) $(OBJPARDISO) $(OBJMETIS)
 modsparse_crs64.o: modsparse.o $(OBJPARDISO)
 ifeq ($(SPAINVENABLE),1)
-modsparse_inv.o: modspainv.o smbfct.o gsfct.o
+modsparse_inv.o: modspainv.o smbfct.o modsparse_inv_int.o
 else
-modsparse_inv.o: smbfct.o gsfct.o
+modsparse_inv.o: smbfct.o modsparse_inv_int.o
 endif
 modspainv.o: modcommon.o modsparse_mkl.o
 modsparse.o: $(OBJPARDISO)
