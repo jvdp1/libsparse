@@ -38,9 +38,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs test external", test_external) &
     , new_unittest("crs test harville", test_harville) &
     , new_unittest("crs cg", test_cg) &
-#if (_SPAINV==1)
     , new_unittest("crs chol", test_chol) &
-#endif
     , new_unittest("crs diag vect", test_diag_vect) &
     , new_unittest("crs diag vect lupper", test_diag_vect_lupper) &
     , new_unittest("crs ncol diag vect", test_ncol_diag_vect) &
@@ -53,12 +51,10 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ncol get", test_ncol_get) &
     , new_unittest("crs ncol get nel", test_ncol_get_nel) &
     , new_unittest("crs ncol get lupper", test_ncol_get_lupper) &
-#if (_SPAINV==1)
     , new_unittest("crs ichol", test_ichol) &
     , new_unittest("crs ichol_failed", test_ichol_failed, should_fail = .true.) &
     , new_unittest("crs isolve", test_isolve) &
     , new_unittest("crs ldlt", test_ldlt) &
-#endif
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
     , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
     , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
@@ -93,7 +89,6 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs solve_arr", test_solve_array, should_fail = .true.) &
     , new_unittest("crs solve_arr_perm", test_solve_array_perm, should_fail = .true.) &
 #endif
-#if (_SPAINV==1)
     , new_unittest("crs solveldlt_s", test_solveldlt_s) &
     , new_unittest("crs solveldlt_vector", test_solveldlt_vector) &
     , new_unittest("crs solveldlt_array", test_solveldlt_array) &
@@ -103,7 +98,6 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs spainv_spsd", test_spainv_spsd) &
     , new_unittest("crs spainv_spsd_1", test_spainv_spsd_1) &
     , new_unittest("crs spainv_spsd_2", test_spainv_spsd_2) &
-#endif
     , new_unittest("crs submatrix_off_full_full", test_submatrix_off_full_full) &
     , new_unittest("crs submatrix_off_full_upper", test_submatrix_off_full_upper) &
     , new_unittest("crs submatrix_off_upper_full", test_submatrix_off_upper_full) &
@@ -488,7 +482,6 @@ subroutine test_cg(error)
 
 end subroutine
 
-#if (_SPAINV==1)
 !CHOLESKY FACTOR
 subroutine test_chol(error)
  type(error_type), allocatable, intent(out) :: error
@@ -556,7 +549,6 @@ subroutine test_chol(error)
                  , 'Chol_permf')
 
 end subroutine
-#endif
 
 !DIAG VECT
 subroutine test_diag_vect(error)
@@ -880,7 +872,6 @@ subroutine test_harville(error)
 
 end subroutine
 
-#if (_SPAINV==1)
 !ICHOL
 subroutine test_ichol(error)
  type(error_type), allocatable, intent(out) :: error
@@ -1148,7 +1139,6 @@ subroutine test_ldlt(error)
                  , 'LDLt_permf')
 
 end subroutine
-#endif
 
 !MULT BY VECT
 subroutine test_multbyv_n_n_n(error)
@@ -1773,7 +1763,6 @@ subroutine test_solve_array_perm(error)
 
 end subroutine
 
-#if (_SPAINV==1)
 !SOLVE LDLt
 subroutine test_solveldlt_s(error)
  type(error_type), allocatable, intent(out) :: error
@@ -2369,7 +2358,6 @@ subroutine test_spainv_failed(error)
  call check(error, all(abs(mat_l - matinv ) < tol_wp), 'should_spainv_failed')
 
 end subroutine
-#endif
 
 !SUBMATRIX
 subroutine test_submatrix_off_full_full(error)
