@@ -27,6 +27,7 @@ list(
   "${dir}/modsparse.f90"
   "${dir}/modsparse_gen.f90"
   "${dir}/modsparse_inv.f90"
+  "${dir}/modsparse_inv_int.f90"
   "${dir}/modsparse_ll.f90"
   "${dir}/modsparse_metisgraph.f90"
   "${dir}/modsparse_mkl.f90"
