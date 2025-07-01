@@ -1,9 +1,13 @@
 module modsparse_inv_int
- use, intrinsic :: iso_fortran_env, only: wp => real64
+#if (_DP==0)
+ use, intrinsic :: iso_fortran_env, only: output_unit,int32,int64,real32,real64,wp=>real32
+#else
+ use, intrinsic :: iso_fortran_env, only: output_unit,int32,int64,real32,real64,wp=>real64
+#endif
  implicit none
  private
- public :: spainverse
  public :: gsfct
+ public :: spainverse
 
  real(kind=wp), parameter :: tol = 1.e-8_wp
 
@@ -68,16 +72,16 @@ contains
 !c
 !c***************************************************************
 !c
-  integer, intent(in) :: neqns
-  integer, intent(in) :: nzsub(:)
-  integer, intent(in) :: xlnz(:), xnzsub(:)
-  integer, intent(out) :: iflag
+  integer(kind=int32), intent(in) :: neqns
+  integer(kind=int32), intent(in) :: nzsub(:)
+  integer(kind=int32), intent(in) :: xlnz(:), xnzsub(:)
+  integer(kind=int32), intent(out) :: iflag
   real(kind=wp), intent(inout) :: diag(:), lnz(:)
 
   real(kind=wp) :: diagj, ljk
   real(kind=wp), allocatable :: temp(:)
-  integer, allocatable :: link(:), first(:)
-  integer :: i, ii, istop, istrt, isub, j, k, kfirst, newk
+  integer(kind=int32), allocatable :: link(:), first(:)
+  integer(kind=int32) :: i, ii, istop, istrt, isub, j, k, kfirst, newk
 !c
 !c***************************************************************
 !c
@@ -176,11 +180,11 @@ contains
  end subroutine
 
  subroutine spainverse(neqns, xlnz, lnz, xnzsub, nzsub, diag)
-  integer, intent(in) :: neqns
-  integer, intent(in) :: xnzsub(:), nzsub(:), xlnz(:)
+  integer(kind=int32), intent(in) :: neqns
+  integer(kind=int32), intent(in) :: xnzsub(:), nzsub(:), xlnz(:)
   real(kind=wp), intent(inout) :: diag(:), lnz(:)
 
-  integer :: i, j, k, j1, k1, i_, j1_
+  integer(kind=int32) :: i, j, k, j1, k1, i_, j1_
   real(kind=wp), allocatable :: lnz_(:), lnzd(:)
 
   allocate (lnz_(neqns), source=0._wp)
