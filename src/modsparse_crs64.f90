@@ -26,11 +26,12 @@ module function constructor_crs64(m,nel,n,lupper,unlog) result(sparse)
 
  sparse%lsymmetric=.false.
 
- allocate(sparse%ia(sparse%dim1+1),sparse%ja(nel),sparse%a(nel))
- sparse%ia=0
+ allocate(sparse%ia(sparse%dim1+1), source=0_int64)
  sparse%ia(sparse%dim1+1)=-nel
- sparse%ja=0
- sparse%a=0._wp
+
+ allocate(sparse%ja(nel), source=0_int64)
+
+ allocate(sparse%a(nel), source=0._wp)
 
  sparse%loriginal=.true.
 
@@ -51,11 +52,12 @@ module subroutine constructor_sub_crs64(sparse,m,nel,n,lupper,unlog)
 
  sparse%lsymmetric=.false.
 
- allocate(sparse%ia(sparse%dim1+1),sparse%ja(nel),sparse%a(nel))
- sparse%ia=0
+ allocate(sparse%ia(sparse%dim1+1), source=0_int64)
  sparse%ia(sparse%dim1+1)=-nel
- sparse%ja=0
- sparse%a=0._wp
+
+ allocate(sparse%ja(nel), source=0_int64)
+
+ allocate(sparse%a(nel), source=0._wp)
 
  sparse%loriginal=.true.
 

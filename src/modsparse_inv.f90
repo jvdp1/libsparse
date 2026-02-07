@@ -287,13 +287,11 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
   invp(perm(i))=i
  enddo
 
- allocate(xlnz(neqns+1),xnzsub(neqns+1))
- allocate(rchlnk(neqns),mrglnk(neqns),marker(neqns))
- xlnz=0
- xnzsub=0
- rchlnk=0
- mrglnk=0
- marker=0
+ allocate(xlnz(neqns+1), source=0_int32)
+ allocate(xnzsub(neqns+1), source=0_int32)
+ allocate(rchlnk(neqns), source=0_int32)
+ allocate(mrglnk(neqns), source=0_int32)
+ allocate(marker(neqns), source=0_int32)
  !maxsub=ia(neqns+1)-1
  maxsub=nnzeros
 
@@ -301,8 +299,8 @@ subroutine symbolicfact(neqns,nnzeros,xadj,adjncy,perm,xlnz,maxlnz,xnzsub,nzsub,
   flag=0
   maxsubinit=maxsub
   if(allocated(nzsub))deallocate(nzsub)
-  allocate(nzsub(maxsub))
-  nzsub=0
+  allocate(nzsub(maxsub), source=0_int32)
+
   call smbfct(neqns,xadj,adjncy,perm,invp,xlnz,maxlnz,xnzsub,nzsub,maxsub,&
               rchlnk,mrglnk,marker,flag&
               )
@@ -324,9 +322,8 @@ pure subroutine computexsparsdiag(neqns,ia,ja,a,xlnz,nzsub,xnzsub,maxlnz,lnz,dia
 
  integer(kind=int32)::irow,iirow,icol,i,j,k
 
- allocate(lnz(maxlnz),diag(neqns))
- lnz=0._wp
- diag=0._wp
+ allocate(lnz(maxlnz), source=0._wp)
+ allocate(diag(neqns), source=0._wp)
 
  do i=1,neqns
   irow=perm(i)
@@ -477,7 +474,7 @@ pure subroutine convertfactortoija(neqns,xlnz,lnz,xnzsub,nzsub,diag,ia,ja,a)
 
  integer(kind=int32)::j,irow,ksub,icol
 
- allocate(ja(size(lnz)+neqns), source=0)
+ allocate(ja(size(lnz)+neqns), source=0_int32)
  allocate(a(size(lnz)+neqns), source=0._wp)
 
  do irow=1,neqns
