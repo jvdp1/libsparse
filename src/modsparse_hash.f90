@@ -4,7 +4,7 @@ module modsparse_hash
  use iso_fortran_env,only:int32,int64,real64
  implicit none
  private
- public::hashf,roundinguppower2
+ public::hashf,next_power_of_2
 
  interface hashf
    module procedure hashf_vect,hashf_array
@@ -167,13 +167,30 @@ pure function hashf_array_getval(row,col,mat,dim2) result(address)
 end function
   
 !> @brief Function returning the next power of 2 of a number
-pure function roundinguppower2(x) result(next)
- integer(kind=int64),intent(in)::x
+pure function next_power_of_2(x) result(next)
+ integer(kind=int64), intent(in)::x
  integer(kind=int64)::next
 
- real(real64), parameter :: log2 = log(2._real64)
+ integer :: bits
 
- next = 2_int64 ** int((ceiling( log(real(x, real64)) / log2) ), int64)
+ ! If x is 0 or 1, the next power of 2 is 1
+ if (x <= 1_int64) then
+  next = 1_int64
+  return
+ end if
+
+ ! Check if x is already a power of 2
+ ! A power of 2 has only one bit set, so iand(x, x-1) == 0
+ if (iand(x, x - 1_int64) == 0_int64) then
+  next = x
+  return
+ end if
+
+ ! The position of the highest set bit determines the power
+ bits = bit_size(x) - leadz(x)
+
+ ! Shift 1 into the position above the highest set bit
+ next = shiftl(1_int64, bits)
 
 end function
 

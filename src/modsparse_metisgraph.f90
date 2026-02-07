@@ -14,9 +14,9 @@ module subroutine constructor_sub_metisgraph(metis,n,m,unlog)
 
  metis%nvertices=n
  metis%medges=m
- allocate(metis%xadj(metis%nvertices+1),metis%adjncy(2*metis%medges))
- metis%xadj=0
- metis%adjncy=0
+ allocate(metis%xadj(metis%nvertices+1), source=0_int32)
+ allocate(metis%adjncy(2*metis%medges), source=0_int32)
+
  metis%vwgt=c_null_ptr
  metis%adjwgt=c_null_ptr
 

@@ -1,5 +1,5 @@
 submodule (modsparse) modsparse_coo
- use modsparse_hash, only:hashf,roundinguppower2
+ use modsparse_hash, only:hashf,next_power_of_2
  !$ use omp_lib
  implicit none
 
@@ -25,11 +25,10 @@ module function constructor_coo(m,n,nel,lupper,unlog) result(sparse)
 
  sparse%filled=0_int64
 
- sparse%nel=roundinguppower2(100_int64)
- if(present(nel))sparse%nel=roundinguppower2(int(nel,int64))
- allocate(sparse%ij(2,sparse%nel),sparse%a(sparse%nel))
- sparse%ij=0
- sparse%a=0._wp
+ sparse%nel=next_power_of_2(100_int64)
+ if(present(nel))sparse%nel=next_power_of_2(int(nel,int64))
+ allocate(sparse%ij(2,sparse%nel), source=0_int32)
+ allocate(sparse%a(sparse%nel), source=0._wp)
 
 end function
 
@@ -50,12 +49,10 @@ module subroutine constructor_sub_coo(sparse,m,n,nel,lupper,unlog)
 
  sparse%filled=0_int64
 
- sparse%nel=roundinguppower2(100_int64)
- if(present(nel))sparse%nel=roundinguppower2(int(nel,int64))
- allocate(sparse%ij(2,sparse%nel))
- sparse%ij=0
- allocate(sparse%a(sparse%nel))
- sparse%a=0._wp
+ sparse%nel=next_power_of_2(100_int64)
+ if(present(nel))sparse%nel=next_power_of_2(int(nel,int64))
+ allocate(sparse%ij(2,sparse%nel), source=0_int32)
+ allocate(sparse%a(sparse%nel), source=0._wp)
 
 end subroutine
 
@@ -81,8 +78,7 @@ module function diag_vect_coo(sparse) result(array)
 
  ndiag=min(sparse%dim1,sparse%dim2)
 
- allocate(array(ndiag))
- array=0.0_wp
+ allocate(array(ndiag), source=0.0_wp)
 
  do i=1,ndiag
   array(i)=sparse%get(i,i)
