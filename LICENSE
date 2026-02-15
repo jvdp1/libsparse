@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## License for src/modspainv.f90
+
+The code in modspainv.f90 is based on code originally written by Karin Meyer
+(didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran). The incorporated
+and modified code is re-licensed under the MIT license with express permission
+from Karin Meyer. We are grateful for her permission to use and adapt this
+work.
+

@@ -37,6 +37,12 @@ The brief documentation is available in the directory *doc* (see *mainpage.md*).
 
 
 ## Acknowledgements  
+
+The code in modspainv.f90 is based on code originally written by Karin Meyer
+(didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran). The incorporated and
+modified code is re-licensed under the MIT license with express permission from
+Karin Meyer. We are grateful for her permission to use and adapt this work.
+
 This library was inspired by several sources:  
 
 
