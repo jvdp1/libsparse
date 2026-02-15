@@ -6,7 +6,11 @@
 !Support of sparse inverse of SPSD matrices by implementing the S. D. Kachman modifications
 !(https://www.ars.usda.gov/ARSUserFiles/80420530/MTDFREML/MTDFMan.pdf ; Chapter 6)
 
-!Rewritten for my purposes
+!The code in modspainv.f90 is based on code originally written by Karin Meyer
+!(didgeridoo.une.edu.au/womwiki/doku.php?id=fortran:fortran). The incorporated and 
+!modified code is re-licensed under the MIT license with express permission from
+!Karin Meyer. We are grateful for her permission to use and adapt this work.
+
 
 module modspainv
 #if (_DP==0)

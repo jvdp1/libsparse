@@ -92,40 +92,40 @@ contains
   allocate (link(neqns), source=0)
   allocate (temp(neqns), source=0.0_wp)
   iflag = 0
-!c        --------------------------------------------
-!c        compute column l(*,j) for j = 1,...., neqns.
-!c        --------------------------------------------
+  !--------------------------------------------
+  !compute column l(*,j) for j = 1,...., neqns.
+  !--------------------------------------------
   do j = 1, neqns
-!c           -------------------------------------------
-!c           for each column l(*,k) that affects l(*,j).
-!c           -------------------------------------------
+   !-------------------------------------------
+   !for each column l(*,k) that affects l(*,j).
+   !-------------------------------------------
    diagj = 0.0d0
    newk = link(j)
    k = newk
    do while (k /= 0)
     newk = link(k)
-!c              ---------------------------------------
-!c              outer product modification of l(*,j) by
-!c              l(*,k) starting at first(k) of l(*,k).
-!c              ---------------------------------------
+    !---------------------------------------
+    !outer product modification of l(*,j) by
+    !l(*,k) starting at first(k) of l(*,k).
+    !---------------------------------------
     kfirst = first(k)
     ljk = lnz(kfirst)
     diagj = diagj + ljk*ljk
     istrt = kfirst + 1
     istop = xlnz(k + 1) - 1
     if (istop >= istrt) then
-!c                 ------------------------------------------
-!c                 before modification, update vectors first,
-!c                 and link for future modification steps.
-!c                 ------------------------------------------
+     !------------------------------------------
+     !before modification, update vectors first,
+     !and link for future modification steps.
+     !------------------------------------------
      first(k) = istrt
      i = xnzsub(k) + (kfirst - xlnz(k)) + 1
      isub = nzsub(i)
      link(k) = link(isub)
      link(isub) = k
-!c                 ---------------------------------------
-!c                 the actual mod is saved in vector temp.
-!c                 ---------------------------------------
+     !---------------------------------------
+     !the actual mod is saved in vector temp.
+     !---------------------------------------
      do ii = istrt, istop
       isub = nzsub(i)
       temp(isub) = temp(isub) + lnz(ii)*ljk
@@ -134,23 +134,23 @@ contains
     end if
     k = newk
    end do
-!c           ----------------------------------------------
-!c           apply the modifications accumulated in temp to
-!c           column l(*,j).
-!c           ----------------------------------------------
+   !----------------------------------------------
+   !apply the modifications accumulated in temp to
+   !column l(*,j).
+   !----------------------------------------------
    diagj = diag(j) - diagj
    if (diag(j) < tol) then
-!c              ------------------------------------------------------
-!c              error - zero diagonal element
-!c              ------------------------------------------------------
+    !------------------------------------------------------
+    !error - zero diagonal element
+    !------------------------------------------------------
     diagj = 0.d0
     diag(j) = 0.d0
     iflag = iflag + 1
    else
     if (diagj < tol*diag(j)) then
-!c              ------------------------------------------------------
-!c              error - zero or negative square root in factorization.
-!c              ------------------------------------------------------
+     !------------------------------------------------------
+     !error - zero or negative square root in factorization.
+     !------------------------------------------------------
      diagj = 0.d0
      diag(j) = 0.d0
      iflag = iflag + 1
