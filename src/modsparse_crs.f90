@@ -1533,11 +1533,19 @@ module subroutine getlogdetchol_crs(sparse, logdet, rank)
 
  integer::i,j,n
 
+ if (.not.sparse%isdecomposed()) then
+  logdet=-1._wp
+  rank = -1
+  return
+ endif
+
  n = size(sparse%ia) - 1
 
  logdet=0._wp
+ rank = n
+
  row: do i = 1, n
-   column: do j = sparse%ia(i)+1, sparse%ia(i+1)-1
+   column: do j = sparse%ia(i), sparse%ia(i+1)-1
     if (sparse%ja(j).ne.i) cycle column
     if (sparse%a(j).le.epsilon(0._wp)) then
      rank = rank - 1
