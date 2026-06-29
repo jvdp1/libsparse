@@ -1525,4 +1525,31 @@ pure module subroutine setdecomposed_crs(sparse,ll)
 
 end subroutine
 
+!**GET LOG-DETERMINANT OF A CHOLESKY DECOMPOSITION
+module subroutine getlogdetchol_crs(sparse, logdet, rank)
+ class(crssparse),intent(in)::sparse
+ real(kind=wp),intent(out)::logdet
+ integer,intent(out)::rank
+
+ integer::i,j,n
+
+ n = size(sparse%ia) - 1
+
+ logdet=0._wp
+ row: do i = 1, n
+   column: do j = sparse%ia(i)+1, sparse%ia(i+1)-1
+    if (sparse%ja(j).ne.i) cycle column
+    if (sparse%a(j).le.epsilon(0._wp)) then
+     rank = rank - 1
+    else
+     logdet = logdet + log10(sparse%a(j))
+    endif
+    cycle row
+  enddo column
+ enddo row
+
+ logdet = 2.d0 * logdet
+ 
+end subroutine getlogdetchol_crs
+
 end submodule
