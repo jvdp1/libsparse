@@ -1,10 +1,6 @@
 submodule (modsparse) modsparse_crs
  use modrandom, only: setseed, snorm=>rand_stdnormal
- use modsparse_mkl, only: pardisoinit, pardiso &
-                          , mkl_scsrmv, mkl_dcsrmv &
-                          , mkl_scsrmm, mkl_dcsrmm &
-                          , mkl_scsrtrsv, mkl_dcsrtrsv &
-                          , mkl_scsrsymv, mkl_dcsrsymv
+ use modsparse_mkl, only: pardisoinit, pardiso
  use modsparse_inv, only: get_chol, get_ichol, get_spainv
 #if (_PARDISO==1)
  use modvariablepardiso, only: checkpardiso, pardiso_variable
@@ -251,11 +247,7 @@ module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
  endif
 
  do i = 1, ngibbs
-#if(_DP==0)
-  call mkl_scsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
-#else
-  call mkl_dcsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
-#endif
+  call csrsymv_wp(n, a, sparse%ia, sparse%ja, xt, x)
   x = -1 * x
   do j=1,n
    x(j) = w(j) * x(j)
@@ -339,15 +331,9 @@ module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
 
  matdescra(4)='F'
 
-#if(_DP==0)
- call mkl_scsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
+ call csrmv_wp(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
                   ,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1)&
                   ,x,val,y)
-#else
- call mkl_dcsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
-                  ,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1)&
-                  ,x,val,y)
-#endif
 
 end subroutine
 
@@ -382,17 +368,10 @@ module subroutine multgenm_csr(sparse,alpha,trans,x,val,y)
 
  matdescra(4)='F'
 
-#if(_DP==0)
- call mkl_scsrmm(trans,sparse%dim1,size(y,2),sparse%dim2,&
+ call csrmm_wp(trans,sparse%dim1,size(y,2),sparse%dim2,&
                  alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),&
-                 x,size(x,1),&
-                 val,y,size(y,1))
-#else
- call mkl_dcsrmm(trans,sparse%dim1,size(y,2),sparse%dim2,&
-                 alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),&
-                 x,size(x,1),&
-                 val,y,size(y,1))
-#endif
+                 x,&
+                 val,y)
 
 end subroutine
 
@@ -1193,22 +1172,14 @@ module subroutine isolve_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if(_DP==0)
- call mkl_scsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
-#else
- call mkl_dcsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
-#endif
+ call csrtrsv_wp('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'ISOLVE CRS 1st triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
 #endif
 
-#if(_DP==0)
- call mkl_scsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
-#else
- call mkl_dcsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
-#endif
+ call csrtrsv_wp('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'ISOLVE CRS 2nd triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
@@ -1253,11 +1224,7 @@ module subroutine solveldlt_s_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if(_DP==0)
- call mkl_scsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
-#else
- call mkl_dcsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
-#endif
+ call csrtrsv_wp('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
  !$ t2=omp_get_wtime()
@@ -1275,11 +1242,7 @@ module subroutine solveldlt_s_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if(_DP==0)
- call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
-#else
- call mkl_dcsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
-#endif
+ call csrtrsv_wp('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'SOLVE LDLt CRS 2nd triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
@@ -1559,5 +1522,159 @@ module subroutine getlogdetchol_crs(sparse, logdet, rank)
  logdet = 2.d0 * logdet
  
 end subroutine getlogdetchol_crs
+
+!**PRIVATE SPARSE BLAS HELPERS (replace deprecated MKL routines)
+
+! Symmetric CSR matrix-vector product: y = A*x
+! Upper triangular part stored; diagonal may be zero
+subroutine csrsymv_wp(n, a, ia, ja, x, y)
+ integer, intent(in) :: n
+ real(kind=wp), intent(in) :: a(:), x(:)
+ integer(kind=int32), intent(in) :: ia(:), ja(:)
+ real(kind=wp), intent(out) :: y(:)
+ integer :: i, k
+ y = 0._wp
+ do i = 1, n
+  do k = ia(i), ia(i+1)-1
+   y(i) = y(i) + a(k) * x(ja(k))
+   if (ja(k) /= i) y(ja(k)) = y(ja(k)) + a(k) * x(i)
+  end do
+ end do
+end subroutine csrsymv_wp
+
+! Upper triangular CSR solve: op(A)*y = x
+! Diagonal is first entry in each row (sorted CSR assumed)
+subroutine csrtrsv_wp(uplo, transa, diag, m, a, ia, ja, x, y)
+ character(len=1), intent(in) :: uplo, transa, diag
+ integer, intent(in) :: m
+ real(kind=wp), intent(in) :: a(:), x(:)
+ integer(kind=int32), intent(in) :: ia(:), ja(:)
+ real(kind=wp), intent(out) :: y(:)
+ integer :: i, k
+ y = x
+ if (transa == 'N' .or. transa == 'n') then
+  ! Solve U*y = x: backward substitution
+  do i = m, 1, -1
+   do k = ia(i)+1, ia(i+1)-1
+    y(i) = y(i) - a(k) * y(ja(k))
+   end do
+   if (diag == 'N' .or. diag == 'n') y(i) = y(i) / a(ia(i))
+  end do
+ else
+  ! Solve U^T*y = x: forward substitution
+  do i = 1, m
+   if (diag == 'N' .or. diag == 'n') y(i) = y(i) / a(ia(i))
+   do k = ia(i)+1, ia(i+1)-1
+    y(ja(k)) = y(ja(k)) - a(k) * y(i)
+   end do
+  end do
+ end if
+end subroutine csrtrsv_wp
+
+! CSR matrix-vector product: y = beta*y + alpha*op(A)*x
+subroutine csrmv_wp(transa, m, k, alpha, matdescra, a, ja, pntrb, pntre, x, beta, y)
+ character(len=1), intent(in) :: transa
+ integer, intent(in) :: m, k
+ real(kind=wp), intent(in) :: alpha, beta
+ character(len=1), intent(in) :: matdescra(6)
+ real(kind=wp), intent(in) :: a(:), x(:)
+ integer(kind=int32), intent(in) :: ja(:), pntrb(:), pntre(:)
+ real(kind=wp), intent(inout) :: y(:)
+ integer :: i, j
+ if (transa == 'N' .or. transa == 'n') then
+  y(1:m) = beta * y(1:m)
+  select case (matdescra(1))
+  case ('G', 'g', 'T', 't')
+   do i = 1, m
+    do j = pntrb(i), pntre(i)-1
+     y(i) = y(i) + alpha * a(j) * x(ja(j))
+    end do
+   end do
+  case ('S', 's')
+   do i = 1, m
+    do j = pntrb(i), pntre(i)-1
+     y(i) = y(i) + alpha * a(j) * x(ja(j))
+     if (ja(j) /= i) y(ja(j)) = y(ja(j)) + alpha * a(j) * x(i)
+    end do
+   end do
+  end select
+ else
+  select case (matdescra(1))
+  case ('S', 's')
+   ! Symmetric: A^T = A
+   y(1:m) = beta * y(1:m)
+   do i = 1, m
+    do j = pntrb(i), pntre(i)-1
+     y(i) = y(i) + alpha * a(j) * x(ja(j))
+     if (ja(j) /= i) y(ja(j)) = y(ja(j)) + alpha * a(j) * x(i)
+    end do
+   end do
+  case ('G', 'g', 'T', 't')
+   y(1:k) = beta * y(1:k)
+   do i = 1, m
+    do j = pntrb(i), pntre(i)-1
+     y(ja(j)) = y(ja(j)) + alpha * a(j) * x(i)
+    end do
+   end do
+  end select
+ end if
+end subroutine csrmv_wp
+
+! CSR matrix-dense matrix product: c = beta*c + alpha*op(A)*b
+subroutine csrmm_wp(transa, m, n, k, alpha, matdescra, a, ja, pntrb, pntre, b, beta, c)
+ character(len=1), intent(in) :: transa
+ integer, intent(in) :: m, n, k
+ real(kind=wp), intent(in) :: alpha, beta
+ character(len=1), intent(in) :: matdescra(6)
+ real(kind=wp), intent(in) :: a(:), b(:,:)
+ integer(kind=int32), intent(in) :: ja(:), pntrb(:), pntre(:)
+ real(kind=wp), intent(inout) :: c(:,:)
+ integer :: i, j, p
+ if (transa == 'N' .or. transa == 'n') then
+  c(1:m, 1:n) = beta * c(1:m, 1:n)
+  select case (matdescra(1))
+  case ('G', 'g', 'T', 't')
+   do j = 1, n
+    do i = 1, m
+     do p = pntrb(i), pntre(i)-1
+      c(i,j) = c(i,j) + alpha * a(p) * b(ja(p),j)
+     end do
+    end do
+   end do
+  case ('S', 's')
+   do j = 1, n
+    do i = 1, m
+     do p = pntrb(i), pntre(i)-1
+      c(i,j) = c(i,j) + alpha * a(p) * b(ja(p),j)
+      if (ja(p) /= i) c(ja(p),j) = c(ja(p),j) + alpha * a(p) * b(i,j)
+     end do
+    end do
+   end do
+  end select
+ else
+  select case (matdescra(1))
+  case ('S', 's')
+   ! Symmetric: A^T = A
+   c(1:m, 1:n) = beta * c(1:m, 1:n)
+   do j = 1, n
+    do i = 1, m
+     do p = pntrb(i), pntre(i)-1
+      c(i,j) = c(i,j) + alpha * a(p) * b(ja(p),j)
+      if (ja(p) /= i) c(ja(p),j) = c(ja(p),j) + alpha * a(p) * b(i,j)
+     end do
+    end do
+   end do
+  case ('G', 'g', 'T', 't')
+   c(1:k, 1:n) = beta * c(1:k, 1:n)
+   do j = 1, n
+    do i = 1, m
+     do p = pntrb(i), pntre(i)-1
+      c(ja(p),j) = c(ja(p),j) + alpha * a(p) * b(i,j)
+     end do
+    end do
+   end do
+  end select
+ end if
+end subroutine csrmm_wp
 
 end submodule
