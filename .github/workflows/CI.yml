@@ -26,15 +26,12 @@ jobs:
 #          - {compiler: gcc, version: 11}
 #          - {compiler: gcc, version: 12}
 #          - {compiler: gcc, version: 13}
-          - {compiler: intel, version: '2024.2'}
-          - {compiler: intel, version: '2024.1'}
-          - {compiler: intel-classic, version: '2021.9'}
+          - {compiler: intel, version: '2024.2', mkl: '2024.2'}
+          - {compiler: intel, version: '2024.1', mkl: '2024.1'}
+          - {compiler: intel-classic, version: '2021.9', mkl: '2021.4.0'}
         build: [cmake]
     env:
       BUILD_DIR: ${{ matrix.build == 'cmake' && 'build' || '.' }}
-      MKL_PACKAGES: >-
-        intel-oneapi-mkl
-        intel-oneapi-mkl-devel
 
     steps:
     - name: Checkout code
@@ -57,8 +54,11 @@ jobs:
 
     - name: Install Intel OneAPI MKL
       run: |
-        sudo apt-get install ${MKL_PACKAGES}
-        source /opt/intel/oneapi/mkl/latest/env/vars.sh
+        sudo apt-get update
+        sudo apt-get install \
+          intel-oneapi-mkl-${{ matrix.toolchain.mkl }} \
+          intel-oneapi-mkl-devel-${{ matrix.toolchain.mkl }}
+        source /opt/intel/oneapi/mkl/${{ matrix.toolchain.mkl }}/env/vars.sh
         printenv >> $GITHUB_ENV
 
     - name: Configure with CMake
