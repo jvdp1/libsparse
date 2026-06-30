@@ -55,6 +55,7 @@ subroutine collect_crs(testsuite)
     , new_unittest("crs ichol_failed", test_ichol_failed, should_fail = .true.) &
     , new_unittest("crs isolve", test_isolve) &
     , new_unittest("crs ldlt", test_ldlt) &
+    , new_unittest("crs logdet", test_logdet) &
     , new_unittest("crs multbyv_n_n_n", test_multbyv_n_n_n) &
     , new_unittest("crs multbyv_n_n_y", test_multbyv_n_n_y) &
     , new_unittest("crs multbyv_n_y_n", test_multbyv_n_y_n) &
@@ -1137,6 +1138,93 @@ subroutine test_ldlt(error)
  call check(error, all(abs(mat(permf(nrow), permf(nrow)) - & 
                        matmul(transpose(mat_l), matmul(mat_d, mat_l))) < tol_wp)&
                  , 'LDLt_permf')
+
+end subroutine
+
+!Logdet
+subroutine test_logdet(error)
+ type(error_type), allocatable, intent(out) :: error
+
+ integer :: i
+
+ integer, parameter :: nrow = 6
+ integer, parameter :: ncol = nrow
+ integer, parameter :: perm(nrow) = [(i, i =nrow, 1, -1)]
+
+ integer :: rank
+ integer, allocatable :: iat(:), jat(:)
+ real(wp), allocatable :: at(:)
+ real(wp) :: logdet
+ real(wp) :: mat(nrow, ncol)
+ real(wp) :: matchol(nrow, ncol)
+ type(coosparse) :: coo
+ type(crssparse) :: crs
+
+ coo = coosparse(nrow, n = ncol, lupper = .true.,  unlog = sparse_unit)
+ call coo%setsymmetric()
+
+! call addval(coo, coo%getdim(1), coo%getdim(2), [ia, 2], [ja, 2]&
+!             , merge([a, 22._wp] + 1000, [a, 22._wp], [ia, 2] ==  [ja, 2]))
+ call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+
+ crs = coo
+
+ call getija_crs(crs, iat, jat, at, mat)
+ if(verbose)call printmat(mat)
+
+ !Complete Cholesky decomposition
+ call check(error, crs%isdecomposed(), .false., 'LogDet Chol - wrong status 0')
+ if(allocated(error))return
+
+ call crs%setpermutation(perm)
+ call crs%chol()
+
+ call check(error, crs%isdecomposed(), .true., 'LogDet Chol - wrong status 1')
+ if(allocated(error))return
+
+ deallocate(iat); deallocate(jat); deallocate(at)
+ call getija_crs(crs, iat, jat, at, matchol)
+ 
+ call check(error, all(abs(mat(perm, perm) - & 
+                       matmul(transpose(matchol), matchol)) < tol_wp)&
+                 , 'LogDet Chol')
+ if(allocated(error))return
+
+ call crs%logdet(logdet, rank)
+
+ call check(error, abs(logdet - 12.562395463193_wp) < tol_wp, 'LogDet Chol - wrong logdet')
+ if(allocated(error))return
+
+ call check(error, rank, 5, 'LogDet Chol - wrong rank')
+ if(allocated(error))return
+
+
+ !Complete Cholesky decomposition
+ crs = coo
+
+ call check(error, crs%isdecomposed(), .false., 'LogDet Chol_permf - wrong status 2')
+ if(allocated(error))return
+
+ call crs%setpermutation(permf(nrow))
+ call crs%chol()
+
+ call check(error, crs%isdecomposed(), .true., 'LogDet Chol_permf - wrong status 3')
+ if(allocated(error))return
+
+ deallocate(iat); deallocate(jat); deallocate(at)
+ call getija_crs(crs, iat, jat, at, matchol)
+ 
+ call check(error, all(abs(mat(permf(nrow), permf(nrow)) - & 
+                       matmul(transpose(matchol), matchol)) < tol_wp)&
+                 , 'LogDet Chol_permf')
+
+ call crs%logdet(logdet, rank)
+
+ call check(error, abs(logdet - 12.562395463193_wp) < tol_wp, 'LogDet Chol - wrong logdet')
+ if(allocated(error))return
+
+ call check(error, rank, 5, 'LogDet Chol_permf - wrong rank')
+ if(allocated(error))return
 
 end subroutine
 

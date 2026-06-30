@@ -466,6 +466,8 @@ module modsparse
   procedure,public::add=>add_crs
   !> @brief Computes and replaces the sparse matrix by the (complete) Cholesky factor
   procedure,public::chol=>getchol_crs
+  !> @brief Computes the log-determinant using a (complete) Cholesky factor
+  procedure,public::logdet=>getlogdetchol_crs
   !> @brief Deallocates the sparse matrix and sets to default values
   procedure,public::destroy=>destroy_crs
   procedure::diag_vect_crs
@@ -642,6 +644,12 @@ module modsparse
   module subroutine getchol_crs(sparse,minsizenode)
    class(crssparse),intent(inout)::sparse
    integer(kind=int32),intent(in),optional::minsizenode
+  end subroutine
+  !**GET LOG-DETERMINANT OF A CHOLESKY DECOMPOSITION
+  module subroutine getlogdetchol_crs(sparse, logdet, rank)
+   class(crssparse),intent(in)::sparse
+   real(kind=wp),intent(out)::logdet
+   integer,intent(out)::rank
   end subroutine
   !**GET LDLt DECOMPOSITION
   module subroutine getldlt_crs(sparse,minsizenode)
