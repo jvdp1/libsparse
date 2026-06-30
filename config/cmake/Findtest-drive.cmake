@@ -136,7 +136,7 @@ foreach(method ${${_pkg}_FIND_METHOD})
     FetchContent_Declare(
       "${_lib}"
       GIT_REPOSITORY "${_url}"
-      GIT_TAG "HEAD"
+      GIT_TAG "e8b7ca492c647ed384c9845d2caed04192af7d02"
       )
     FetchContent_MakeAvailable("${_lib}")
 
