@@ -94,6 +94,8 @@ subroutine csrmm(transa, m, n, k, alpha, matdescra, a, ja, pntrb, pntre, b, ldb,
      end do
     end do
    end do
+  case default
+   error stop 'csrmm: unsupported matdescra(1)'
   end select
 
  else
@@ -119,6 +121,8 @@ subroutine csrmm(transa, m, n, k, alpha, matdescra, a, ja, pntrb, pntre, b, ldb,
      end do
     end do
    end do
+  case default
+   error stop 'csrmm: unsupported matdescra(1)'
   end select
 
  end if
