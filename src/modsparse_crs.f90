@@ -1,10 +1,14 @@
 submodule (modsparse) modsparse_crs
  use modrandom, only: setseed, snorm=>rand_stdnormal
- use modsparse_mkl, only: pardisoinit, pardiso &
-                          , mkl_scsrmv, mkl_dcsrmv &
+ use modsparse_mkl, only: pardisoinit, pardiso
+#if _MKL_SPARSE
+ use modsparse_mkl, only: mkl_scsrmv, mkl_dcsrmv &
                           , mkl_scsrmm, mkl_dcsrmm &
                           , mkl_scsrtrsv, mkl_dcsrtrsv &
                           , mkl_scsrsymv, mkl_dcsrsymv
+#else
+ use modsparse_helpers, only: csrsymv, csrmm, csrmv, csrtrsv
+#endif
  use modsparse_inv, only: get_chol, get_ichol, get_spainv
 #if (_PARDISO==1)
  use modvariablepardiso, only: checkpardiso, pardiso_variable
@@ -251,10 +255,14 @@ module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
  endif
 
  do i = 1, ngibbs
+#if _MKL_SPARSE
 #if(_DP==0)
   call mkl_scsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
 #else
   call mkl_dcsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
+#endif
+#else
+  call csrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
 #endif
   x = -1 * x
   do j=1,n
@@ -339,12 +347,18 @@ module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
 
  matdescra(4)='F'
 
+#if _MKL_SPARSE
 #if(_DP==0)
  call mkl_scsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
                   ,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1)&
                   ,x,val,y)
 #else
  call mkl_dcsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
+                  ,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1)&
+                  ,x,val,y)
+#endif
+#else
+ call csrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
                   ,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1)&
                   ,x,val,y)
 #endif
@@ -382,6 +396,7 @@ module subroutine multgenm_csr(sparse,alpha,trans,x,val,y)
 
  matdescra(4)='F'
 
+#if _MKL_SPARSE
 #if(_DP==0)
  call mkl_scsrmm(trans,sparse%dim1,size(y,2),sparse%dim2,&
                  alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),&
@@ -392,6 +407,12 @@ module subroutine multgenm_csr(sparse,alpha,trans,x,val,y)
                  alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),&
                  x,size(x,1),&
                  val,y,size(y,1))
+#endif
+#else
+ call csrmm(trans,sparse%dim1,size(y,2),sparse%dim2,&
+            alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),&
+            x,size(x,1),&
+            val,y,size(y,1))
 #endif
 
 end subroutine
@@ -1193,10 +1214,14 @@ module subroutine isolve_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
+#if _MKL_SPARSE
 #if(_DP==0)
  call mkl_scsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #else
  call mkl_dcsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#endif
+#else
+  call csrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #endif
 
 #if (_VERBOSE>0)
@@ -1204,10 +1229,14 @@ module subroutine isolve_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
+#if _MKL_SPARSE
 #if(_DP==0)
  call mkl_scsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #else
  call mkl_dcsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+#endif
+#else
+ call csrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #endif
 
 #if (_VERBOSE>0)
@@ -1253,10 +1282,14 @@ module subroutine solveldlt_s_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
+#if _MKL_SPARSE
 #if(_DP==0)
  call mkl_scsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #else
  call mkl_dcsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
+#endif
+#else
+ call csrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #endif
 #if (_VERBOSE>0)
  !$ write(sparse%unlog,'(1x,a,t30,a,f0.5)')'SOLVE LDLt CRS 1st triangular solve',': Elapsed time (s) = ',omp_get_wtime()-t2
@@ -1275,10 +1308,14 @@ module subroutine solveldlt_s_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
+#if _MKL_SPARSE
 #if(_DP==0)
  call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #else
  call mkl_dcsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
+#endif
+#else
+ call csrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #endif
 
 #if (_VERBOSE>0)

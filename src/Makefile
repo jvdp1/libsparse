@@ -20,6 +20,7 @@ OBJ = modcommon.o \
       modsparse_inv_int.o \
       modsparse_inv.o  smbfct.o \
       $(OBJPARDISO) $(OBJMETIS) $(OBJSPAINV) \
+      modsparse_helpers.o \
       modsparse_mkl.o modsparse_hash.o modsparse.o modsparse_gen.o modsparse_coo.o \
       modsparse_crs64.o \
       modsparse_crs.o modsparse_ll.o modsparse_metisgraph.o
@@ -36,7 +37,7 @@ libsparse.a: $(OBJ)
 
 #dependencies
 modsparse_coo.o: modsparse.o modsparse_hash.o
-modsparse_crs.o: modsparse_mkl.o modsparse.o $(OBJSPAINV) $(OBJPARDISO) $(OBJMETIS)
+modsparse_crs.o: modsparse_mkl.o modsparse.o modsparse_helpers.o $(OBJSPAINV) $(OBJPARDISO) $(OBJMETIS)
 modsparse_crs64.o: modsparse.o $(OBJPARDISO)
 ifeq ($(SPAINVENABLE),1)
 modsparse_inv.o: modspainv.o smbfct.o modsparse_inv_int.o
