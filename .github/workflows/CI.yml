@@ -28,7 +28,7 @@ jobs:
 #          - {compiler: gcc, version: 13}
           - {compiler: intel, version: '2024.2', mkl: '2024.2'}
           - {compiler: intel, version: '2024.1', mkl: '2024.1'}
-          - {compiler: intel, version: '2026.1', mkl: '2026.1'}
+          - {compiler: intel, version: latest, mkl: '2026.1'}
           - {compiler: intel-classic, version: '2021.9', mkl: '2021.4.0'}
         build: [cmake]
     env:
