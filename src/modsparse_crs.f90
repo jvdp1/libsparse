@@ -1,7 +1,7 @@
 submodule (modsparse) modsparse_crs
  use modrandom, only: setseed, snorm=>rand_stdnormal
  use modsparse_mkl, only: pardisoinit, pardiso
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
  use modsparse_mkl, only: mkl_scsrmv, mkl_dcsrmv &
                           , mkl_scsrmm, mkl_dcsrmm &
                           , mkl_scsrtrsv, mkl_dcsrtrsv &
@@ -255,7 +255,7 @@ module subroutine harville_crs(sparse, ngibbs, nburn, diaginv, seed)
  endif
 
  do i = 1, ngibbs
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
   call mkl_scsrsymv('U', n, a, sparse%ia, sparse%ja, xt, x)
 #else
@@ -347,7 +347,7 @@ module subroutine multgenv_csr(sparse,alpha,trans,x,val,y)
 
  matdescra(4)='F'
 
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
  call mkl_scsrmv(trans,sparse%dim1,sparse%dim2,alpha,matdescra&
                   ,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1)&
@@ -396,7 +396,7 @@ module subroutine multgenm_csr(sparse,alpha,trans,x,val,y)
 
  matdescra(4)='F'
 
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
  call mkl_scsrmm(trans,sparse%dim1,size(y,2),sparse%dim2,&
                  alpha,matdescra,sparse%a,sparse%ja,sparse%ia(1:sparse%dim1),sparse%ia(2:sparse%dim1+1),&
@@ -1214,7 +1214,7 @@ module subroutine isolve_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
  call mkl_scsrtrsv('U','T','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #else
@@ -1229,7 +1229,7 @@ module subroutine isolve_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
  call mkl_scsrtrsv('U','N','N',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #else
@@ -1282,7 +1282,7 @@ module subroutine solveldlt_s_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
  call mkl_scsrtrsv('U','T','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x_,x)
 #else
@@ -1308,7 +1308,7 @@ module subroutine solveldlt_s_crs(sparse,x,y)
  !$ t2=omp_get_wtime()
 #endif
 
-#if _MKL_SPARSE
+#if (_MKL_SPARSE==1)
 #if(_DP==0)
  call mkl_scsrtrsv('U','N','U',sparse%getdim(1),sparse%a,sparse%ia,sparse%ja,x,x_)
 #else
