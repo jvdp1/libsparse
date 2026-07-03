@@ -26,9 +26,10 @@ jobs:
 #          - {compiler: gcc, version: 11}
 #          - {compiler: gcc, version: 12}
 #          - {compiler: gcc, version: 13}
-          - {compiler: intel, version: '2024.2', mkl: '2024.2'}
-          - {compiler: intel, version: '2024.1', mkl: '2024.1'}
-          - {compiler: intel-classic, version: '2021.9', mkl: '2021.4.0'}
+          - {compiler: intel, version: '2024.2', mkl: '2024.2', mkl_sparse: '1'}
+          - {compiler: intel, version: '2024.1', mkl: '2024.1', mkl_sparse: '1'}
+          - {compiler: intel, version: latest, mkl: '2026.1', mkl_sparse: '0'}
+          - {compiler: intel-classic, version: '2021.9', mkl: '2021.4.0', mkl_sparse: '1'}
         build: [cmake]
     env:
       BUILD_DIR: ${{ matrix.build == 'cmake' && 'build' || '.' }}
@@ -46,7 +47,7 @@ jobs:
       run: pip install --upgrade fypp ninja
 
     - name: Setup Fortran compiler
-      uses: fortran-lang/setup-fortran@v1.6.1
+      uses: fortran-lang/setup-fortran@v1.9.2
       id: setup-fortran
       with:
         compiler: ${{ matrix.toolchain.compiler }}
@@ -65,6 +66,7 @@ jobs:
       if: ${{ contains(matrix.build, 'cmake') }}
       run: >-
         cmake -Wdev
+        -DCMAKE_MKL_SPARSE=${{ matrix.toolchain.mkl_sparse }}
         -DCMAKE_SPAINV=0
         -DCMAKE_BUILD_TYPE=Debug
         -DCMAKE_INSTALL_PREFIX=$PWD/_dist
