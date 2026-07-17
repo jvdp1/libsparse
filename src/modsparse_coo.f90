@@ -531,7 +531,7 @@ recursive module subroutine set_coo(sparse,row,col,val)
   !1. Copy matrix
   sptmp=coosparse(sparse%dim1,sparse%dim2,int(sparse%nel*1.5_real64, int64))
   do i8=1_int64,sparse%nel
-   call sptmp%add(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
+   call sptmp%set(sparse%ij(1,i8),sparse%ij(2,i8),sparse%a(i8))
   enddo
   !2. reallocate matrix using move_alloc
   write(sparse%unlog,'(2(a,i0))')'  Current | New size COO: ',sparse%nel,' | ',sptmp%nel
