@@ -109,7 +109,7 @@ module function xAy_gen(sparse,x,y) result(rv)
  select type(sparse)
    type is(coosparse)
     lsym=sparse%lsymmetric .and. sparse%lupperstorage
-    !$omp do reduction(+:rv)
+    !$omp parallel do reduction(+:rv)
     do ic=1_int64,sparse%nel
      if(sparse%ij(1,ic).eq.0)cycle
      i=sparse%ij(1,ic)
@@ -117,17 +117,17 @@ module function xAy_gen(sparse,x,y) result(rv)
      rv=rv+sparse%a(ic)*x(i)*y(c)
      if(lsym.and.i.ne.c) rv=rv+sparse%a(ic)*x(c)*y(i)
     enddo
-    !$omp enddo
+    !$omp end parallel do
    type is(crssparse)
     lsym=sparse%lsymmetric .and. sparse%lupperstorage
-    !$omp do reduction(+:rv)
+    !$omp parallel do reduction(+:rv)
     do i=1,sparse%dim1
      do c=sparse%ia(i),sparse%ia(i+1)-1
       rv=rv+sparse%a(c)*(x(i)*y(sparse%ja(c))&
             +merge(x(sparse%ja(c))*y(i),0._wp,lsym.and.i.ne.sparse%ja(c)))
      enddo
     enddo
-    !$omp enddo
+    !$omp end parallel do
   class default
    write(sparse%unlog,'(a)')' ERROR (xAy): unsupported format'
    call sparse%printstats
@@ -190,7 +190,7 @@ module function traceproduct_gen(sparse,r1,r2,c1,c2,b) result(rv)
   select type(sparse)
    type is(coosparse)
     lsym=sparse%lsymmetric .and. sparse%lupperstorage
-    !$omp do reduction(+:rv)
+    !$omp parallel do reduction(+:rv)
     do ic=1_int64,sparse%nel
      if(sparse%ij(1,ic).eq.0)cycle
      j=sparse%ij(1,ic)
@@ -204,12 +204,12 @@ module function traceproduct_gen(sparse,r1,r2,c1,c2,b) result(rv)
       rv=rv+sparse%a(ic)*b(j-c1+1,k-r1+1)
      endif
     enddo
-    !$omp enddo
+    !$omp end parallel do
    type is(crssparse)
     lsym=sparse%lsymmetric .and. sparse%lupperstorage
     rmin=min(r1,c1)
     rmax=max(r2,c2)
-    !$omp do reduction(+:rv)
+    !$omp parallel do reduction(+:rv)
     do i=rmin,rmax
      do j=sparse%ia(i),sparse%ia(i+1)-1
       k=sparse%ja(j)
@@ -223,7 +223,7 @@ module function traceproduct_gen(sparse,r1,r2,c1,c2,b) result(rv)
       endif
      enddo
     enddo
-    !$omp enddo
+    !$omp end parallel do
    class default
     write(sparse%unlog,'(a)')' ERROR (traceproduct): unsupported format'
     call sparse%printstats
