@@ -84,6 +84,7 @@ end subroutine
 module function xAy_gen(sparse,x,y) result(rv)
  !x' A y (A need not be square; size(x)=rows, size(y)=cols)
  !Accumulates in-place over the stored non-zero elements (no dense A*y, O(nnz)).
+ !OpenMP parallel reduction over the independent entries.
  class(gen_sparse),intent(in)::sparse
  real(kind=wp),intent(in)::x(:)
  real(kind=wp),intent(in)::y(:)
@@ -106,28 +107,31 @@ module function xAy_gen(sparse,x,y) result(rv)
  !A stored element (i,k) contributes A(i,k) x(i) y(k); a symmetric matrix also
  !contributes its mirror A(k,i)=A(i,k), giving the extra A(i,k) x(k) y(i).
  select type(sparse)
-  type is(coosparse)
-   lsym=sparse%lsymmetric .and. sparse%lupperstorage
-   do ic=1_int64,sparse%nel
-    if(sparse%ij(1,ic).eq.0)cycle
-    i=sparse%ij(1,ic)
-    c=sparse%ij(2,ic)
-    rv=rv+sparse%a(ic)*x(i)*y(c)
-    if(lsym .and. i.ne.c)rv=rv+sparse%a(ic)*x(c)*y(i)
-   enddo
-  type is(crssparse)
-   lsym=sparse%lsymmetric .and. sparse%lupperstorage
-   do i=1,sparse%dim1
-    do c=sparse%ia(i),sparse%ia(i+1)-1
-     rv=rv+sparse%a(c)*x(i)*y(sparse%ja(c))
-     if(lsym .and. i.ne.sparse%ja(c))rv=rv+sparse%a(c)*x(sparse%ja(c))*y(i)
+   type is(coosparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    !$omp do reduction(+:rv)
+    do ic=1_int64,sparse%nel
+     if(sparse%ij(1,ic).eq.0)cycle
+     i=sparse%ij(1,ic)
+     c=sparse%ij(2,ic)
+     rv=rv+sparse%a(ic)*(x(i)*y(c)+merge(x(c)*y(i),0._wp,lsym.and.i.ne.c))
     enddo
-   enddo
+    !$omp enddo
+   type is(crssparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    !$omp do reduction(+:rv)
+    do i=1,sparse%dim1
+     do c=sparse%ia(i),sparse%ia(i+1)-1
+      rv=rv+sparse%a(c)*(x(i)*y(sparse%ja(c))&
+            +merge(x(sparse%ja(c))*y(i),0._wp,lsym.and.i.ne.sparse%ja(c)))
+     enddo
+    enddo
+    !$omp enddo
   class default
    write(sparse%unlog,'(a)')' ERROR (xAy): unsupported format'
    call sparse%printstats
    error stop
- end select
+  end select
 
 end function
 
@@ -182,44 +186,48 @@ module function traceproduct_gen(sparse,r1,r2,c1,c2,b) result(rv)
   error stop
  endif
 
- select type(sparse)
-  type is(coosparse)
-   lsym=sparse%lsymmetric .and. sparse%lupperstorage
-   do ic=1_int64,sparse%nel
-    if(sparse%ij(1,ic).eq.0)cycle
-    j=sparse%ij(1,ic)
-    k=sparse%ij(2,ic)
-    !stored element A(j,k), position (k-c1+1, j-r1+1) of b if within the block
-    if(j.ge.r1 .and. j.le.r2 .and. k.ge.c1 .and. k.le.c2)then
-     rv=rv+sparse%a(ic)*b(k-c1+1,j-r1+1)
-    endif
-    !symmetric mirror A(k,j), if stored as upper triangle
-    if(lsym .and. j.ne.k .and. k.ge.r1 .and. k.le.r2 .and. j.ge.c1 .and. j.le.c2)then
-     rv=rv+sparse%a(ic)*b(j-c1+1,k-r1+1)
-    endif
-   enddo
-  type is(crssparse)
-   lsym=sparse%lsymmetric .and. sparse%lupperstorage
-   rmin=min(r1,c1)
-   rmax=max(r2,c2)
-   do i=rmin,rmax
-    do j=sparse%ia(i),sparse%ia(i+1)-1
-     k=sparse%ja(j)
-     !stored element A(i,k), position (k-c1+1, i-r1+1) of b if within the block
-     if(i.ge.r1 .and. i.le.r2 .and. k.ge.c1 .and. k.le.c2)then
-      rv=rv+sparse%a(j)*b(k-c1+1,i-r1+1)
+  select type(sparse)
+   type is(coosparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    !$omp do reduction(+:rv)
+    do ic=1_int64,sparse%nel
+     if(sparse%ij(1,ic).eq.0)cycle
+     j=sparse%ij(1,ic)
+     k=sparse%ij(2,ic)
+     !stored element A(j,k), position (k-c1+1, j-r1+1) of b if within the block
+     if(j.ge.r1 .and. j.le.r2 .and. k.ge.c1 .and. k.le.c2)then
+      rv=rv+sparse%a(ic)*b(k-c1+1,j-r1+1)
      endif
-     !symmetric mirror A(k,i), if stored as upper triangle
-     if(lsym .and. i.ne.k .and. k.ge.r1 .and. k.le.r2 .and. i.ge.c1 .and. i.le.c2)then
-      rv=rv+sparse%a(j)*b(i-c1+1,k-r1+1)
+     !symmetric mirror A(k,j), if stored as upper triangle
+     if(lsym .and. j.ne.k .and. k.ge.r1 .and. k.le.r2 .and. j.ge.c1 .and. j.le.c2)then
+      rv=rv+sparse%a(ic)*b(j-c1+1,k-r1+1)
      endif
     enddo
-   enddo
-  class default
-   write(sparse%unlog,'(a)')' ERROR (traceproduct): unsupported format'
-   call sparse%printstats
-   error stop
- end select
+    !$omp enddo
+   type is(crssparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    rmin=min(r1,c1)
+    rmax=max(r2,c2)
+    !$omp do reduction(+:rv)
+    do i=rmin,rmax
+     do j=sparse%ia(i),sparse%ia(i+1)-1
+      k=sparse%ja(j)
+      !stored element A(i,k), position (k-c1+1, i-r1+1) of b if within the block
+      if(i.ge.r1 .and. i.le.r2 .and. k.ge.c1 .and. k.le.c2)then
+       rv=rv+sparse%a(j)*b(k-c1+1,i-r1+1)
+      endif
+      !symmetric mirror A(k,i), if stored as upper triangle
+      if(lsym .and. i.ne.k .and. k.ge.r1 .and. k.le.r2 .and. i.ge.c1 .and. i.le.c2)then
+       rv=rv+sparse%a(j)*b(i-c1+1,k-r1+1)
+      endif
+     enddo
+    enddo
+    !$omp enddo
+   class default
+    write(sparse%unlog,'(a)')' ERROR (traceproduct): unsupported format'
+    call sparse%printstats
+    error stop
+  end select
 
 end function
 
