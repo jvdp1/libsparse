@@ -114,7 +114,8 @@ module function xAy_gen(sparse,x,y) result(rv)
      if(sparse%ij(1,ic).eq.0)cycle
      i=sparse%ij(1,ic)
      c=sparse%ij(2,ic)
-     rv=rv+sparse%a(ic)*(x(i)*y(c)+merge(x(c)*y(i),0._wp,lsym.and.i.ne.c))
+     rv=rv+sparse%a(ic)*x(i)*y(c)
+     if(lsym.and.i.ne.c) rv=rv+sparse%a(ic)*x(c)*y(i)
     enddo
     !$omp enddo
    type is(crssparse)
