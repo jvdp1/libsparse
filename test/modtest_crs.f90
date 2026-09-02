@@ -661,6 +661,7 @@ subroutine test_traceproduct_crs(error)
   enddo
   call check(error, abs(crs%traceproduct(1, 4, 1, 4, b(1:4, 1:4))) < tol_wp&
            , more = 'crs traceproduct empty')
+  if(allocated(error))return
 
   !Case 6: CRS result equals COO result for the same input
   coo = coosparse(n, lupper = .true., unlog = sparse_unit)
