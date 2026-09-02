@@ -5,9 +5,10 @@ module modtest_coo
  use, intrinsic :: iso_fortran_env, only: int64, output_unit, wp => real64
 #endif
  use testdrive, only: new_unittest, unittest_type, error_type, check
- use modsparse, only: coosparse
- use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd&
-                       , addval => addval_coo, getmat, matcheck, printmat
+  use modsparse, only: coosparse
+  use modrandom, only: setseed, rand_stdnormal
+  use modtest_common, only: tol_wp, verbose, ia, ja, a, aspsd&
+                        , addval => addval_coo, getmat, matcheck, printmat
  implicit none
  private
 
@@ -60,6 +61,9 @@ subroutine collect_coo(testsuite)
     , new_unittest("coo multbymat_y_y_n", test_multbymat_y_y_n) &
     , new_unittest("coo multbymat_y_y_y", test_multbymat_y_y_y) &
     , new_unittest("coo multbymat_sym", test_multbymat_sym) &
+    , new_unittest("coo xAx", test_xAx_coo) &
+   , new_unittest("coo xAy", test_xAy_coo) &
+    , new_unittest("coo traceproduct", test_traceproduct_coo) &
     , new_unittest("coo nonzero", test_nonzero) &
     , new_unittest("coo nonzero_sym", test_nonzero_sym) &
     , new_unittest("coo scale", test_scale) &
@@ -1164,9 +1168,176 @@ subroutine test_submatrix_upper_full(error)
  call check(error, coosub%getdim(2), colend - colstart + 1, 'submatrix_dim2')
  if(allocated(error))return
 
- call check(error, all(getmat(coosub) == mat(rowstart:rowend, colstart:colend)) &
+  call check(error, all(getmat(coosub) == mat(rowstart:rowend, colstart:colend)) &
             , 'submatrix_upper_full')
 
 end subroutine
+
+!QUADRATIC FORM
+subroutine test_xAx_coo(error)
+  type(error_type), allocatable, intent(out) :: error
+
+  integer :: i
+  integer, parameter :: n = 6
+
+  type(coosparse) :: coo
+  real(wp) :: mat(n,n), x(n), expected, quad
+  real(wp) :: tol
+
+  !Known SPD matrix (aspsd + a(2,2)=202 => SPD)
+  coo = coosparse(n, lupper = .true., unlog = sparse_unit)
+  call coo%setsymmetric()
+  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+  call coo%add(2, 2, 202._wp)
+
+  mat = getmat(coo)
+
+  !fixed x
+  x = [1._wp, 2._wp, 3._wp, 4._wp, 5._wp, 6._wp]
+  quad = coo%xAx(x)
+  expected = dot_product(x, matmul(mat, x))
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(quad - expected) < tol, more = 'coo xAx fixed')
+  if(allocated(error))return
+
+  !random x
+  call setseed(42)
+  do i = 1, n
+    x(i) = rand_stdnormal()
+  enddo
+  quad = coo%xAx(x)
+  expected = dot_product(x, matmul(mat, x))
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(quad - expected) < tol, more = 'coo xAx random')
+  if(allocated(error))return
+
+  !empty matrix -> 0
+  coo = coosparse(4, unlog = sparse_unit)
+  call check(error, abs(coo%xAx([1._wp, 2._wp, -1._wp, 3._wp])) < tol_wp&
+           , more = 'coo xAx empty')
+
+end subroutine test_xAx_coo
+
+!BILINEAR FORM
+subroutine test_xAy_coo(error)
+  type(error_type), allocatable, intent(out) :: error
+
+  integer :: i
+  integer, parameter :: n = 6
+
+  type(coosparse) :: coo
+  real(wp) :: mat(n,n), x(n), y(n), expected, bilin
+  real(wp) :: tol
+
+  !Known SPD matrix (aspsd + a(2,2)=202 => SPD)
+  coo = coosparse(n, lupper = .true., unlog = sparse_unit)
+  call coo%setsymmetric()
+  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+  call coo%add(2, 2, 202._wp)
+
+  mat = getmat(coo)
+
+  !fixed x, y (x != y)
+  x = [1._wp, 2._wp, 3._wp, 4._wp, 5._wp, 6._wp]
+  y = [2._wp, 1._wp, 4._wp, 3._wp, 6._wp, 5._wp]
+  bilin = coo%xAy(x, y)
+  expected = dot_product(x, matmul(mat, y))
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(bilin - expected) < tol, more = 'coo xAy fixed')
+  if(allocated(error))return
+
+  !identity: xAx(x) == xAy(x, x)
+  call check(error, abs(coo%xAx(x) - coo%xAy(x, x)) < tol_wp&
+           , more = 'coo xAx identity xAy(x,x)')
+  if(allocated(error))return
+
+  !random x, y
+  call setseed(42)
+  do i = 1, n
+    x(i) = rand_stdnormal()
+    y(i) = rand_stdnormal()
+  enddo
+  bilin = coo%xAy(x, y)
+  expected = dot_product(x, matmul(mat, y))
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(bilin - expected) < tol, more = 'coo xAy random')
+  if(allocated(error))return
+
+  !empty matrix -> 0
+  coo = coosparse(4, unlog = sparse_unit)
+  call check(error, abs(coo%xAy([1._wp, 2._wp, -1._wp, 3._wp], [3._wp, -1._wp, 2._wp, 1._wp])) < tol_wp&
+           , more = 'coo xAy empty')
+
+end subroutine test_xAy_coo
+
+!TRACE OF A BLOCK PRODUCT
+subroutine test_traceproduct_coo(error)
+  type(error_type), allocatable, intent(out) :: error
+
+  integer :: id
+  integer, parameter :: n = 6
+
+  type(coosparse) :: coo
+  real(wp) :: mat(n,n), b(n,n), expected, result
+  real(wp) :: tol
+
+  !Known SPD matrix (aspsd + a(2,2)=202)
+  coo = coosparse(n, lupper = .true., unlog = sparse_unit)
+  call coo%setsymmetric()
+  call addval(coo, coo%getdim(1), coo%getdim(2), ia, ja, aspsd)
+  call coo%add(2, 2, 202._wp)
+
+  mat = getmat(coo)
+
+  !Case 1: whole-matrix block, b = identity => expected = trace(mat)
+  b = 0._wp
+  do id = 1, n
+    b(id, id) = 1._wp
+  enddo
+  expected = sum([(mat(id, id), id = 1, n)])
+  result = coo%traceproduct(1, n, 1, n, b)
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(result - expected) < tol, more = 'coo traceproduct whole I')
+  if(allocated(error))return
+
+  !Case 2: whole-matrix block, deterministic dense b
+  b = 0._wp
+  do id = 0, n*n - 1
+    b(mod(id, n) + 1, id/n + 1) = real(id, kind=wp)
+  enddo
+  expected = sum(mat * transpose(b))
+  result = coo%traceproduct(1, n, 1, n, b)
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(result - expected) < tol, more = 'coo traceproduct whole dense')
+  if(allocated(error))return
+
+  !Case 3: 2x2 block at (1:2, 1:2)
+  b(1, 1) = 1._wp; b(1, 2) = 2._wp; b(2, 1) = 3._wp; b(2, 2) = 4._wp
+  expected = mat(1,1)*b(1,1) + mat(1,2)*b(2,1) &
+           + mat(2,1)*b(1,2) + mat(2,2)*b(2,2)
+  result = coo%traceproduct(1, 2, 1, 2, b(1:2, 1:2))
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(result - expected) < tol, more = 'coo traceproduct 2x2 diag')
+  if(allocated(error))return
+
+  !Case 4: 1x1 off-diagonal at (1,3): A(1,3)=13
+  expected = mat(1,3) * 7._wp
+  result = coo%traceproduct(1, 1, 3, 3, reshape([7._wp], [1,1]))
+  tol = 1.e-3_wp * max(abs(expected), 1._wp)
+  call check(error, abs(result - expected) < tol, more = 'coo traceproduct 1x1 off')
+  if(allocated(error))return
+
+  !Case 5: empty matrix -> 0
+  coo = coosparse(4, unlog = sparse_unit)
+  b(1:4, 1:4) = 0._wp
+  do id = 1, 4
+    b(id, id) = 1._wp
+  enddo
+  call check(error, abs(coo%traceproduct(1, 4, 1, 4, b(1:4, 1:4))) < tol_wp&
+           , more = 'coo traceproduct empty')
+
+end subroutine test_traceproduct_coo
+
+
 
 end module modtest_coo

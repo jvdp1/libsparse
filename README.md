@@ -36,6 +36,44 @@ See the brief [documentation](doc/documentation.md) for more details regarding t
 The brief documentation is available in the directory *doc* (see *mainpage.md*). An extended documentation can be generated with *Doxygen*.  
 
 
+## Usage examples  
+
+To __evaluate the quadratic form__ `x' A x` for a sparse matrix `A` and a dense vector `x`:  
+
+````  
+use modsparse, only: crssparse  
+type(crssparse) :: A  
+real(8) :: x(100), q  
+
+!... build A and set x ...  
+q = A%xAx(x)  
+````  
+
+To __evaluate the bilinear form__ `x' A y` for a sparse matrix `A` and two dense vectors `x` and `y` (`xAx` is the special case `x = y`):  
+
+````  
+use modsparse, only: crssparse  
+type(crssparse) :: A  
+real(8) :: x(100), y(100), q  
+
+!... build A and set x, y ...  
+q = A%xAy(x, y)  
+````  
+
+To __compute the trace of the product of a square sub-block of a sparse matrix with a dense matrix__, e.g. `trace(A(3:6, 3:6) * B)`:  
+
+````  
+use modsparse, only: crssparse  
+type(crssparse) :: A  
+real(8) :: B(4,4), t  
+
+!... build A and set B ...  
+t = A%traceproduct(3, 6, 3, 6, B)  
+````  
+
+*xAx*, *xAy*, and *traceproduct* work on matrices in COO and CRS format and run in O(nnz). `xAy` also works on non-square matrices (length of `x` = rows, length of `y` = columns). Indices in *traceproduct* are 1-based and inclusive.  
+ 
+
 ## Acknowledgements  
 
 The code in modspainv.f90 is based on code originally written by Karin Meyer

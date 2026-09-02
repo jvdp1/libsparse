@@ -202,6 +202,30 @@ call mat%multbyv(alpha, trans, v, val, y)
 where *alpha* and *val* are double-precision real values, *v* and *y* are vectors, and *trans* (= 'n' or 't') relates to the transposition of the matrix.   
 The method *multbyv* is based on the MKL Sparse BLAS library.  
 
+To __evaluate the quadratic form__ *x' A x* for a sparse (square) matrix *A* and a dense vector *x*, the method *xAx* must be used:  
+
+````  
+q = mat%xAx(x)  
+````  
+
+where *mat* is a `coosparse` or `crssparse` object and *x* has the same length as the matrix dimension. The result is computed as *dot(x, A*x)*, reusing the format-specific matrix-vector product, and therefore runs in O(nnz).
+
+To __evaluate the bilinear form__ *x' A y* for a sparse matrix *A* and two dense vectors *x* and *y* (different from each other), the method *xAy* must be used:
+
+````
+q = mat%xAy(x, y)
+````
+
+where *mat* is a `coosparse` or `crssparse` object, *x* has the length of the number of rows of *A*, and *y* has the length of the number of columns of *A* (both hold when *A* is square). `xAx` is the special case `xAx(x) = xAy(x, x)`. The result is computed as *dot(x, A*y)*, reusing the format-specific matrix-vector product, and therefore runs in O(nnz). Unlike `xAx`, `xAy` also works on non-square matrices.
+
+To __compute the trace of the product of a square sub-block of a sparse matrix with a dense matrix__, the method *traceproduct* must be used:
+
+````  
+t = mat%traceproduct(r1, r2, c1, c2, b)  
+````  
+
+where *(r1, r2, c1, c2)* is a 1-based, inclusive tuple defining the square sub-block *A(r1:r2, c1:c2)* (i.e. `r2-r1+1 == c2-c1+1`), and *b* is a dense square matrix of that block size. The returned value is `trace(A(r1:r2, c1:c2) * b)`. On CRS the cost is O(nnz) in the block; on COO it is O(nnz) overall; an informative error is raised on unsupported formats. Setting *b* to the identity gives the plain sub-block trace.
+
 To get the number of __non-zero elements__ of a sparse matrix, the method *nonzero* must be used, e.g.:  
 
 ````  

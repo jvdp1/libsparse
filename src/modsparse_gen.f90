@@ -75,10 +75,162 @@ module subroutine cg_gen(sparse,x,y,maxiter,tol)
   rsold = rsnew
  enddo
  
- if(present(maxiter)) maxiter = i
- if(present(tol)) tol = sqrt(rsnew) / ynorm
+  if(present(maxiter)) maxiter = i
+  if(present(tol)) tol = sqrt(rsnew) / ynorm
 
 end subroutine
+
+!**BILINEAR FORM
+module function xAy_gen(sparse,x,y) result(rv)
+ !x' A y (A need not be square; size(x)=rows, size(y)=cols)
+ !Accumulates in-place over the stored non-zero elements (no dense A*y, O(nnz)).
+ !OpenMP parallel reduction over the independent entries.
+ class(gen_sparse),intent(in)::sparse
+ real(kind=wp),intent(in)::x(:)
+ real(kind=wp),intent(in)::y(:)
+ real(kind=wp)::rv
+
+ integer(kind=int32)::i,c
+ integer(kind=int64)::ic
+ logical::lsym
+
+ if(size(x).ne.sparse%getdim(1))then
+  write(sparse%unlog,'(a)')' ERROR (xAy): the length of x does not match the number of rows of the matrix'
+  error stop
+ endif
+ if(size(y).ne.sparse%getdim(2))then
+  write(sparse%unlog,'(a)')' ERROR (xAy): the length of y does not match the number of columns of the matrix'
+  error stop
+ endif
+
+ rv=0._wp
+ !A stored element (i,k) contributes A(i,k) x(i) y(k); a symmetric matrix also
+ !contributes its mirror A(k,i)=A(i,k), giving the extra A(i,k) x(k) y(i).
+ select type(sparse)
+   type is(coosparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    !$omp parallel do reduction(+:rv)
+    do ic=1_int64,sparse%nel
+     if(sparse%ij(1,ic).eq.0)cycle
+     i=sparse%ij(1,ic)
+     c=sparse%ij(2,ic)
+     rv=rv+sparse%a(ic)*x(i)*y(c)
+     if(lsym.and.i.ne.c) rv=rv+sparse%a(ic)*x(c)*y(i)
+    enddo
+    !$omp end parallel do
+   type is(crssparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    !$omp parallel do reduction(+:rv)
+    do i=1,sparse%dim1
+     do c=sparse%ia(i),sparse%ia(i+1)-1
+      rv=rv+sparse%a(c)*(x(i)*y(sparse%ja(c))&
+            +merge(x(sparse%ja(c))*y(i),0._wp,lsym.and.i.ne.sparse%ja(c)))
+     enddo
+    enddo
+    !$omp end parallel do
+  class default
+   write(sparse%unlog,'(a)')' ERROR (xAy): unsupported format'
+   call sparse%printstats
+   error stop
+  end select
+
+end function
+
+!**QUADRATIC FORM
+module function xAx_gen(sparse,x) result(rv)
+ !x' A x (A must be square); special case of xAy with x=y
+ class(gen_sparse),intent(in)::sparse
+ real(kind=wp),intent(in)::x(:)
+ real(kind=wp)::rv
+
+ if(.not.sparse%issquare())then
+  write(sparse%unlog,'(a)')' ERROR (xAx): the matrix must be square'
+  error stop
+ endif
+
+ rv=xAy_gen(sparse,x,x)
+
+end function
+
+!**TRACE OF A BLOCK PRODUCT
+module function traceproduct_gen(sparse,r1,r2,c1,c2,b) result(rv)
+ !trace( A(r1:r2, c1:c2) * b ) where A(r1:r2, c1:c2) is square
+ class(gen_sparse),intent(in)::sparse
+ integer(kind=int32),intent(in)::r1,r2,c1,c2
+ real(kind=wp),intent(in)::b(:,:)
+ real(kind=wp)::rv
+
+ integer(kind=int32)::i,j,k,nrow,ncol,kblk
+ integer(kind=int64)::ic
+ integer(kind=int32)::rmin,rmax
+ logical::lsym
+
+ rv=0._wp
+ nrow=sparse%getdim(1)
+ ncol=sparse%getdim(2)
+ kblk=r2-r1+1
+
+ if(r1.lt.1 .or. r2.gt.nrow .or. r1.gt.r2)then
+  write(sparse%unlog,'(a)')' ERROR (traceproduct): the block row range is out of bounds'
+  error stop
+ endif
+ if(c1.lt.1 .or. c2.gt.ncol .or. c1.gt.c2)then
+  write(sparse%unlog,'(a)')' ERROR (traceproduct): the block column range is out of bounds'
+  error stop
+ endif
+ if(r2-r1.ne.c2-c1)then
+  write(sparse%unlog,'(a)')' ERROR (traceproduct): the block is not square'
+  error stop
+ endif
+ if(size(b,1).ne.kblk .or. size(b,2).ne.kblk)then
+  write(sparse%unlog,'(a)')' ERROR (traceproduct): b does not have the block size'
+  error stop
+ endif
+
+  select type(sparse)
+   type is(coosparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    !$omp parallel do reduction(+:rv)
+    do ic=1_int64,sparse%nel
+     if(sparse%ij(1,ic).eq.0)cycle
+     j=sparse%ij(1,ic)
+     k=sparse%ij(2,ic)
+     !stored element A(j,k), position (k-c1+1, j-r1+1) of b if within the block
+     if(j.ge.r1 .and. j.le.r2 .and. k.ge.c1 .and. k.le.c2)then
+      rv=rv+sparse%a(ic)*b(k-c1+1,j-r1+1)
+     endif
+     !symmetric mirror A(k,j), if stored as upper triangle
+     if(lsym .and. j.ne.k .and. k.ge.r1 .and. k.le.r2 .and. j.ge.c1 .and. j.le.c2)then
+      rv=rv+sparse%a(ic)*b(j-c1+1,k-r1+1)
+     endif
+    enddo
+    !$omp end parallel do
+   type is(crssparse)
+    lsym=sparse%lsymmetric .and. sparse%lupperstorage
+    rmin=min(r1,c1)
+    rmax=max(r2,c2)
+    !$omp parallel do reduction(+:rv)
+    do i=rmin,rmax
+     do j=sparse%ia(i),sparse%ia(i+1)-1
+      k=sparse%ja(j)
+      !stored element A(i,k), position (k-c1+1, i-r1+1) of b if within the block
+      if(i.ge.r1 .and. i.le.r2 .and. k.ge.c1 .and. k.le.c2)then
+       rv=rv+sparse%a(j)*b(k-c1+1,i-r1+1)
+      endif
+      !symmetric mirror A(k,i), if stored as upper triangle
+      if(lsym .and. i.ne.k .and. k.ge.r1 .and. k.le.r2 .and. i.ge.c1 .and. i.le.c2)then
+       rv=rv+sparse%a(j)*b(i-c1+1,k-r1+1)
+      endif
+     enddo
+    enddo
+    !$omp end parallel do
+   class default
+    write(sparse%unlog,'(a)')' ERROR (traceproduct): unsupported format'
+    call sparse%printstats
+    error stop
+  end select
+
+end function
 
 !**GET ELEMENTS
 pure module function getdim_gen(sparse,dim1) result(dimget)
