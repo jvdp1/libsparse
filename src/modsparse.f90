@@ -72,10 +72,16 @@ module modsparse
   procedure,public::issorted
   !> @brief Returns true if square matrix; else returns false
   procedure,public::issquare
-  !> @brief Multiplication with a vector or matrix
-  generic,public::mult=>multbyv,multbym
-  !> @brief Prints the sparse matrix to a file
-  procedure,public::printtofile=>printtofile_gen
+   !> @brief Multiplication with a vector or matrix
+   generic,public::mult=>multbyv,multbym
+    !> @brief Computes the quadratic form; e.g., rv = mat%xAx(x)
+    procedure,public::xAx=>xAx_gen
+    !> @brief Computes the bilinear form x'Ay; e.g., rv = mat%xAy(x,y)
+    procedure,public::xAy=>xAy_gen
+    !> @brief Computes the trace of a block product; e.g., rv = mat%traceproduct(r1,r2,c1,c2,b)
+    procedure,public::traceproduct=>traceproduct_gen
+   !> @brief Prints the sparse matrix to a file
+   procedure,public::printtofile=>printtofile_gen
   !> @brief Prints the sparse matrix in a rectangular/square format to the output mat\%unlog
   procedure,public::printsquaretofile=>printsquaretofile_gen
   !> @brief Prints the current status of a sparse matrix to the output mat\%unlog ; e.g., call mat%printstats()
@@ -156,16 +162,36 @@ module modsparse
   module elemental subroutine destroy_gen_gen(sparse)
    class(gen_sparse),intent(inout)::sparse
   end subroutine
-  !**CONJUGATE GRADIENT
-  module subroutine cg_gen(sparse,x,y,maxiter,tol)
-   !sparse*x=y
-   class(gen_sparse),intent(in)::sparse
-   integer(kind=int32),intent(inout),optional::maxiter
-   real(kind=wp),intent(inout)::x(:)
-   real(kind=wp),intent(in)::y(:)
-   real(kind=wp),intent(inout),optional::tol
-  end subroutine
-  !**GET ELEMENTS
+   !**CONJUGATE GRADIENT
+   module subroutine cg_gen(sparse,x,y,maxiter,tol)
+    !sparse*x=y
+    class(gen_sparse),intent(in)::sparse
+    integer(kind=int32),intent(inout),optional::maxiter
+    real(kind=wp),intent(inout)::x(:)
+    real(kind=wp),intent(in)::y(:)
+    real(kind=wp),intent(inout),optional::tol
+   end subroutine
+   !**QUADRATIC FORM
+   module function xAx_gen(sparse,x) result(rv)
+    class(gen_sparse),intent(in)::sparse
+    real(kind=wp),intent(in)::x(:)
+    real(kind=wp)::rv
+   end function
+   !**BILINEAR FORM
+   module function xAy_gen(sparse,x,y) result(rv)
+    class(gen_sparse),intent(in)::sparse
+    real(kind=wp),intent(in)::x(:)
+    real(kind=wp),intent(in)::y(:)
+    real(kind=wp)::rv
+   end function
+   !**TRACE OF A BLOCK PRODUCT
+   module function traceproduct_gen(sparse,r1,r2,c1,c2,b) result(rv)
+    class(gen_sparse),intent(in)::sparse
+    integer(kind=int32),intent(in)::r1,r2,c1,c2
+    real(kind=wp),intent(in)::b(:,:)
+    real(kind=wp)::rv
+   end function
+   !**GET ELEMENTS
   pure module function getdim_gen(sparse,dim1) result(dimget)
    class(gen_sparse),intent(in)::sparse
    integer(kind=int32),intent(in)::dim1
